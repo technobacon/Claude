@@ -1,0 +1,39 @@
+CHROME WEB STORE LISTING
+========================
+
+SHORT DESCRIPTION (132 chars max)
+----------------------------------
+Save your open tabs as named workspaces and bring them back whenever you need them. Groups and pinned tabs included.
+
+
+FULL DESCRIPTION
+----------------
+TabStash lets you save whatever you have open right now, give it a name,
+and restore it later in one click.
+
+When you restore a workspace, Chrome reopens the tabs in the same windows
+you had, puts them back in their tab groups (with the same colors and
+names), and respects which tabs were pinned. Nothing gets flattened into
+a long list.
+
+Free accounts can keep up to 3 saved workspaces. A one-time $3 purchase
+removes that limit and adds export/import so you can back up your
+workspaces to a file and restore them after reinstalling Chrome or
+switching computers.
+
+Everything is stored locally on your device. No account required. No
+browsing data is collected or transmitted anywhere. The extension works
+offline.
+
+FEATURES
+- Save the current window or all open windows at once
+- Name each workspace whatever you want
+- Restores tab groups (color, name, collapsed state) and pinned tabs
+- Keyboard shortcut to save quickly (Ctrl+Shift+S / Cmd+Shift+S)
+- Export and import workspaces as a JSON file (paid)
+- No servers, no sign-in, no subscription
+
+WHAT IT DOESN'T DO
+TabStash does not sync across devices, does not read page content, and
+does not require any permissions beyond what is needed to read your open
+tabs and save data locally.

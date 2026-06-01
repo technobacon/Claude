@@ -1,0 +1,22 @@
+TabStash Privacy Policy
+Last updated: [fill in the date you publish]
+
+TabStash stores your saved workspaces (tab URLs, titles, and group
+names) in Chrome's local storage on your device. This data never leaves
+your device. It is not sent to any server, not shared with any third
+party, and not accessible to the developer.
+
+The extension does not collect analytics, crash reports, or usage data
+of any kind.
+
+Payment processing (if you purchase the Pro version) is handled by
+ExtensionPay and Stripe. That transaction happens between you and those
+services. TabStash itself only receives a true/false signal confirming
+whether a purchase has been made.
+
+The only permissions this extension requests are:
+  - tabs: to read which URLs you have open when saving a workspace
+  - tabGroups: to read and recreate tab group names and colors
+  - storage: to save your workspaces locally on your device
+
+If you have questions, contact: [your email address]

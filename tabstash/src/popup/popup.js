@@ -43,7 +43,7 @@ function render(workspaces) {
   if (workspaces.length === 0) {
     const li = document.createElement('li');
     li.className = 'empty';
-    li.textContent = 'No saved workspaces yet. Name one above and hit Save.';
+    li.innerHTML = '<span class="empty-icon">🗂️</span>No saved workspaces yet.<br>Name one above and hit Save.';
     els.list.appendChild(li);
   }
 
@@ -73,7 +73,10 @@ function render(workspaces) {
     del.title = 'Delete';
     del.addEventListener('click', () => onDelete(ws.id, ws.name));
 
-    li.append(meta, restore, del);
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    actions.append(restore, del);
+    li.append(meta, actions);
     els.list.appendChild(li);
   }
 
@@ -98,7 +101,7 @@ async function refresh() {
 async function onSave(scope) {
   const res = await send({ type: 'SAVE', scope, name: els.name.value });
   if (!res.ok) {
-    if (res.reason === 'LIMIT_REACHED') showMessage('Free plan limit reached — unlock for unlimited.', true);
+    if (res.reason === 'LIMIT_REACHED') showMessage('Free plan limit reached. Unlock for unlimited.', true);
     else if (res.reason === 'NO_TABS') showMessage('Nothing to save (only internal pages were open).', true);
     else showMessage('Could not save.', true);
     return;

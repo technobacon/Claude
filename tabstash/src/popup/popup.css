@@ -1,96 +1,221 @@
 :root {
-  --bg: #ffffff;
-  --fg: #1f2330;
+  --bg: #eef0f8;
+  --surface: #fff;
+  --fg: #111827;
   --muted: #6b7280;
-  --line: #e6e8ef;
+  --subtle: #9ca3af;
+  --line: #e5e7eb;
   --brand: #4f46e5;
-  --brand-ink: #ffffff;
-  --danger: #dc2626;
-  --chip: #eef2ff;
+  --brand-mid: #6366f1;
+  --brand-light: #eef2ff;
+  --brand-glow: rgba(99,102,241,.18);
+  --brand-ink: #fff;
+  --danger: #ef4444;
+  --danger-bg: #fef2f2;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
+  --shadow: 0 1px 4px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.09), 0 2px 4px rgba(0,0,0,.05);
 }
 
-* { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
 
 body {
-  width: 340px;
+  width: 360px;
   margin: 0;
-  font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: var(--fg);
   background: var(--bg);
+  font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--fg);
 }
 
+/* ── Header ────────────────────────────────── */
 .bar {
+  background: var(--surface);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+.brand { display: flex; align-items: center; gap: 9px; }
+.brand h1 { font-size: 15px; font-weight: 700; margin: 0; letter-spacing: -.02em; }
+.logo-svg { display: block; flex-shrink: 0; }
+
+.plan {
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--brand); background: var(--brand-light);
+  padding: 3px 9px; border-radius: 999px; border: 1px solid #c7d2fe;
+}
+
+/* ── Save area ─────────────────────────────── */
+.save {
+  background: var(--surface);
+  padding: 13px 16px;
+  display: grid;
+  gap: 9px;
   border-bottom: 1px solid var(--line);
 }
-.brand { display: flex; align-items: center; gap: 8px; }
-.brand h1 { font-size: 15px; margin: 0; letter-spacing: -0.01em; }
-.logo {
-  width: 18px; height: 18px; border-radius: 5px;
-  background: var(--brand);
-  box-shadow: inset 0 -6px 0 rgba(255, 255, 255, 0.25);
-}
-.plan {
-  font-size: 11px; font-weight: 600; color: var(--brand);
-  background: var(--chip); padding: 2px 8px; border-radius: 999px;
-}
 
-.save { padding: 12px 14px; display: grid; gap: 8px; }
 #name {
-  width: 100%; padding: 8px 10px; font-size: 13px;
-  border: 1px solid var(--line); border-radius: 8px; outline: none;
+  width: 100%;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 13px;
+  border: 1.5px solid var(--line);
+  border-radius: 9px;
+  outline: none;
+  background: #fafbff;
+  color: var(--fg);
+  transition: border-color .15s, box-shadow .15s, background .15s;
 }
-#name:focus { border-color: var(--brand); }
+#name:focus {
+  border-color: var(--brand-mid);
+  box-shadow: 0 0 0 3px var(--brand-glow);
+  background: var(--surface);
+}
+#name::placeholder { color: var(--subtle); }
+
 .save-actions { display: flex; gap: 8px; }
 
+/* ── Buttons ───────────────────────────────── */
 button {
-  font: inherit; cursor: pointer; border-radius: 8px;
-  border: 1px solid transparent; padding: 8px 10px;
+  font: inherit;
+  cursor: pointer;
+  border-radius: 9px;
+  border: 1.5px solid transparent;
+  padding: 8px 13px;
+  line-height: 1;
+  transition: opacity .12s, box-shadow .15s, background .12s, border-color .12s;
 }
-button:disabled { opacity: 0.5; cursor: not-allowed; }
-.primary { background: var(--brand); color: var(--brand-ink); flex: 1; font-weight: 600; }
-.primary:hover:not(:disabled) { filter: brightness(1.05); }
-.ghost { background: #fff; border-color: var(--line); color: var(--fg); }
-.ghost:hover { background: #f7f8fc; }
+button:disabled { opacity: .4; cursor: not-allowed; }
 
+.primary {
+  background: linear-gradient(150deg, #6366f1 0%, #4338ca 100%);
+  color: var(--brand-ink);
+  flex: 1;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(79,70,229,.32), 0 1px 2px rgba(0,0,0,.1);
+}
+.primary:hover:not(:disabled) {
+  box-shadow: 0 4px 16px rgba(79,70,229,.42), 0 1px 4px rgba(0,0,0,.1);
+  opacity: .92;
+}
+
+.ghost {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--fg);
+  font-weight: 500;
+}
+.ghost:hover:not(:disabled) { background: #f5f6fc; border-color: #d1d5db; }
+
+/* ── Toast ─────────────────────────────────── */
 .message {
-  margin: 0; padding: 8px 14px; font-size: 12px;
-  color: var(--brand); background: var(--chip);
+  margin: 0;
+  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #3730a3;
+  background: #e0e7ff;
+  border-bottom: 1px solid #c7d2fe;
 }
-.message.error { color: var(--danger); background: #fef2f2; }
+.message.error { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
 
-.list { list-style: none; margin: 0; padding: 4px 0; max-height: 320px; overflow-y: auto; }
-.item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 9px 14px; border-bottom: 1px solid var(--line);
+/* ── Workspace list ────────────────────────── */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 300px;
+  overflow-y: auto;
 }
-.item:last-child { border-bottom: none; }
+.list::-webkit-scrollbar { width: 4px; }
+.list::-webkit-scrollbar-track { background: transparent; }
+.list::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 999px; }
+
+/* Workspace card */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border-radius: 10px;
+  border-left: 3px solid var(--brand-mid);
+  box-shadow: var(--shadow);
+  transition: box-shadow .15s, transform .12s;
+}
+.item:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
 .item .meta { flex: 1; min-width: 0; }
 .item .name {
-  font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
 }
-.item .sub { color: var(--muted); font-size: 11px; }
-.item button { padding: 5px 9px; font-size: 12px; }
-.item .restore { background: var(--brand); color: #fff; }
-.item .del { background: #fff; border-color: var(--line); color: var(--danger); }
+.item .sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
 
-.empty { padding: 22px 14px; text-align: center; color: var(--muted); }
+.item .actions { display: flex; gap: 5px; align-items: center; }
+.item .actions button { padding: 5px 10px; font-size: 12px; flex: none; box-shadow: none; }
 
+.item .restore {
+  background: var(--brand-light);
+  color: var(--brand);
+  border-color: #c7d2fe;
+  font-weight: 600;
+}
+.item .restore:hover { background: #e0e7ff; border-color: #a5b4fc; }
+.item .del {
+  background: transparent;
+  border-color: transparent;
+  color: var(--subtle);
+  font-size: 15px;
+  padding: 4px 7px;
+}
+.item .del:hover { color: var(--danger); background: var(--danger-bg); border-color: #fca5a5; }
+
+/* Empty state */
+.empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.empty-icon { font-size: 30px; margin-bottom: 8px; display: block; opacity: .65; }
+
+/* ── Upsell ────────────────────────────────── */
 .upsell {
-  margin: 8px 14px; padding: 12px; border: 1px dashed var(--brand);
-  border-radius: 10px; background: var(--chip);
+  margin: 4px 14px 12px;
+  padding: 14px;
+  background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+  border: 1.5px solid #c7d2fe;
+  border-radius: 12px;
 }
-.upsell p { margin: 0 0 8px; }
+.upsell p { margin: 0 0 10px; font-size: 12.5px; line-height: 1.55; }
+.upsell strong { color: var(--brand); }
 .upsell .primary { width: 100%; flex: none; }
 
+/* ── Footer ────────────────────────────────── */
 .foot {
-  display: flex; gap: 14px; padding: 10px 14px;
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--surface);
   border-top: 1px solid var(--line);
 }
 .link {
-  background: none; border: none; color: var(--brand);
-  padding: 0; font-size: 12px; text-decoration: underline;
+  background: none;
+  border: 1.5px solid var(--line);
+  color: var(--muted);
+  padding: 5px 11px;
+  font-size: 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: color .12s, background .12s, border-color .12s;
 }
+.link:hover { color: var(--brand); background: var(--brand-light); border-color: #c7d2fe; }

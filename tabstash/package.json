@@ -1,0 +1,11 @@
+{
+  "name": "tabstash",
+  "version": "1.0.0",
+  "description": "Save & restore tab workspaces — a privacy-first Chrome extension.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "icons": "node icons/generate-icons.mjs"
+  }
+}

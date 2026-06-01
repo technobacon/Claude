@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "TabStash — Save & Restore Tab Workspaces",
+  "version": "1.0.0",
+  "description": "Save your open tabs as named workspaces and restore them in one click — tab groups and pinned tabs included. 100% local, no account.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["tabs", "tabGroups", "storage"],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "TabStash",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "commands": {
+    "save-window": {
+      "suggested_key": { "default": "Ctrl+Shift+S", "mac": "Command+Shift+S" },
+      "description": "Quick-save the current window as a workspace"
+    }
+  }
+}

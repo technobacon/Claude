@@ -1,0 +1,157 @@
+===========================================================================
+ TabStash — WHAT TO DO NEXT
+ A plain-English checklist to go from "code in a repo" to "earning money."
+ Written for someone new to all of this. Take it one numbered step at a time.
+===========================================================================
+
+WHAT YOU HAVE RIGHT NOW
+-----------------------
+A complete, working Chrome extension called TabStash. It saves your open
+tabs as named "workspaces" and restores them later. The code is finished
+and the core logic is covered by 20 automated tests (all passing).
+
+What is NOT done yet (because only YOU can do these — they need accounts,
+your identity, and money):
+  - Connecting a real payment system so people can pay you the $3.
+  - Publishing it to the Chrome Web Store so the public can install it.
+
+Estimated time for everything below: about 2-3 hours, spread over a few
+days (Google's review takes a day or two and isn't something you wait at
+the screen for).
+
+Estimated cost to start:
+  - Chrome Web Store developer account: $5 one-time (required by Google).
+  - ExtensionPay / Stripe: free to set up; they take a small cut per sale.
+
+
+---------------------------------------------------------------------------
+ PART 0 — TRY IT YOURSELF FIRST (10 minutes, free, do this today)
+---------------------------------------------------------------------------
+Before spending any money, confirm you like the product.
+
+  1. Download this project to your computer (on GitHub, click the green
+     "Code" button -> "Download ZIP", then unzip it).
+  2. Open Chrome and go to:  chrome://extensions
+  3. Turn ON "Developer mode" (toggle, top-right corner).
+  4. Click "Load unpacked".
+  5. Select the folder named "tabstash" (the one containing manifest.json).
+  6. The TabStash icon appears in your toolbar. Open a few tabs, click it,
+     type a name, and hit "Save this window". Close the tabs, then click
+     "Restore". That's the whole product.
+
+If you want to feel the paid version: on the chrome://extensions page,
+click "service worker" under TabStash to open a console, paste this and
+press Enter:
+     chrome.storage.local.set({ 'tabstash:paid': true })
+Now export/import and unlimited workspaces are unlocked.
+
+
+---------------------------------------------------------------------------
+ PART 1 — DECIDE ON THE NAME (15 minutes)
+---------------------------------------------------------------------------
+"TabStash" is a working name. Before publishing:
+
+  1. Go to the Chrome Web Store and search "TabStash" and "tab workspace"
+     to make sure the name isn't already taken / too similar.
+  2. If you want a different name, tell Claude "rename the extension to X"
+     and it will update manifest.json and the UI. (The folder name and
+     icons don't strictly need to change.)
+
+
+---------------------------------------------------------------------------
+ PART 2 — SET UP PAYMENTS WITH EXTENSIONPAY (about 45 minutes)
+---------------------------------------------------------------------------
+The Chrome Web Store removed its built-in "paid extensions" feature years
+ago, so everyone now uses a third-party tool. The simplest is ExtensionPay
+(it handles the money through Stripe for you).
+
+  1. Create a Stripe account at https://stripe.com (free). This is what
+     actually deposits money into your bank. You'll need to enter your
+     bank details and some basic identity info — this is normal and
+     required by law for anyone receiving payments.
+
+  2. Create an ExtensionPay account at https://extensionpay.com and click
+     "Register a new extension".
+        - Choose a ONE-TIME payment.
+        - Set the price to $3 (or $2.99).
+        - Connect the Stripe account from step 1 when prompted.
+        - Note the "extension id" string ExtensionPay gives you.
+
+  3. Download their library file "ExtPay.js" from the link in their docs
+     and put it in this folder:   src/lib/ExtPay.js
+
+  4. Tell Claude: "Wire up ExtensionPay using extension id <the id from
+     step 2>." Claude will:
+        - edit src/lib/payments.js (there are clearly-marked REPLACE
+          sections already waiting for this),
+        - add the required ExtensionPay domains to manifest.json,
+        - and confirm the tests still pass.
+
+  5. Reload the extension in chrome://extensions and test a purchase using
+     Stripe's test card number (4242 4242 4242 4242, any future expiry,
+     any CVC). Confirm the paywall unlocks after "paying".
+
+  (Don't want a free tier at all? You can instead make the whole extension
+   require payment. Tell Claude and it will adjust the gating.)
+
+
+---------------------------------------------------------------------------
+ PART 3 — CREATE STORE LISTING ASSETS (about 30 minutes)
+---------------------------------------------------------------------------
+Google requires a few images and texts for your store page.
+
+  1. Screenshots: open the extension, take 1-5 screenshots showing it in
+     use (1280x800 or 640x400 pixels). Just use your computer's normal
+     screenshot tool.
+  2. A short description and a detailed description. Ask Claude to draft
+     these for you — say "write my Chrome Web Store listing copy".
+  3. A privacy policy. Because TabStash stores everything locally and
+     collects nothing, this is short. Ask Claude: "write a privacy policy
+     for TabStash" and host the text somewhere public (a free GitHub Pages
+     page works, or a Google Doc set to 'anyone with link').
+
+
+---------------------------------------------------------------------------
+ PART 4 — PUBLISH TO THE CHROME WEB STORE (about 30 minutes + waiting)
+---------------------------------------------------------------------------
+  1. Go to https://chrome.google.com/webstore/devconsole and sign in with
+     a Google account.
+  2. Pay the ONE-TIME $5 developer registration fee.
+  3. Click "New item".
+  4. Zip the contents of the tabstash folder (the manifest.json must be at
+     the top level of the zip, not inside another folder) and upload it.
+        - Tip: ask Claude "package the extension into a zip for upload"
+          and it will produce the correct file.
+  5. Fill in the listing using the assets from Part 3.
+  6. In the privacy section, declare that the extension does NOT collect
+     user data (true — everything is local).
+  7. Submit for review. Google usually responds within 1-3 days.
+  8. When approved, your extension is live. Share the link!
+
+
+---------------------------------------------------------------------------
+ PART 5 — AFTER LAUNCH
+---------------------------------------------------------------------------
+  - Money from sales lands in your Stripe account and pays out to your
+    bank automatically on Stripe's schedule.
+  - Watch your reviews. When users ask for features, bring the request
+    back to Claude and we'll build them, then publish an update (bump the
+    "version" in manifest.json, re-zip, re-upload).
+  - To raise or lower the price later, change it in the ExtensionPay
+    dashboard — no code change needed.
+
+
+---------------------------------------------------------------------------
+ QUICK REFERENCE — THINGS YOU CAN ASK CLAUDE TO DO
+---------------------------------------------------------------------------
+  - "Rename the extension to ___."
+  - "Wire up ExtensionPay with extension id ___."
+  - "Make the whole extension paid instead of freemium."
+  - "Write my store listing copy and a privacy policy."
+  - "Package the extension into a zip for upload."
+  - "Add a feature: ___."
+  - "Bump the version and prepare an update."
+
+You don't need to memorize any of this. Start at Part 0 and come back to
+this file whenever you're ready for the next step.
+===========================================================================

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="popup.css" />
+    <title>TabStash</title>
+  </head>
+  <body>
+    <header class="bar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"></span>
+        <h1>TabStash</h1>
+      </div>
+      <span id="plan" class="plan" hidden></span>
+    </header>
+
+    <section class="save">
+      <input
+        id="name"
+        type="text"
+        placeholder="Name this workspace…"
+        maxlength="120"
+        autocomplete="off"
+      />
+      <div class="save-actions">
+        <button id="saveWindow" class="primary">Save this window</button>
+        <button id="saveAll" class="ghost" title="Save every open window">All windows</button>
+      </div>
+    </section>
+
+    <p id="message" class="message" hidden></p>
+
+    <ul id="list" class="list" aria-live="polite"></ul>
+
+    <section id="upsell" class="upsell" hidden>
+      <p><strong>Free plan holds 3 workspaces.</strong></p>
+      <p>Unlock unlimited workspaces plus file backup (export / import) with a one-time purchase.</p>
+      <button id="buy" class="primary">Unlock — one-time $3</button>
+    </section>
+
+    <footer class="foot">
+      <button id="export" class="link" hidden>Export…</button>
+      <button id="import" class="link" hidden>Import…</button>
+      <input id="importFile" type="file" accept="application/json,.json" hidden />
+    </footer>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

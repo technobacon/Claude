@@ -9,6 +9,12 @@ as named "workspaces" and restores them (preserving tab groups + pinned tabs).
 Plain JavaScript, **no build step, no runtime dependencies**. Sold as a one-time
 purchase (free for 3 workspaces; paid unlocks unlimited + JSON export/import).
 
+`spireling/` — **Spireling**, a deck-building roguelike that plays in mobile
+Safari. Plain JS, no runtime dependencies. Same shape as TabStash: all rules in
+pure, tested functions (`src/core/`) with a thin DOM UI (`src/ui/`); a
+dependency-free `build.mjs` inlines everything into a self-contained
+`dist/index.html`. See `spireling/README.md`.
+
 ## Commands
 
 Run from `tabstash/`:

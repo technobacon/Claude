@@ -1,0 +1,11 @@
+{
+  "name": "spireling",
+  "version": "1.0.0",
+  "description": "A pocket deck-building roguelike — pure-logic core, plays in mobile Safari.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "build": "node build.mjs"
+  }
+}

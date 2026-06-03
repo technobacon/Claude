@@ -8,369 +8,190 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>The Last Bard</title>
-  <style>/* The Last Bard — pixel art UI.
-   World is grey and muted; the Bard and note colours are vivid contrast points. */
+  <style>/* The Last Bard — pixel UI, redesigned around the 2.5D arena.
+   World = desaturated greys; Bard + notes = vivid accents. */
 
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {
-  --bg:     #0d0d14;
-  --bg2:    #14141e;
-  --panel:  #1a1a28;
-  --panel2: #22223a;
-  --border: #2e2e4a;
-  --border2:#4a4a6a;
-  --ink:    #d8d8ec;
-  --muted:  #7070a0;
-  --hp:     #cc4444;
-  --hp-bg:  #3a1818;
-  --block:  #4488aa;
-  --tempo:  #ccaa44;
-  --gold:   #ccaa22;
-
-  /* Note colours */
-  --strike: #ff6b6b;
-  --ward:   #4ecdc4;
-  --verse:  #ffe66d;
-
-  /* Chain states */
-  --harmony:   #4ecdc4;
-  --crescendo: #ffd700;
-
-  /* Rarity */
-  --common:   #888890;
-  --uncommon: #4a8fd4;
-  --rare:     #d4a040;
-  --starter:  #505060;
+  --bg:#08080f; --bg2:#0f0f1a; --panel:#16162a; --panel2:#1f1f38;
+  --border:#2a2a44; --border2:#43436a; --ink:#dcdcf0; --muted:#7878a8;
+  --hp:#cc4444; --block:#4ba0d0; --tempo:#ffd23f; --gold:#e0b020;
+  --strike:#ff5e7a; --ward:#3afae0; --verse:#ffe24a;
+  --harmony:#3afae0; --crescendo:#ffd23f;
+  --uncommon:#4a8fd4; --rare:#d4a040;
 }
 
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-html, body {
-  margin: 0; height: 100%;
-  background: var(--bg);
-  color: var(--ink);
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  overscroll-behavior: none;
-  user-select: none; -webkit-user-select: none;
-  image-rendering: pixelated;
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body {
+  margin:0; height:100%;
+  background:var(--bg); color:var(--ink);
+  font-family:'Press Start 2P', monospace; font-size:10px;
+  overscroll-behavior:none; user-select:none; -webkit-user-select:none;
+  image-rendering:pixelated; overflow:hidden;
 }
+#app { max-width:560px; margin:0 auto; height:100dvh; height:100vh; display:flex; flex-direction:column; position:relative; }
 
-/* Pixel borders: 4px solid, no radius → chunky */
-.px-border  { border: 4px solid var(--border); }
-.px-border2 { border: 4px solid var(--border2); }
+button { font-family:'Press Start 2P', monospace; }
 
-#app {
-  max-width: 520px;
-  margin: 0 auto;
-  min-height: 100%;
-  display: flex; flex-direction: column;
-}
+/* ── generic screens ─────────────────────────────────────────── */
+.screen { display:flex; flex-direction:column; min-height:100dvh; min-height:100vh;
+  padding:calc(8px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom)); }
+.screen.center { justify-content:center; align-items:center; gap:18px; text-align:center; }
 
-/* ── screens ─────────────────────────────────────────────────── */
-.screen {
-  display: flex; flex-direction: column;
-  min-height: 100vh;
-  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-  padding-top: calc(8px + env(safe-area-inset-top));
-}
-.screen.center { justify-content: center; align-items: center; gap: 16px; text-align: center; }
+.logo { font-size:1.6rem; letter-spacing:.1em; color:var(--verse); margin:0; line-height:1.5;
+  text-shadow:0 0 18px rgba(255,226,74,.55), 0 0 38px rgba(255,226,74,.25); }
+.logo.won { color:var(--crescendo); }
+.logo.lost { color:var(--hp); text-shadow:0 0 18px rgba(204,68,68,.5); }
+.subtitle { color:var(--muted); font-size:.66rem; line-height:1.9; white-space:pre-line; }
+.screen-title { font-size:.9rem; margin:8px 0; }
+.hint { color:var(--muted); font-size:.62rem; line-height:1.8; }
 
-/* ── typography ──────────────────────────────────────────────── */
-.logo {
-  font-size: 1.8rem; letter-spacing: .12em;
-  color: var(--verse); text-shadow: 0 0 20px rgba(255,230,109,.6), 0 0 40px rgba(255,230,109,.3);
-  margin: 0; line-height: 1.4;
-}
-.subtitle { color: var(--muted); font-size: .7rem; line-height: 1.8; }
-.screen-title { font-size: .9rem; color: var(--ink); margin: 8px 0; }
-.hint { color: var(--muted); font-size: .65rem; line-height: 1.7; }
+.title-stage { padding:10px; filter:drop-shadow(0 10px 18px rgba(0,0,0,.6)); animation:bob 2.4s ease-in-out infinite; }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 
 /* ── buttons ─────────────────────────────────────────────────── */
-.btn {
-  appearance: none;
-  font-family: 'Press Start 2P', monospace;
-  font-size: .7rem;
-  background: var(--panel2);
-  color: var(--ink);
-  border: 4px solid var(--border2);
-  padding: 10px 14px;
-  cursor: pointer;
-  min-height: 44px;
-  image-rendering: pixelated;
-  /* pixel shadow effect */
-  box-shadow: 4px 4px 0 #000;
-}
-.btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #000; }
-.btn.primary { border-color: var(--verse); color: var(--verse); box-shadow: 4px 4px 0 var(--gold); }
-.btn.danger  { border-color: var(--hp);    color: var(--hp); }
-.btn.big     { font-size: .8rem; padding: 14px 20px; }
-.btn.tiny    { font-size: .55rem; padding: 6px 8px; min-height: 32px; box-shadow: 2px 2px 0 #000; }
+.btn { font-size:.7rem; background:var(--panel2); color:var(--ink);
+  border:3px solid var(--border2); padding:11px 15px; cursor:pointer; min-height:44px;
+  box-shadow:3px 3px 0 #000; transition:transform .04s, box-shadow .04s; }
+.btn:active { transform:translate(2px,2px); box-shadow:1px 1px 0 #000; }
+.btn.primary { border-color:var(--verse); color:var(--verse); box-shadow:3px 3px 0 var(--gold); }
+.btn.primary:active { box-shadow:1px 1px 0 var(--gold); }
+.btn.ghost { background:transparent; border-color:var(--border2); color:var(--muted); }
+.btn.big { font-size:.85rem; padding:15px 26px; }
+.icon-btn { background:transparent; border:2px solid var(--border2); color:var(--muted);
+  width:30px; height:30px; padding:0; cursor:pointer; font-size:.7rem; }
 
-/* ── top bar ─────────────────────────────────────────────────── */
-.topbar {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 4px 8px;
-  border-bottom: 4px solid var(--border);
-  flex-wrap: wrap;
-}
-.pstat         { font-size: .6rem; font-weight: 700; }
-.pstat.hp      { color: var(--hp); }
-.pstat.block   { color: var(--block); }
-.pstat.tempo   { color: var(--tempo); }
-.pstat.gold    { color: var(--gold); }
-.topbar .btn.tiny { margin-left: auto; }
+/* ── top bar (non-combat) ────────────────────────────────────── */
+.topbar { display:flex; align-items:center; gap:10px; padding:6px 4px 8px; border-bottom:3px solid var(--border); }
+.pstat { font-size:.6rem; } .pstat.hp{color:var(--hp);} .pstat.gold{color:var(--gold);}
+.topbar .icon-btn { margin-left:auto; }
+.footer { margin-top:auto; display:flex; justify-content:space-between; gap:8px;
+  padding:8px 2px calc(8px + env(safe-area-inset-bottom)); }
 
-/* ── chain strip ─────────────────────────────────────────────── */
-.chain-strip {
-  display: flex; align-items: center; justify-content: center;
-  gap: 6px; padding: 6px 4px;
-  border-bottom: 4px solid var(--border);
-  background: var(--bg2);
-}
-.chain-slot {
-  position: relative;
-  width: 24px; height: 24px;
-  border: 3px solid var(--border2);
-  background: var(--panel);
-  display: flex; align-items: center; justify-content: center;
-}
-.chain-slot.filled-strike { border-color: var(--strike); background: rgba(255,107,107,.15); }
-.chain-slot.filled-ward   { border-color: var(--ward);   background: rgba(78,205,196,.15); }
-.chain-slot.filled-verse  { border-color: var(--verse);  background: rgba(255,230,109,.15); }
-.chain-dot { width: 6px; height: 6px; background: var(--border2); }
+/* ════════════════════════════════════════════════════════════════
+   COMBAT
+   ════════════════════════════════════════════════════════════════ */
+.combat { height:100dvh; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
 
-.chain-label {
-  font-size: .5rem; color: var(--muted); text-align: center;
-  padding: 0 4px;
-}
-.chain-label.harmony   { color: var(--harmony); }
-.chain-label.crescendo { color: var(--crescendo); text-shadow: 0 0 8px var(--gold); }
+.arena-wrap { position:relative; flex:1; min-height:0; overflow:hidden;
+  border-bottom:3px solid var(--border); }
+.arena-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:manipulation; }
 
-.muted-bar {
-  display: flex; gap: 4px; justify-content: center;
-  padding: 4px 4px 0;
-  font-size: .5rem;
-}
-.muted-chip {
-  padding: 2px 5px;
-  border: 2px solid #444460;
-  color: var(--muted);
-}
-.muted-chip.active { border-color: var(--hp); color: var(--hp); }
+/* HUD overlays float over the canvas */
+.hud-top { position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between;
+  align-items:flex-start; padding:6px 8px; pointer-events:none; }
+.hud-top .icon-btn { pointer-events:auto; }
+.hud-left { display:flex; flex-direction:column; gap:5px; }
+.hud-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+.hud-hp { display:flex; align-items:center; gap:5px; font-size:.62rem;
+  background:rgba(8,8,16,.7); padding:4px 7px; border:2px solid var(--border); }
+.hud-hp .heart { color:var(--hp); }
+.hud-block { color:var(--block); }
+.hud-floor { font-size:.55rem; color:var(--muted); background:rgba(8,8,16,.7); padding:3px 6px; border:2px solid var(--border); }
 
-/* ── combat ──────────────────────────────────────────────────── */
-.enemies-row {
-  display: flex; gap: 8px; justify-content: center;
-  padding: 10px 2px;
-  flex-wrap: wrap;
-}
-.enemy-card {
-  flex: 1 1 0; min-width: 100px; max-width: 180px;
-  background: var(--bg2);
-  border: 4px solid var(--border);
-  padding: 6px;
-  text-align: center;
-}
-.enemy-card.targetable {
-  border-color: var(--hp);
-  box-shadow: 0 0 12px rgba(204,68,68,.5), 4px 4px 0 var(--hp-bg);
-  cursor: pointer;
-}
-.enemy-card.targetable:active { transform: scale(.97); }
-.enemy-card.dead { opacity: .35; filter: grayscale(1); }
+.tempo-orbs { display:flex; gap:4px; }
+.orb { width:13px; height:13px; border-radius:50%; border:2px solid #5a4a18; background:#241f10;
+  box-shadow:inset 0 0 3px #000; }
+.orb.full { background:radial-gradient(circle at 35% 30%, #fff3b0, var(--tempo) 60%, #b8860b);
+  border-color:var(--tempo); box-shadow:0 0 8px rgba(255,210,63,.7); }
 
-.enemy-sprite-wrap {
-  display: flex; justify-content: center; align-items: flex-end;
-  height: 60px; margin-bottom: 4px;
-}
-.enemy-name  { font-size: .55rem; color: var(--muted); margin-bottom: 4px; }
-.intent-text {
-  font-size: .6rem; color: var(--hp); min-height: 1.2em;
-  margin-bottom: 4px; line-height: 1.5;
-}
+/* chain strip overlay */
+.hud-chain { position:absolute; top:42px; left:0; right:0; display:flex; flex-direction:column;
+  align-items:center; gap:4px; pointer-events:none; }
+.chain-row { display:flex; align-items:center; gap:5px; background:rgba(8,8,16,.66);
+  padding:5px 9px; border:2px solid var(--border); }
+.chain-slot { width:26px; height:26px; border:3px solid var(--border2); background:var(--panel);
+  display:flex; align-items:center; justify-content:center; }
+.chain-slot.f-strike { border-color:var(--strike); background:rgba(255,94,122,.16); box-shadow:0 0 8px rgba(255,94,122,.4); }
+.chain-slot.f-ward   { border-color:var(--ward);   background:rgba(58,250,224,.16); box-shadow:0 0 8px rgba(58,250,224,.4); }
+.chain-slot.f-verse  { border-color:var(--verse);  background:rgba(255,226,74,.16); box-shadow:0 0 8px rgba(255,226,74,.4); }
+.chain-dot { width:6px; height:6px; background:var(--border2); }
+.chain-link { width:7px; height:3px; background:var(--border2); }
+.chain-tag { font-size:.55rem; padding:3px 6px; margin-left:4px; }
+.chain-tag.harmony { color:var(--harmony); text-shadow:0 0 8px rgba(58,250,224,.7); animation:pulse .6s ease-in-out infinite; }
+.chain-tag.crescendo { color:var(--crescendo); text-shadow:0 0 10px var(--gold); animation:pulse .45s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:.7; transform:scale(1)} 50%{opacity:1; transform:scale(1.08)} }
 
-/* hp bar */
-.hpbar {
-  position: relative; height: 16px;
-  border: 3px solid var(--border2);
-  background: var(--hp-bg); overflow: hidden;
-}
-.hpfill {
-  position: absolute; inset: 0 auto 0 0;
-  background: var(--hp); transition: width .12s;
-}
-.hptext {
-  position: relative; font-size: .52rem;
-  text-align: center; line-height: 10px; padding-top: 3px;
-  text-shadow: 1px 1px 0 #000;
-}
+.muted-row { display:flex; gap:5px; }
+.muted-tag { font-size:.5rem; color:var(--hp); border:2px solid var(--hp); padding:2px 5px; background:rgba(8,8,16,.7); }
 
-.statuses {
-  display: flex; gap: 3px; justify-content: center; flex-wrap: wrap;
-  margin-top: 4px; min-height: 4px;
-}
-.chip {
-  font-size: .5rem; padding: 2px 4px;
-  border: 2px solid rgba(255,255,255,.15);
-  background: var(--panel2);
-}
-.chip.forte    { color: #e09050; border-color: #a06030; }
-.chip.exposed  { color: #e06060; border-color: #903030; }
-.chip.diminu   { color: #a0a050; border-color: #606020; }
-.chip.discord  { color: #c070c0; border-color: #703070; }
-.chip.resonant { color: var(--harmony); border-color: var(--harmony); }
+/* ── tray (hand + footer) ────────────────────────────────────── */
+.tray { flex-shrink:0; background:linear-gradient(180deg,#0c0c16,#08080f);
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom)); }
+.hand { display:flex; justify-content:center; align-items:flex-end; min-height:128px;
+  padding-top:14px; perspective:680px; }
+.hand .card { margin:0 -10px; transform-origin:bottom center;
+  transform:rotate(var(--rot,0)) translateY(var(--ty,0)); transition:transform .12s ease, box-shadow .12s; }
+.hand .card.selected { transform:translateY(-24px) rotate(0) scale(1.06); }
+.hand .card:not(.unplayable):active { transform:translateY(-14px) rotate(0) scale(1.04); }
 
-/* player status row in combat */
-.player-bar {
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-  padding: 6px 4px;
-  border-top: 4px solid var(--border);
-  border-bottom: 4px solid var(--border);
-  background: var(--bg2);
-}
+.tray-foot { display:flex; align-items:center; justify-content:space-between; padding:4px 6px 0; }
+.piles { display:flex; align-items:center; gap:8px; font-size:.55rem; color:var(--muted); }
+.mini-btn { background:transparent; border:2px solid var(--border2); color:var(--muted); padding:5px 8px; font-size:.5rem; cursor:pointer; }
+.end-turn { border-color:var(--verse); color:var(--verse); box-shadow:3px 3px 0 var(--gold); font-size:.62rem; padding:10px 14px; }
 
-/* ── hand ───────────────────────────────────────────────────── */
-.hand {
-  display: flex; gap: 6px; overflow-x: auto;
-  padding: 8px 2px 10px;
-  scroll-snap-type: x proximity;
-  -webkit-overflow-scrolling: touch;
-}
-.card {
-  flex: 0 0 auto; width: 100px; min-height: 140px;
-  background: var(--panel2);
-  border: 4px solid var(--border2);
-  padding: 6px;
-  position: relative; cursor: pointer;
-  scroll-snap-align: center;
-  display: flex; flex-direction: column;
-  box-shadow: 3px 3px 0 #000;
-}
-.card.note-strike { border-color: var(--strike); }
-.card.note-ward   { border-color: var(--ward); }
-.card.note-verse  { border-color: var(--verse); }
-.card.selected    {
-  transform: translateY(-12px);
-  box-shadow: 0 8px 0 #000, 0 0 20px var(--crescendo);
-}
-.card.unplayable  { opacity: .4; cursor: default; }
-.card:not(.unplayable):active { transform: translateY(-4px); }
+/* ── cards ───────────────────────────────────────────────────── */
+.card { width:94px; min-height:128px; background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:3px solid var(--border2); padding:6px; position:relative; cursor:pointer;
+  display:flex; flex-direction:column; box-shadow:3px 3px 0 #000; flex:0 0 auto; }
+.card.note-strike { border-color:var(--strike); }
+.card.note-ward   { border-color:var(--ward); }
+.card.note-verse  { border-color:var(--verse); }
+.card.unplayable { opacity:.42; cursor:default; }
+.card.selected { box-shadow:0 10px 0 #000, 0 0 22px var(--crescendo); }
+.card-cost { position:absolute; top:-8px; left:-8px; width:22px; height:22px; background:var(--tempo);
+  color:#1a1410; border:3px solid var(--bg); border-radius:50%; font-size:.6rem;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 0 6px rgba(255,210,63,.6); }
+.card-note { position:absolute; top:-7px; right:-7px; }
+.card-name { font-size:.52rem; margin:5px 0 4px; line-height:1.45; }
+.card-text { font-size:.46rem; color:var(--muted); line-height:1.65; flex:1; }
+.card-note-label { font-size:.4rem; text-align:right; opacity:.7; }
+.card.note-strike .card-note-label { color:var(--strike); }
+.card.note-ward   .card-note-label { color:var(--ward); }
+.card.note-verse  .card-note-label { color:var(--verse); }
+.card-chain { position:absolute; bottom:-13px; left:0; right:0; text-align:center; font-size:.42rem; }
+.card-chain.harmony { color:var(--harmony); text-shadow:0 0 6px rgba(58,250,224,.8); }
+.card-chain.crescendo { color:var(--crescendo); text-shadow:0 0 6px var(--gold); }
+.card.upgraded { box-shadow:3px 3px 0 #000, 0 0 12px var(--rare); }
+.card.mini { width:auto; min-height:54px; }
+.card.mini .card-text, .card.mini .card-note-label, .card.mini .card-chain { display:none; }
 
-.card-cost {
-  position: absolute; top: -8px; left: -8px;
-  width: 22px; height: 22px;
-  background: var(--tempo); color: #1a1410;
-  border: 3px solid var(--bg);
-  font-size: .65rem;
-  display: flex; align-items: center; justify-content: center;
-}
-.card-note-icon {
-  position: absolute; top: -8px; right: -8px;
-  width: 16px; height: 16px;
-}
-.card-name { font-size: .55rem; margin: 6px 0 4px; line-height: 1.4; }
-.card-text { font-size: .48rem; color: var(--muted); line-height: 1.6; flex: 1; }
-.card-type-badge {
-  font-size: .42rem; color: var(--border2);
-  text-align: right; margin-top: 4px;
-}
-.card.note-strike .card-type-badge { color: var(--strike); }
-.card.note-ward   .card-type-badge { color: var(--ward); }
-.card.note-verse  .card-type-badge { color: var(--verse); }
-
-/* preview chain label on card */
-.card-chain-preview {
-  position: absolute; bottom: -14px; left: 0; right: 0;
-  text-align: center; font-size: .45rem;
-}
-.card-chain-preview.harmony   { color: var(--harmony); }
-.card-chain-preview.crescendo { color: var(--crescendo); }
-
-/* ── footer ─────────────────────────────────────────────────── */
-.footer {
-  margin-top: auto;
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 8px 2px calc(8px + env(safe-area-inset-bottom));
-}
-.pile-info { font-size: .5rem; color: var(--muted); line-height: 1.8; }
+/* ── status chips ────────────────────────────────────────────── */
+.statuses { display:flex; gap:3px; flex-wrap:wrap; }
+.chip { font-size:.46rem; padding:2px 4px; border:2px solid rgba(255,255,255,.14); background:rgba(8,8,16,.7); }
+.chip.forte{color:#e09050;border-color:#a06030;} .chip.exposed{color:#e06060;border-color:#903030;}
+.chip.diminu{color:#a0a050;border-color:#606020;} .chip.discord{color:#c070c0;border-color:#703070;}
+.chip.resonant{color:var(--harmony);border-color:var(--harmony);}
 
 /* ── map ─────────────────────────────────────────────────────── */
-.map-list { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 8px 2px; overflow-y: auto; }
-.map-node {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px;
-  background: var(--bg2);
-  border: 4px solid var(--border);
-}
-.map-node.done { opacity: .4; }
-.map-node.here {
-  border-color: var(--verse);
-  box-shadow: 4px 4px 0 var(--gold), inset 0 0 0 2px rgba(255,230,109,.1);
-}
-.map-icon  { font-size: 1.1rem; width: 24px; text-align: center; flex-shrink: 0; }
-.map-label { font-size: .6rem; flex: 1; }
-.map-here  { font-size: .5rem; color: var(--verse); }
+.map-list { flex:1; display:flex; flex-direction:column; gap:6px; padding:8px 2px; overflow-y:auto; }
+.map-node { display:flex; align-items:center; gap:10px; padding:11px 12px; background:var(--bg2); border:3px solid var(--border); }
+.map-node.done { opacity:.4; } .map-node.here { border-color:var(--verse); box-shadow:3px 3px 0 var(--gold); }
+.map-icon { font-size:1rem; width:22px; text-align:center; } .map-label { font-size:.6rem; flex:1; }
+.map-here { font-size:.5rem; color:var(--verse); }
 
-/* ── reward / rest screens ───────────────────────────────────── */
-.reward-cards { display: flex; gap: 8px; justify-content: center; padding: 12px 2px; flex-wrap: wrap; }
-.reward-card  { width: 120px; }
+/* ── reward / rest / relics ──────────────────────────────────── */
+.reward-cards { display:flex; gap:10px; justify-content:center; padding:14px 2px; flex-wrap:wrap; }
+.reward-cards .card { width:108px; }
+.relic-row { display:flex; gap:8px; justify-content:center; padding:6px 2px; flex-wrap:wrap; }
+.relic-card { flex:1 1 0; min-width:120px; max-width:220px; background:var(--panel2); border:3px solid var(--rare); padding:8px; cursor:pointer; box-shadow:3px 3px 0 #000; }
+.relic-card.mini { cursor:default; }
+.relic-name { font-size:.55rem; color:var(--rare); margin-bottom:5px; }
+.relic-text { font-size:.46rem; color:var(--muted); line-height:1.6; }
+.relic-strip { display:flex; flex-direction:column; gap:6px; padding:8px 2px; }
 
-.relic-row { display: flex; gap: 8px; justify-content: center; padding: 8px 2px; flex-wrap: wrap; }
-.relic-card {
-  flex: 1 1 0; min-width: 100px; max-width: 200px;
-  background: var(--panel2); border: 4px solid var(--rare);
-  padding: 8px; cursor: pointer;
-  box-shadow: 3px 3px 0 #000;
-}
-.relic-card:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #000; }
-.relic-name { font-size: .55rem; color: var(--rare); margin-bottom: 6px; }
-.relic-text { font-size: .48rem; color: var(--muted); line-height: 1.6; }
+.rest-choices { display:flex; flex-direction:column; gap:10px; padding:10px 2px; }
+.rest-option { background:var(--bg2); border:3px solid var(--border2); padding:13px; cursor:pointer; box-shadow:3px 3px 0 #000; }
+.rest-option:active { transform:translate(2px,2px); box-shadow:1px 1px 0 #000; }
+.rest-title { font-size:.65rem; color:var(--verse); margin-bottom:6px; }
+.rest-desc { font-size:.5rem; color:var(--muted); line-height:1.7; }
 
-/* ── rest choices ────────────────────────────────────────────── */
-.rest-choices { display: flex; flex-direction: column; gap: 10px; padding: 10px 2px; }
-.rest-option {
-  background: var(--bg2); border: 4px solid var(--border2);
-  padding: 12px; cursor: pointer;
-  box-shadow: 3px 3px 0 #000;
-}
-.rest-option:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #000; }
-.rest-option-title { font-size: .65rem; color: var(--verse); margin-bottom: 6px; }
-.rest-option-desc  { font-size: .52rem; color: var(--muted); line-height: 1.7; }
+.deck-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(78px,1fr)); gap:6px; padding:8px 2px; overflow-y:auto; flex:1; }
 
-/* ── compose / transcribe ────────────────────────────────────── */
-.compose-cards { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 2px; justify-content: center; }
-.compose-card  { width: 90px; cursor: pointer; }
-.compose-card.pinned { border-color: var(--crescendo) !important; }
-
-.deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; padding: 8px 2px; overflow-y: auto; }
-.card.mini { width: auto; min-height: 60px; }
-.card.mini .card-text { display: none; }
-.card.mini .card-chain-preview { display: none; }
-.card.upgraded { box-shadow: 3px 3px 0 #000, 0 0 12px var(--rare); }
-
-/* ── end screens ─────────────────────────────────────────────── */
-.end-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
-.end-icon { font-size: 4rem; line-height: 1; }
-.end-title { font-size: 1.2rem; line-height: 1.6; }
-.end-title.won  { color: var(--crescendo); text-shadow: 0 0 20px var(--gold); }
-.end-title.lost { color: var(--hp); }
-
-/* ── scanline overlay ────────────────────────────────────────── */
-#app::after {
-  content: '';
-  position: fixed; inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 3px,
-    rgba(0,0,0,.08) 3px,
-    rgba(0,0,0,.08) 4px
-  );
-  z-index: 9999;
-}
+/* ── CRT scanlines (kept subtle) ─────────────────────────────── */
+#app::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+  background:repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.05) 3px, rgba(0,0,0,.05) 4px); }
 </style>
 </head>
 <body>
@@ -1682,804 +1503,1559 @@ function advance(s) {
 
 
 // === src/ui/sprites.js ===
-// sprites.js — canvas-based pixel art sprites.
+// src/ui/sprites.js
 //
-// Each sprite is defined as an array of equal-length strings (one per row).
-// Each character maps to a colour via the palette; '.' is transparent.
-// renderSprite(ctx, name, x, y, scale) draws to a 2D canvas context.
-// createSpriteCanvas(name, scale) returns a ready-to-append <canvas>.
+// Pixel-art sprite data + an offscreen-canvas cache. Each sprite is a grid of
+// characters mapped to a palette ('.' = transparent). On first use we bake the
+// grid into a 1px-per-cell offscreen <canvas>; the arena then drawImages it at
+// any scale with imageSmoothing off, so we get crisp scaling, squash & stretch,
+// rotation and tinting for free (animation is procedural, not frame-by-frame).
+//
+// Design language: the WORLD is desaturated greys/blue-greys. The BARD and the
+// musical NOTES are the only vivid colour — the player's eye is always drawn to
+// what matters (the "juice echoes the mechanic" principle).
 
 const P = {
   '.': null,
-  // Grayscale world
-  '0': '#080810', '1': '#14141e', '2': '#1e1e2c', '3': '#2c2c3e',
-  '4': '#3a3a50', '5': '#4e4e68', '6': '#666680', '7': '#8888a0',
-  '8': '#aaaabc', '9': '#d0d0e0',
-  // Bard — vibrant against the grey world
-  'b': '#5a9fe8', 'B': '#3a6db8', 'D': '#1e3f7a',   // blue hat
-  'g': '#ffd700', 'G': '#b89000',                     // gold
-  'v': '#9b3ef5', 'V': '#6b1bc5', 'W': '#4a0da0',    // violet cloak
-  'r': '#e04444', 'R': '#a02020',                     // red tunic
-  'c': '#00ffcc', 'C': '#00c09a',                     // cyan glow eyes
-  's': '#d4a080', 'S': '#a07050',                     // warm skin
-  // Note colours
-  'N': '#ff6b6b',  // Strike note (red)
-  'T': '#4ecdc4',  // Ward note (teal)
-  'Y': '#ffe66d',  // Verse note (yellow)
-  // Enemy accents
-  'w': '#c8c8d8', 'x': '#e8e8f8',  // wisp highlight
-  'e': '#7070d0', 'E': '#5050a8',  // echo phantom
-  'd': '#d05050', 'F': '#602020',  // discord sprite
-  'm': '#505070',                   // minstrel mid
-  'H': '#101018',                   // hush black
-  'Z': '#302840',                   // hush dark purple edge
+  // ── greyscale world ──
+  '0': '#06060c', '1': '#101019', '2': '#1b1b2a', '3': '#28283c',
+  '4': '#393952', '5': '#4d4d6a', '6': '#646483', '7': '#84849e',
+  '8': '#a6a6bd', '9': '#cfcfde', 'W': '#ececf6',
+  // ── bard: vivid ──
+  'h': '#6aa9ff', 'H': '#3f73d6', 'j': '#274a9e',           // hat blues
+  'k': '#ffd23f', 'K': '#c89414',                            // gold trim
+  'c': '#a85bff', 'C': '#7a2fe0', 'X': '#521aa8',            // violet cloak
+  'r': '#ff5e7a', 'R': '#c0304e',                            // rose tunic
+  'g': '#3afae0', 'G': '#16c9b4',                            // glowing cyan (eyes)
+  's': '#ffce9e', 'S': '#c98f63',                            // skin
+  'l': '#b9763a', 'L': '#7c4a20',                            // lute wood
+  'y': '#fff4c2',                                            // lute string highlight
+  // ── note colours ──
+  'N': '#ff5e5e', 'n': '#ffa1a1',   // strike (red)
+  'T': '#3afae0', 't': '#9bfff2',   // ward (teal)
+  'Y': '#ffe24a', 'y2': '#fff6b0',  // verse (yellow)  (y2 unused key safeguard)
+  // ── enemy accents (all muted, ghostly) ──
+  'p': '#b9b9cc', 'q': '#d8d8e8',   // pale wisp
+  'e': '#6f6f9e', 'E': '#4a4a72',   // echo phantom
+  'd': '#9a5560', 'D': '#5e2f37',   // discord (desaturated red)
+  'm': '#5c5c74', 'M': '#3c3c50',   // minstrel grey
+  'u': '#7a7a92', 'U': '#54546c',   // conductor
+  'z': '#231b33', 'Z': '#15101f',   // hush void
+  'v': '#3a2f55', 'V': '#2a2140',   // hush rim purple
 };
 
 const SPRITES = {
-  // ─── Bard (14×20) ─────────────────────────────────────────────────────────
+  // ── BARD (16×26) — hooded, lute across body, glowing eyes ─────────────────
   bard: [
-    '......DDD.....',
-    '.....DBBBD....',
-    '....DBBgBBD...',
-    '.....DBDBD....',
-    '.....8ss58....',
-    '....8sSCCS8...',
-    '....85sCCs5...',
-    '....855558....',
-    '...VVVrRrVVV..',
-    '..VVVrRGRrVVV.',
-    '.VVVVrrrrrVVVV',
-    'VVVVVrrrrrVVVVV',
-    '.VVVVvvvvvVVVV.',
-    '..VVVvvvvvVVV..',
-    '..VVV.....VVV..',
-    '..433.....334..',
-    '.4433.....3344.',
-    '44333.....33344',
-    '.433.......334.',
-    '..3.........3..',
+    '......jjjj......',
+    '.....jHHHHj.....',
+    '....jHHhhHHj....',
+    '...jHHhhhhHHj...',
+    '...jHhhkkhhHj...',
+    '....jHhkkhHj....',
+    '.....8ssss8.....',
+    '....8sSggSs8....',
+    '....8sSggSs8....',
+    '....88sssS88....',
+    '...XcccccccX....',
+    '..Xccc rr cccX..',
+    '..XccrRRRRrccX..',
+    '.XcccrRRRRrcccX.',
+    '.XcclLLrRrccccX.',
+    '.XcclyyLLLcccccX',
+    'XccclyylLLLccccX',
+    'XcccLyyl LLccccX',
+    '.XccLLll  ccccX.',
+    '.XXcc kk  ccXX..',
+    '..Xc  kk  cX....',
+    '..4c  44  c4....',
+    '..44  44  44....',
+    '.444  44  444...',
+    '.43.   .   .34..',
+    '.3.         .3..',
   ],
 
-  // ─── Hush Wisp (12×12) ─── ghostly translucent orb ───────────────────────
+  // ── HUSH WISP (14×14) — translucent floating orb wraith ───────────────────
   hushWisp: [
-    '....7777....',
-    '...7wwww7...',
-    '..7wwxx.w7..',
-    '.7wwx....w7.',
-    '.7wx.....w7.',
-    '77wx......77',
-    '77w......w77',
-    '.7w......77.',
-    '.7ww....w7..',
-    '..7wwwww7...',
-    '....7777....',
-    '....5554....',
+    '.....pppp.....',
+    '...ppqqqqpp...',
+    '..pqq qq qqp..',
+    '.pqq  WW  qqp.',
+    '.pq   WW   qp.',
+    'pq    qq    qp',
+    'pq          qp',
+    'pq    qq    qp',
+    '.pq  qqqq  qp.',
+    '.pqq qqqq qqp.',
+    '..pqq    qqp..',
+    '...pq qq qp...',
+    '....p q q p...',
+    '.....6 5 6....',
   ],
 
-  // ─── Pale Minstrel (12×18) ─── hollow ghost with broken lute ─────────────
+  // ── PALE MINSTREL (14×22) — hollow ghost, ribcage, broken lute ───────────
   paleMinstrel: [
-    '....9999....',
-    '...9m8m89...',
-    '...9m.m.9...',
-    '...9mmm89...',
-    '....8889....',
-    '..99mmm99...',
-    '..9mmmmm9...',
-    '.99mmmmm99..',
-    '.9mm...mm9..',
-    '..9m...m9...',
-    '..99.m.99...',
-    '...9mmm9....',
-    '....9m9.....',
-    '..44.m.44...',
-    '.444.m.444..',
-    '4444.m.4444.',
-    '...3.m.3....',
-    '....333.....',
+    '....9999 9....',
+    '...9MmmM89....',
+    '...9m gg m9...',
+    '...9m gg m9...',
+    '....9mmmm9....',
+    '.....9889.....',
+    '...99mmmm99...',
+    '..9MmmmmmmM9..',
+    '.9Mm m m m mM9',
+    '.9m mmmmmm m9.',
+    '.9m m m m m9..',
+    '..9 mmmmmm 9..',
+    '..9m m m m9...',
+    '...99mmmm9....',
+    '....9 mm 9....',
+    '...4M mm M4...',
+    '..44m mm m44..',
+    '.44 m mm m 44.',
+    '44  m mm m  44',
+    '..  M mm M ...',
+    '...4 4mm4 4...',
+    '....44  44....',
   ],
 
-  // ─── Echo Phantom (12×14) ─── shifting mirror shadow ─────────────────────
+  // ── ECHO PHANTOM (14×16) — duplicating shadow with mirror seams ──────────
   echoPhantom: [
-    '....EEEE....',
-    '..EEeeeEEE..',
-    '.EEee...eeE.',
-    'EEe.E.E..eE.',
-    'Ee.E...E.eEE',
-    'Ee..eee..eEE',
-    'Ee..eee..eE.',
-    'EEe.....eEE.',
-    '.EEeee.eEE..',
-    '..EEeeeEE...',
-    '...EEEEEE...',
-    '....EEEE....',
-    '....3443....',
-    '...33.333...',
+    '....EEEEEE....',
+    '..EEeeeeeeEE..',
+    '.Eeee g g eeE.',
+    'Eeee  ggg  eeE',
+    'Eee  gg gg  eE',
+    'Eee g  e  g eE',
+    'Ee e  eee  e e',
+    'Ee ee eee ee e',
+    'Eee  eeeee  eE',
+    'Eeee eeeee eeE',
+    '.Eee eeeee eE.',
+    '..EEe eee eEE.',
+    '...EE eee EE..',
+    '....EEE EEE...',
+    '...4E E E E4..',
+    '..44 4 4 4 44.',
   ],
 
-  // ─── Discord Sprite (12×14) ─── spiky chaos creature ─────────────────────
+  // ── DISCORD SPRITE (14×16) — jagged chaotic spiky imp ────────────────────
   discordSprite: [
-    '.d..d..d.d..',
-    'd.dd.dd..dd.',
-    '.dFFFFFFFd..',
-    'd.FFFFFFF.d.',
-    '.dFF.d.FFd..',
-    'd.FF...FFdd.',
-    '.dFF.d.FFd..',
-    'd.FFFFFFFd..',
-    '.dFFFFFFd...',
-    'dd.FFFdd.d..',
-    'd..d.dd..dd.',
-    'dd..d...dd..',
-    '.d.3.3.3.d..',
-    '..333.333...',
+    '..d..d..d..d..',
+    '.d.dd.dd.dd.d.',
+    'd.dDDDDDDDDd.d',
+    '.dDD g  g DDd.',
+    'd.D  gggg  D.d',
+    '.dD g e e g Dd',
+    'd.D  geeg   .d',
+    '.dD g eeee gDd',
+    'd.DD gggggDDd.',
+    '.dDDDDDDDDDDd.',
+    'd..dDDDDDDd..d',
+    '.dd.dDDDDd.dd.',
+    'd..d.dDDd.d..d',
+    '.dd..d.d..dd..',
+    '..d.4.d.d.4d..',
+    '....44.d.44...',
   ],
 
-  // ─── Broken Conductor (14×22) ─── tall imposing grey figure ──────────────
+  // ── BROKEN CONDUCTOR (16×26) — tall grey maestro, snapped baton ───────────
   brokenConductor: [
-    '......888.....',
-    '.....88888....',
-    '.....8m8m8....',
-    '....88888m8...',
-    '....8m888m8...',
-    '...8888mmm8...',
-    '..888mmmmm88..',
-    '.88mmmmmmmm8..',
-    '88mmm...mmm88.',
-    '.8mm.....mm8..',
-    '..8m.....m8...',
-    '..8mm...mm8...',
-    '..888mmm888...',
-    '..7mmmmmmm7...',
-    '..7mm...mm7...',
-    '..7m.....m7...',
-    '..7m.....m7...',
-    '..7m..6..m7...',  // broken baton
-    '..44.666.44...',
-    '.444..6..444..',
-    '4444.....4444.',
-    '...3.....3....',
+    '......8888......',
+    '.....8MUUM8.....',
+    '....8UMggMU8....',
+    '....8UMggMU8....',
+    '....8UMmmMU8....',
+    '.....8UmmU8.....',
+    '......8UU8......',
+    '....88UmmU88....',
+    '...8UUmmmmUU8...',
+    '..8UUmmmmmmUU8..',
+    '.8Uum m m m muU8',
+    '8Uum mmmmmm muU8',
+    '8Uu m m m m u uU',
+    '8U  mmmmmmmm  U8',
+    '.8U mm m m mmU8.',
+    '..8Um m m m mU..',
+    '..8U mmmmmm U8..',
+    '...8U m  m U8...',
+    '...8Uu7  u U8...',  // broken baton (7)
+    '...8U 7    U8...',
+    '...4U  7   U4...',
+    '..44u  7   u44..',
+    '.44 U      U 44.',
+    '44  Uu    uU  44',
+    '..  4U    U4 ...',
+    '...44 4  4 44...',
   ],
 
-  // ─── The Hush (18×24) ─── vast void entity ───────────────────────────────
+  // ── THE HUSH (20×26) — vast silence entity, void core, hollow eyes ───────
   theHush: [
-    '.....ZZZZZZZZ.....',
-    '...ZZH000000ZZ....',
-    '..ZHH00000000HZ...',
-    '.ZHH0000000000HZ..',
-    'ZZH00..00000..0HZ.',
-    'ZH000..H00H0..0HZZ',
-    'ZH0000H0000H0000HZ',
-    'ZH000000000000000H',
-    'ZH000000000000000H',
-    'ZZH0000000000000HZ',
-    '.ZH00.0000000.00HZ',
-    '.ZHH0.0.00.0.00HZ.',
-    '..ZH0..000000..HZ.',
-    '..ZZH00000000HZZ..',
-    '...ZHH000000HHZ...',
-    '....ZHHH00HHHZ....',
-    '.....ZZZHHZZZ.....',
-    '......ZZ33ZZ......',
-    '......Z3333Z......',
-    '.....Z333333Z.....',
-    '....ZZ......ZZ....',
-    '...Z..........Z...',
-    '..............Z...',
-    '..................',
-  ],
-
-  // ─── Note symbols (8×8) ──────────────────────────────────────────────────
-  noteStrike: [
-    '.NNN....',
-    'NNNNN...',
-    'N.NNN...',
-    '.NNNN...',
-    '...NN...',
-    '...NN...',
-    '..NNNNN.',
-    '..NNNNN.',
-  ],
-  noteWard: [
-    '.TTT....',
-    'TTTTT...',
-    'T.TTT...',
-    '.TTTT...',
-    '...TT...',
-    '..TTT...',
-    '.TTTTT..',
-    '.TTTTT..',
-  ],
-  noteVerse: [
-    '.YYY.YYY',
-    'YYYYYYY.',
-    'Y.YYYY..',
-    '.YYYYYYY',
-    '...YY.YY',
-    '...YYYY.',
-    '..YYYYYY',
-    '..YYYYYY',
-  ],
-
-  // ─── Chain link (8×8) ─────────────────────────────────────────────────────
-  chainEmpty: [
-    '..3333..',
-    '.3....3.',
-    '3......3',
-    '3......3',
-    '3......3',
-    '3......3',
-    '.3....3.',
-    '..3333..',
-  ],
-  harmonyGlow: [
-    '..7777..',
-    '.7cccc7.',
-    '7c....c7',
-    '7c....c7',
-    '7c....c7',
-    '7c....c7',
-    '.7cccc7.',
-    '..7777..',
-  ],
-  crescendoGlow: [
-    '..gggg..',
-    '.gYYYYg.',
-    'gY....Yg',
-    'gY....Yg',
-    'gY....Yg',
-    'gY....Yg',
-    '.gYYYYg.',
-    '..gggg..',
+    '......vvvvvvvv......',
+    '....vvVzzzzzzVvv....',
+    '...vVzzzzzzzzzzVv...',
+    '..vVzzzzzzzzzzzzVv..',
+    '.vVzzzz zz zz zzzVv.',
+    '.vzzz z      z zzzv.',
+    'vVzz z   gg   z zzVv',
+    'vzz z   gggg   z zzv',
+    'vzz    g    g    zzv',
+    'vzz   g  zz  g   zzv',
+    'vzz    g zz g    zzv',
+    'vVz     gggg     zVv',
+    '.vz      gg      zv.',
+    '.vVz   zzzzzz   zVv.',
+    '..vz  z      z  zv..',
+    '..vVz z zzzz z zVv..',
+    '...vVz zz  zz zVv...',
+    '....vVzz    zzVv....',
+    '.....vVzzzzzzVv.....',
+    '......vVzzzzVv......',
+    '.......vVzzVv.......',
+    '......4 vVVv 4......',
+    '.....44 v  v 44.....',
+    '....44  4  4  44....',
+    '...44   4  4   44...',
+    '..4.    4  4    .4..',
   ],
 };
 
-// ─── renderer ───────────────────────────────────────────────────────────────
+// Note glyphs (8×9) — small, vivid, used in chain slots & card corners.
+const NOTE_SPRITES = {
+  noteStrike: ['.NNNNN..','.NnnnN..','.NNNNN..','.N......','.N......','.N......','NNN.....','NNNNn...','.NNN....'],
+  noteWard:   ['.TTT.TTT','TtttTttt','TTTTTTTT','.T...T..','.T...T..','.T...T..','TTT.TTT.','NNN.NNN.','.TT..TT.'].map(r=>r.replace(/N/g,'T')),
+  noteVerse:  ['.YYYYY..','.YyyyY..','.YYYYY..','.Y...Y..','.Y...Y..','YYY.YYY.','YYY.YYY.','.Y...Y..','........'],
+};
+Object.assign(SPRITES, NOTE_SPRITES);
 
-function renderSprite(ctx, name, x, y, scale = 1) {
+// ── offscreen-canvas cache ───────────────────────────────────────────────────
+const cache = new Map();
+
+function bake(name) {
   const rows = SPRITES[name];
-  if (!rows) return;
-  for (let row = 0; row < rows.length; row++) {
-    for (let col = 0; col < rows[row].length; col++) {
-      const colour = P[rows[row][col]];
-      if (!colour) continue;
-      ctx.fillStyle = colour;
-      ctx.fillRect(x + col * scale, y + row * scale, scale, scale);
+  if (!rows) return null;
+  const w = rows[0].length;
+  const h = rows.length;
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d');
+  for (let y = 0; y < h; y++) {
+    const row = rows[y];
+    for (let x = 0; x < w; x++) {
+      const col = P[row[x]];
+      if (!col) continue;
+      ctx.fillStyle = col;
+      ctx.fillRect(x, y, 1, 1);
     }
   }
+  return { canvas: cv, w, h };
 }
 
-function spriteSize(name, scale = 1) {
-  const rows = SPRITES[name];
-  if (!rows) return { w: 0, h: 0 };
-  return { w: rows[0].length * scale, h: rows.length * scale };
+/** Return { canvas, w, h } for a sprite (w,h in pixel-cells). Cached. */
+function getFrame(name) {
+  if (!cache.has(name)) cache.set(name, bake(name));
+  return cache.get(name);
 }
 
+/** Convenience for menus/cards: a DOM <canvas> drawn at integer scale. */
 function createSpriteCanvas(name, scale = 1) {
-  const rows = SPRITES[name];
-  if (!rows) return document.createElement('canvas');
-  const w = rows[0].length * scale;
-  const h = rows.length * scale;
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  canvas.style.cssText = `width:${w}px;height:${h}px;image-rendering:pixelated;display:block;`;
-  const ctx = canvas.getContext('2d');
-  renderSprite(ctx, name, 0, 0, scale);
-  return canvas;
+  const f = getFrame(name);
+  if (!f) return document.createElement('canvas');
+  const cv = document.createElement('canvas');
+  cv.width = f.w * scale; cv.height = f.h * scale;
+  cv.style.cssText = `width:${f.w*scale}px;height:${f.h*scale}px;image-rendering:pixelated;display:block;`;
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(f.canvas, 0, 0, f.w * scale, f.h * scale);
+  return cv;
 }
 
-/** Animated glow: pulsing alpha on a second canvas layer. Returns { canvas, stop() }. */
-function createGlowCanvas(name, scale = 1) {
-  const canvas = createSpriteCanvas(name, scale);
-  let raf = null;
-  let start = null;
-  function tick(ts) {
-    if (!start) start = ts;
-    const alpha = 0.5 + 0.5 * Math.sin((ts - start) / 400);
-    canvas.style.opacity = String(alpha);
-    raf = requestAnimationFrame(tick);
+const ENEMY_SPRITE = {
+  hushWisp: 'hushWisp', paleMinstrel: 'paleMinstrel', echoPhantom: 'echoPhantom',
+  discordSprite: 'discordSprite', brokenConductor: 'brokenConductor', theHush: 'theHush',
+};
+
+
+// === src/ui/arena.js ===
+// src/ui/arena.js
+//
+// The 2.5D combat arena: a self-contained canvas renderer with its own rAF
+// loop and a juice/effects system. The pure game core stays instantaneous;
+// the arena is what makes a state transition *feel* like something — lunges,
+// hitstop, screenshake, particles, floating numbers, tweened HP bars.
+//
+// HD-2D-ish layering each frame:
+//   sky gradient → far spire silhouettes (parallax) → drifting dust →
+//   perspective ground plane + point-light pools → actor shadows →
+//   actors (procedurally animated) → particles → floating text → vignette.
+//
+// The app drives it through a small imperative API (attack/guard/cast/hurt/
+// die/setStat/floatText/shake/hitstop/crescendo/harmonyPing). Animation
+// methods that the sequencer needs to await return Promises.
+
+// ── easing ───────────────────────────────────────────────────────────────────
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+const easeOutBack = (t) => { const c = 2.2; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+const easeInQuad = (t) => t * t;
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+class Arena {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.actors = new Map();   // id -> actor
+    this.particles = [];
+    this.floats = [];
+    this.dust = [];
+    this.spires = [];
+    this.shakeMag = 0;
+    this.frozenUntil = 0;      // hitstop
+    this.flashScreen = 0;      // full-screen flash alpha (crescendo)
+    this.t = 0;                // world clock (paused during hitstop)
+    this.last = now();
+    this.running = false;
+    this.dpr = Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);
+    this.onActorTap = null;    // (id) => void
+    this._raf = null;
+    this._spritesByActor = new Map();
+    this.resize();
+    canvas.addEventListener('pointerdown', (e) => this._handleTap(e));
   }
-  raf = requestAnimationFrame(tick);
-  return { canvas, stop: () => { if (raf) cancelAnimationFrame(raf); canvas.style.opacity = '1'; } };
+
+  // ── lifecycle ──────────────────────────────────────────────────────────────
+  start() {
+    if (this.running) return;
+    this.running = true;
+    this.last = now();
+    const loop = () => {
+      if (!this.running) return;
+      this._tick();
+      this._raf = requestAnimationFrame(loop);
+    };
+    this._raf = requestAnimationFrame(loop);
+  }
+  stop() {
+    this.running = false;
+    if (this._raf) cancelAnimationFrame(this._raf);
+    this._raf = null;
+  }
+
+  resize() {
+    const rect = this.canvas.getBoundingClientRect
+      ? this.canvas.getBoundingClientRect()
+      : { width: this.canvas.width || 360, height: this.canvas.height || 240 };
+    const w = Math.max(1, Math.floor(rect.width));
+    const h = Math.max(1, Math.floor(rect.height));
+    this.cssW = w; this.cssH = h;
+    this.canvas.width = Math.floor(w * this.dpr);
+    this.canvas.height = Math.floor(h * this.dpr);
+    this.horizonY = Math.floor(h * 0.46);
+    this.groundY = Math.floor(h * 0.78);   // where actors stand (feet baseline)
+    this._initBackground();
+    this._layoutActors();
+  }
+
+  // ── scene population ─────────────────────────────────────────────────────────
+  /**
+   * @param {object} player  { sprite, hp, maxHp, block }
+   * @param {Array}  enemies [{ id, sprite, hp, maxHp, block, intent }]
+   */
+  setCombatants(player, enemies) {
+    this.actors.clear();
+    this.actors.set('player', this._makeActor('player', player.sprite, 'player', player));
+    enemies.forEach((e, i) => {
+      this.actors.set(e.id, this._makeActor(e.id, e.sprite, 'enemy', e, i, enemies.length));
+    });
+    this._layoutActors();
+  }
+
+  _makeActor(id, sprite, side, stat, index = 0, count = 1) {
+    return {
+      id, sprite, side,
+      hp: stat.hp, maxHp: stat.maxHp, block: stat.block || 0,
+      displayHp: stat.hp, ghostHp: stat.hp,
+      intent: stat.intent || null,
+      index, count,
+      scale: side === 'player' ? 5.0 : 4.2,   // depth: enemies a touch smaller
+      depth: side === 'player' ? 1 : 0.86,    // atmospheric darkening
+      bx: 0, by: 0,                            // base anchor (set in layout)
+      lungeX: 0, lungeY: 0, rot: 0, squashX: 1, squashY: 1,
+      flash: 0, alpha: 1, dead: false,
+      seed: Math.random() * 9,
+      targetable: false, selected: false,
+      anim: null,
+    };
+  }
+
+  _layoutActors() {
+    const w = this.cssW, h = this.cssH;
+    const player = this.actors.get('player');
+    if (player) { player.bx = Math.floor(w * 0.24); player.by = this.groundY + 6; }
+    const enemies = [...this.actors.values()].filter((a) => a.side === 'enemy');
+    const n = enemies.length;
+    enemies.forEach((e, i) => {
+      const spread = n === 1 ? 0 : (i - (n - 1) / 2);
+      e.bx = Math.floor(w * 0.70 + spread * Math.min(120, w * 0.22));
+      e.by = this.horizonY + Math.floor((this.groundY - this.horizonY) * 0.62) + (i % 2) * 10;
+    });
+  }
+
+  _initBackground() {
+    // Far ruined spires (parallax silhouettes)
+    this.spires = [];
+    const count = 7;
+    for (let i = 0; i < count; i++) {
+      this.spires.push({
+        x: (i + 0.5) / count,
+        w: 0.04 + (i % 3) * 0.02,
+        h: 0.18 + ((i * 37) % 100) / 100 * 0.22,
+      });
+    }
+    // Drifting dust motes
+    this.dust = [];
+    for (let i = 0; i < 34; i++) {
+      this.dust.push({
+        x: Math.random(), y: Math.random(),
+        vy: -0.004 - Math.random() * 0.006,
+        vx: (Math.random() - 0.5) * 0.003,
+        s: Math.random() < 0.3 ? 2 : 1,
+        a: 0.15 + Math.random() * 0.35,
+      });
+    }
+  }
+
+  // ── stat sync ────────────────────────────────────────────────────────────────
+  syncStats(player, enemies) {
+    const p = this.actors.get('player');
+    if (p) { p.maxHp = player.maxHp; p.hp = player.hp; p.block = player.block || 0; }
+    for (const e of enemies) {
+      const a = this.actors.get(e.id);
+      if (!a) continue;
+      a.hp = e.hp; a.maxHp = e.maxHp; a.block = e.block || 0; a.intent = e.intent;
+      if (e.hp <= 0 && !a.dead) this.die(e.id);
+    }
+  }
+  setIntent(id, intent) { const a = this.actors.get(id); if (a) a.intent = intent; }
+  setTargetable(ids) {
+    for (const a of this.actors.values()) { a.targetable = false; a.selected = false; }
+    for (const id of ids || []) { const a = this.actors.get(id); if (a) a.targetable = true; }
+  }
+
+  // ── animation API (Promises) ─────────────────────────────────────────────────
+  _animate(actor, dur, fn) {
+    return new Promise((resolve) => {
+      actor.anim = { t0: this.t, dur, fn, resolve, fired: false };
+    });
+  }
+
+  /** Lunge from `id` toward `targetId`, firing onImpact at the strike apex. */
+  attack(id, targetId, onImpact) {
+    const a = this.actors.get(id);
+    if (!a) return Promise.resolve();
+    const dir = a.side === 'player' ? 1 : -1;
+    return this._animate(a, 460, (p, self) => {
+      // windup → strike → recover
+      if (p < 0.30) {                       // anticipation: pull back + crouch
+        const k = easeOutCubic(p / 0.30);
+        self.lungeX = -dir * 12 * k;
+        self.squashY = 1 - 0.10 * k; self.squashX = 1 + 0.08 * k;
+        self.rot = -dir * 0.05 * k;
+      } else if (p < 0.46) {                // strike: snap forward
+        const k = easeOutCubic((p - 0.30) / 0.16);
+        self.lungeX = lerp(-12 * dir, 46 * dir, k);
+        self.squashY = lerp(0.90, 1.12, k); self.squashX = lerp(1.08, 0.92, k);
+        self.rot = lerp(-dir * 0.05, dir * 0.10, k);
+      } else {                              // recover: ease home
+        const k = easeOutCubic((p - 0.46) / 0.54);
+        self.lungeX = lerp(46 * dir, 0, k);
+        self.squashY = lerp(1.12, 1, k); self.squashX = lerp(0.92, 1, k);
+        self.rot = lerp(dir * 0.10, 0, k);
+      }
+      if (!self.anim.fired && p >= 0.44) {
+        self.anim.fired = true;
+        if (onImpact) onImpact();
+      }
+    });
+  }
+
+  /** Defensive flourish: a small hop + cyan shield shimmer. */
+  guard(id) {
+    const a = this.actors.get(id);
+    if (!a) return Promise.resolve();
+    this.burst(a.bx, a.by - a.scale * 9, { n: 14, color: '#3afae0', spread: 2.2, up: 1.6, size: 3, life: 520 });
+    return this._animate(a, 360, (p, self) => {
+      const k = Math.sin(p * Math.PI);
+      self.lungeY = -10 * k;
+      self.squashX = 1 - 0.06 * k; self.squashY = 1 + 0.06 * k;
+    });
+  }
+
+  /** Verse flourish: rise + spin a vivid note upward. */
+  cast(id, color = '#ffe24a') {
+    const a = this.actors.get(id);
+    if (!a) return Promise.resolve();
+    this.spawnNote(a.bx + 14, a.by - a.scale * 12, color);
+    return this._animate(a, 360, (p, self) => {
+      const k = Math.sin(p * Math.PI);
+      self.lungeY = -8 * k;
+      self.rot = Math.sin(p * Math.PI * 2) * 0.04;
+    });
+  }
+
+  /** Reactive hurt: white flash, knockback, shake (scaled by damage). */
+  hurt(id, fromSide, dmg = 0) {
+    const a = this.actors.get(id);
+    if (!a || a.dead) return;
+    a.flash = 1;
+    const dir = fromSide === 'player' ? 1 : -1; // pushed away from attacker
+    a.anim = null;
+    const start = this.t;
+    const knock = clamp(6 + dmg * 0.5, 6, 22);
+    a._hurt = { start, dur: 300, knock, dir };
+    this.shake(clamp(2 + dmg * 0.35, 2, 9));
+    this.burst(a.bx, a.by - a.scale * 8, {
+      n: clamp(4 + dmg * 0.4, 4, 16), color: a.side === 'player' ? '#ff5e7a' : '#cfcfde',
+      spread: 2.6, up: 0.6, size: 2, life: 420,
+    });
+  }
+
+  die(id) {
+    const a = this.actors.get(id);
+    if (!a || a.dead) return;
+    a.dead = true;
+    a._death = { start: this.t, dur: 700 };
+    this.burst(a.bx, a.by - a.scale * 8, { n: 22, color: '#84849e', spread: 3, up: 1.2, size: 3, life: 800 });
+  }
+
+  // ── effects ──────────────────────────────────────────────────────────────────
+  shake(mag) { this.shakeMag = Math.max(this.shakeMag, mag); }
+  hitstop(ms) { this.frozenUntil = Math.max(this.frozenUntil, now() + ms); }
+
+  burst(x, y, { n = 10, color = '#fff', spread = 2, up = 1, size = 2, life = 500, gravity = 0.00018 } = {}) {
+    for (let i = 0; i < n; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const sp = Math.random() * spread;
+      this.particles.push({
+        x, y,
+        vx: Math.cos(ang) * sp,
+        vy: Math.sin(ang) * sp - up,
+        life, max: life, color, size, gravity,
+      });
+    }
+  }
+
+  spawnNote(x, y, color) {
+    this.particles.push({
+      x, y, vx: (Math.random() - 0.5) * 0.05, vy: -0.10 - Math.random() * 0.04,
+      life: 900, max: 900, color, size: 4, gravity: -0.00002, note: true,
+      wobble: Math.random() * 6,
+    });
+  }
+
+  floatText(id, text, color = '#fff', big = false) {
+    const a = this.actors.get(id);
+    const x = a ? a.bx : this.cssW / 2;
+    const y = a ? a.by - a.scale * (big ? 14 : 11) : this.cssH / 2;
+    this.floats.push({ x, y, text, color, born: this.t, life: big ? 1100 : 850, big, dx: (Math.random() - 0.5) * 0.3 });
+  }
+
+  /** The signature moment: full-screen gold flash + radial note burst + shake. */
+  crescendo(color = '#ffd23f') {
+    this.flashScreen = 0.55;
+    this.shake(9);
+    this.hitstop(90);
+    const cx = this.cssW / 2, cy = this.cssH * 0.5;
+    for (let i = 0; i < 40; i++) {
+      const ang = (i / 40) * Math.PI * 2;
+      const sp = 1.6 + Math.random() * 1.8;
+      this.particles.push({
+        x: cx, y: cy, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
+        life: 760, max: 760, color: i % 3 === 0 ? '#fff4c2' : color, size: 3, gravity: 0,
+      });
+    }
+  }
+
+  harmonyPing(color = '#3afae0') {
+    this.flashScreen = Math.max(this.flashScreen, 0.18);
+    this.burst(this.cssW / 2, this.cssH * 0.5, { n: 14, color, spread: 1.6, up: 0, size: 2, life: 480 });
+  }
+
+  // ── main loop ─────────────────────────────────────────────────────────────────
+  _tick() {
+    const t = now();
+    let dt = t - this.last;
+    this.last = t;
+    if (dt > 60) dt = 60;                  // clamp after tab-away
+    const frozen = t < this.frozenUntil;
+    if (!frozen) this.t += dt;             // hitstop freezes the world clock
+    this._update(frozen ? 0 : dt);
+    this._render();
+  }
+
+  _update(dt) {
+    // shake decay
+    this.shakeMag *= Math.pow(0.86, dt / 16);
+    if (this.shakeMag < 0.2) this.shakeMag = 0;
+    this.flashScreen *= Math.pow(0.86, dt / 16);
+
+    // dust
+    for (const d of this.dust) {
+      d.x += d.vx * dt / 16; d.y += d.vy * dt / 16;
+      if (d.y < -0.02) { d.y = 1.02; d.x = Math.random(); }
+      if (d.x < 0) d.x = 1; if (d.x > 1) d.x = 0;
+    }
+
+    // particles
+    for (const p of this.particles) {
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      p.vy += p.gravity * dt * dt;
+      if (p.note) { p.wobble += dt * 0.01; p.x += Math.sin(p.wobble) * 0.15; }
+      p.life -= dt;
+    }
+    this.particles = this.particles.filter((p) => p.life > 0);
+
+    // floats
+    for (const f of this.floats) { f.y -= dt * 0.022; f.x += f.dx; }
+    this.floats = this.floats.filter((f) => this.t - f.born < f.life);
+
+    // actors
+    for (const a of this.actors.values()) this._updateActor(a, dt);
+  }
+
+  _updateActor(a, dt) {
+    // reset per-frame transform, then apply idle + active anim
+    a.lungeX = 0; a.lungeY = 0; a.rot = 0; a.squashX = 1; a.squashY = 1;
+
+    // idle breathing (skip if dead)
+    if (!a.dead) {
+      const phase = this.t * 0.0028 + a.seed;
+      a.squashY = 1 + Math.sin(phase) * 0.028;
+      a.squashX = 1 - Math.sin(phase) * 0.022;
+      a.lungeY = Math.sin(phase) * 2.2;
+      if (a.side === 'enemy') a.lungeY += Math.sin(this.t * 0.0016 + a.seed) * 3; // float
+    }
+
+    // active scripted anim
+    if (a.anim) {
+      const p = clamp((this.t - a.anim.t0) / a.anim.dur, 0, 1);
+      a.anim.fn(p, a);
+      if (p >= 1) { const r = a.anim.resolve; a.anim = null; if (r) r(); }
+    }
+
+    // hurt knockback overlay
+    if (a._hurt) {
+      const hp = clamp((this.t - a._hurt.start) / a._hurt.dur, 0, 1);
+      const k = (1 - hp) * Math.sin(hp * Math.PI);
+      a.lungeX += a._hurt.dir * a._hurt.knock * (1 - easeOutCubic(hp));
+      a.rot += a._hurt.dir * 0.06 * (1 - hp);
+      if (hp >= 1) a._hurt = null;
+    }
+    a.flash *= Math.pow(0.82, dt / 16);
+    if (a.flash < 0.03) a.flash = 0;
+
+    // death dissolve
+    if (a._death) {
+      const dp = clamp((this.t - a._death.start) / a._death.dur, 0, 1);
+      a.alpha = 1 - dp;
+      a.lungeY = 14 * easeInQuad(dp);
+      a.rot = 0.4 * dp;
+      if (dp >= 1) a._death = null;
+    }
+
+    // hp bar tweening
+    a.displayHp = lerp(a.displayHp, a.hp, clamp(dt / 90, 0, 1));
+    if (Math.abs(a.displayHp - a.hp) < 0.5) a.displayHp = a.hp;
+    if (a.ghostHp > a.displayHp) a.ghostHp = lerp(a.ghostHp, a.displayHp, clamp(dt / 240, 0, 1));
+    else a.ghostHp = a.displayHp;
+  }
+
+  // ── render ────────────────────────────────────────────────────────────────────
+  _render() {
+    const ctx = this.ctx;
+    const W = this.cssW, H = this.cssH;
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, W, H);
+
+    // screenshake offset
+    const sx = this.shakeMag ? (Math.random() * 2 - 1) * this.shakeMag : 0;
+    const sy = this.shakeMag ? (Math.random() * 2 - 1) * this.shakeMag : 0;
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    this._drawSky(ctx, W, H);
+    this._drawSpires(ctx, W, H);
+    this._drawDust(ctx, W, H);
+    this._drawGround(ctx, W, H);
+    this._drawShadows(ctx);
+
+    // actors back-to-front (enemies first, player last)
+    const order = [...this.actors.values()].sort((a, b) => (a.side === 'player' ? 1 : 0) - (b.side === 'player' ? 1 : 0));
+    for (const a of order) this._drawActor(ctx, a);
+
+    this._drawParticles(ctx);
+    this._drawFloats(ctx);
+    ctx.restore();
+
+    this._drawVignette(ctx, W, H);
+    if (this.flashScreen > 0.01) {
+      ctx.fillStyle = `rgba(255,232,120,${this.flashScreen})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  _drawSky(ctx, W, H) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#0a0a14');
+    g.addColorStop(0.45, '#13121f');
+    g.addColorStop(0.7, '#1a1726');
+    g.addColorStop(1, '#0d0c16');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    // cold moon glow
+    const r = Math.min(W, H) * 0.5;
+    const mg = ctx.createRadialGradient(W * 0.72, H * 0.2, 0, W * 0.72, H * 0.2, r);
+    mg.addColorStop(0, 'rgba(90,110,160,0.22)');
+    mg.addColorStop(1, 'rgba(90,110,160,0)');
+    ctx.fillStyle = mg;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  _drawSpires(ctx, W, H) {
+    ctx.fillStyle = '#0e0d18';
+    const base = this.horizonY + 4;
+    for (const s of this.spires) {
+      const x = s.x * W;
+      const w = s.w * W;
+      const h = s.h * H;
+      ctx.beginPath();
+      ctx.moveTo(x - w / 2, base);
+      ctx.lineTo(x, base - h);
+      ctx.lineTo(x + w / 2, base);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.fillStyle = '#0b0a14';
+    ctx.fillRect(0, base - 1, W, 3);
+  }
+
+  _drawDust(ctx, W, H) {
+    for (const d of this.dust) {
+      ctx.fillStyle = `rgba(180,190,220,${d.a})`;
+      ctx.fillRect(Math.floor(d.x * W), Math.floor(d.y * H), d.s, d.s);
+    }
+  }
+
+  _drawGround(ctx, W, H) {
+    const hy = this.horizonY;
+    // ground gradient
+    const g = ctx.createLinearGradient(0, hy, 0, H);
+    g.addColorStop(0, '#14141f');
+    g.addColorStop(0.5, '#1c1c2b');
+    g.addColorStop(1, '#0f0f18');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, hy, W, H - hy);
+    // perspective tile lines (receding)
+    ctx.strokeStyle = 'rgba(120,130,170,0.06)';
+    ctx.lineWidth = 1;
+    const rows = 9;
+    for (let i = 1; i <= rows; i++) {
+      const tt = i / rows;
+      const y = hy + (H - hy) * (tt * tt);              // squared → perspective compression
+      const inset = (1 - tt) * W * 0.42;
+      ctx.beginPath();
+      ctx.moveTo(inset, y);
+      ctx.lineTo(W - inset, y);
+      ctx.stroke();
+    }
+    // converging verticals
+    const vx = W / 2;
+    for (let i = -3; i <= 3; i++) {
+      ctx.beginPath();
+      ctx.moveTo(vx + i * (W * 0.12), hy);
+      ctx.lineTo(vx + i * (W * 0.42), H);
+      ctx.stroke();
+    }
+    // warm light pool under bard, cold under enemies
+    this._lightPool(ctx, W * 0.24, this.groundY + 6, W * 0.30, 'rgba(255,210,120,0.10)');
+    this._lightPool(ctx, W * 0.70, this.groundY - 8, W * 0.34, 'rgba(120,140,200,0.07)');
+  }
+
+  _lightPool(ctx, x, y, r, color) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, color);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+
+  _drawShadows(ctx) {
+    for (const a of this.actors.values()) {
+      if (a.alpha <= 0.02) continue;
+      const lift = -a.lungeY;                          // higher off ground → smaller shadow
+      const f = clamp(1 - lift / 40, 0.5, 1);
+      const w = a.sprite ? 1 : 1;
+      const sw = (getW(a) * a.scale) * 0.42 * f;
+      ctx.fillStyle = `rgba(0,0,0,${0.34 * a.alpha * f})`;
+      ctx.beginPath();
+      ctx.ellipse(a.bx + a.lungeX * 0.4, a.by + 2, sw, sw * 0.30, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  _drawActor(ctx, a) {
+    const f = getFrame(a.sprite);
+    if (!f || a.alpha <= 0.02) return;
+    const w = f.w * a.scale * a.squashX;
+    const h = f.h * a.scale * a.squashY;
+    const cx = a.bx + a.lungeX;
+    const footY = a.by + a.lungeY;
+    ctx.save();
+    ctx.globalAlpha = a.alpha;
+    ctx.translate(cx, footY);
+    ctx.rotate(a.rot);
+    // atmospheric depth: darken far actors slightly
+    if (a.depth < 1) {
+      ctx.globalAlpha = a.alpha;
+    }
+    ctx.drawImage(f.canvas, -w / 2, -h, w, h);
+    // far-depth tint
+    if (a.depth < 1) {
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = `rgba(20,22,40,${(1 - a.depth) * 1.4})`;
+      ctx.fillRect(-w / 2, -h, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    // selected target highlight
+    if (a.targetable) {
+      const pulse = 0.5 + 0.5 * Math.sin(this.t * 0.008);
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = `rgba(255,94,122,${0.18 + pulse * 0.22})`;
+      ctx.fillRect(-w / 2, -h, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    // hit flash
+    if (a.flash > 0) {
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = `rgba(255,255,255,${a.flash})`;
+      ctx.fillRect(-w / 2, -h, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    ctx.restore();
+
+    // bard eye-glow bloom
+    if (a.id === 'player' && !a.dead) {
+      const gy = footY - h * 0.70;
+      const gl = ctx.createRadialGradient(cx, gy, 0, cx, gy, 16);
+      gl.addColorStop(0, 'rgba(58,250,224,0.30)');
+      gl.addColorStop(1, 'rgba(58,250,224,0)');
+      ctx.fillStyle = gl;
+      ctx.fillRect(cx - 16, gy - 16, 32, 32);
+    }
+
+    if (a.side === 'enemy') this._drawEnemyUI(ctx, a, h);
+    if (a.targetable) this._drawTargetRing(ctx, a, h);
+  }
+
+  _drawTargetRing(ctx, a, h) {
+    const y = a.by + a.lungeY + 6;
+    const pulse = 0.5 + 0.5 * Math.sin(this.t * 0.008);
+    ctx.strokeStyle = `rgba(255,94,122,${0.5 + pulse * 0.5})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(a.bx + a.lungeX, y, getW(a) * a.scale * 0.40, getW(a) * a.scale * 0.13, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  _drawEnemyUI(ctx, a, h) {
+    const cx = a.bx + a.lungeX;
+    const top = a.by + a.lungeY - h - 8;
+    // intent bubble
+    if (a.intent && !a.dead) {
+      const label = intentLabel(a.intent);
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'center';
+      const tw = ctx.measureText(label).width + 10;
+      ctx.fillStyle = 'rgba(10,10,18,0.85)';
+      ctx.fillRect(cx - tw / 2, top - 16, tw, 14);
+      ctx.strokeStyle = a.intent.damage > 0 ? 'rgba(255,94,122,0.8)' : 'rgba(132,132,158,0.8)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cx - tw / 2, top - 16, tw, 14);
+      ctx.fillStyle = a.intent.damage > 0 ? '#ff8a9e' : '#b6b6cc';
+      ctx.fillText(label, cx, top - 5);
+    }
+    // hp bar
+    if (!a.dead) {
+      const bw = Math.max(40, getW(a) * a.scale * 0.7);
+      const bx = cx - bw / 2;
+      const by = top + 2;
+      ctx.fillStyle = '#0c0c14';
+      ctx.fillRect(bx - 1, by - 1, bw + 2, 7);
+      // ghost (recent damage)
+      ctx.fillStyle = '#7a2030';
+      ctx.fillRect(bx, by, bw * clamp(a.ghostHp / a.maxHp, 0, 1), 5);
+      ctx.fillStyle = '#cc4444';
+      ctx.fillRect(bx, by, bw * clamp(a.displayHp / a.maxHp, 0, 1), 5);
+      if (a.block > 0) {
+        ctx.fillStyle = '#4488aa';
+        ctx.fillRect(bx - 1, by - 1, 5, 7);
+      }
+    }
+  }
+
+  _drawParticles(ctx) {
+    for (const p of this.particles) {
+      const al = clamp(p.life / p.max, 0, 1);
+      ctx.globalAlpha = al;
+      ctx.fillStyle = p.color;
+      const s = p.size;
+      ctx.fillRect(Math.floor(p.x), Math.floor(p.y), s, s);
+      if (p.note) { // little tail
+        ctx.fillRect(Math.floor(p.x), Math.floor(p.y) + s, Math.max(1, s - 1), s);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  _drawFloats(ctx) {
+    for (const f of this.floats) {
+      const age = (this.t - f.born) / f.life;
+      const pop = age < 0.18 ? easeOutBack(age / 0.18) : 1;
+      const al = age > 0.7 ? 1 - (age - 0.7) / 0.3 : 1;
+      ctx.globalAlpha = clamp(al, 0, 1);
+      const size = (f.big ? 18 : 13) * pop;
+      ctx.font = `${Math.max(8, size)}px 'Press Start 2P', monospace`;
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+      ctx.strokeText(f.text, f.x, f.y);
+      ctx.fillStyle = f.color;
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  _drawVignette(ctx, W, H) {
+    const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.75);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(0,0,0,0.55)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // ── input ─────────────────────────────────────────────────────────────────────
+  _handleTap(e) {
+    if (!this.onActorTap) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left);
+    const y = (e.clientY - rect.top);
+    const hit = this.hitTest(x, y);
+    if (hit) this.onActorTap(hit);
+  }
+
+  hitTest(x, y) {
+    // front-to-back: prefer player then enemies; generous bounds
+    const list = [...this.actors.values()].filter((a) => !a.dead);
+    for (const a of list) {
+      const f = getFrame(a.sprite);
+      if (!f) continue;
+      const w = f.w * a.scale, h = f.h * a.scale;
+      const cx = a.bx + a.lungeX;
+      const top = a.by + a.lungeY - h;
+      if (x >= cx - w / 2 - 6 && x <= cx + w / 2 + 6 && y >= top - 18 && y <= a.by + 8) {
+        return a.id;
+      }
+    }
+    return null;
+  }
 }
+
+// ── helpers ───────────────────────────────────────────────────────────────────
+function getW(a) {
+  const f = getFrame(a.sprite);
+  return f ? f.w : 14;
+}
+
+function intentLabel(intent) {
+  if (!intent) return '';
+  if (intent.damage > 0) {
+    return intent.times > 1 ? `⚔ ${intent.damage}x${intent.times}` : `⚔ ${intent.damage}`;
+  }
+  if (intent.block > 0) return `▢ ${intent.block}`;
+  const m = { buff: 'STR↑', debuff: 'HEX', defend: '▢' };
+  return m[intent.intent] || '…';
+}
+
+// getFrame is imported lazily to avoid a hard import cycle in some bundlers.
 
 
 // === src/ui/app.js ===
-// src/ui/app.js — The Last Bard UI layer.
-// Owns no game rules: holds a `run` state, renders it, routes taps.
+// src/ui/app.js — The Last Bard UI orchestration.
+//
+// Owns no rules. It renders `run` state to the DOM, and for combat it drives
+// the Arena (canvas) so that every pure-core state transition is *played out*
+// with animation before the new state is committed. The arena persists across
+// DOM re-renders (the canvas node is moved, not recreated) so its rAF loop and
+// effects keep running smoothly.
 
 
 const SAVE_KEY = 'lastbard:run';
+const NOTE_COLOR = { strike: '#ff5e7a', ward: '#3afae0', verse: '#ffe24a' };
 const app = document.getElementById('app');
-let run = loadRun();
-let selectedHand = null;  // hand index selected awaiting a target
-let glowHandle = null;    // for cancelling crescendo glow anim
 
-// ─── persistence ────────────────────────────────────────────────────────────
+let run = loadRun();
+let selectedHand = null;
+let arena = null;
+let arenaCanvas = null;
+let mountedKey = null;
+let animating = false;
+let resizeObs = null;
+
+// ── persistence ──────────────────────────────────────────────────────────────
 function saveRun() {
-  try { if (run) localStorage.setItem(SAVE_KEY, JSON.stringify(run)); else localStorage.removeItem(SAVE_KEY); }
-  catch { /* ok */ }
+  try { run ? localStorage.setItem(SAVE_KEY, JSON.stringify(run)) : localStorage.removeItem(SAVE_KEY); } catch {}
 }
 function loadRun() {
   try { const r = localStorage.getItem(SAVE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
 }
-function setRun(next) {
-  run = next; selectedHand = null; saveRun(); render();
-}
+function setRun(next) { run = next; selectedHand = null; saveRun(); render(); }
 
-// ─── tiny DOM helper ─────────────────────────────────────────────────────────
-function el(tag, props = {}, children = []) {
+// ── dom helper ────────────────────────────────────────────────────────────────
+function el(tag, props = {}, kids = []) {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(props)) {
     if (k === 'class') n.className = v;
     else if (k === 'text') n.textContent = v;
+    else if (k === 'html') n.innerHTML = v;
     else if (k.startsWith('on') && typeof v === 'function') n.addEventListener(k.slice(2), v);
     else if (v !== null && v !== undefined) n.setAttribute(k, v);
   }
-  for (const c of [].concat(children)) {
-    if (c == null) continue;
-    n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
-  }
+  for (const c of [].concat(kids)) { if (c == null) continue; n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); }
   return n;
 }
-function clear() { app.replaceChildren(); if (glowHandle) { glowHandle.stop(); glowHandle = null; } }
+function clearApp() { app.replaceChildren(); }
 
-// ─── render dispatcher ───────────────────────────────────────────────────────
+// ── render dispatcher ─────────────────────────────────────────────────────────
 function render() {
-  clear();
+  // tear down arena when leaving combat
+  if (run?.phase !== 'combat' && arena) { teardownArena(); }
+  clearApp();
   if (!run) return renderTitle();
   if (run._deckView) return renderDeckView();
   if (run.compose) return renderCompose();
   if (run.transcribe) return renderTranscribe();
   switch (run.phase) {
-    case 'map':    return renderMap();
+    case 'map': return renderMap();
     case 'combat': return renderCombat();
     case 'reward': return renderReward();
-    case 'rest':   return renderRest();
-    case 'dead':   return renderEnd(false);
-    case 'won':    return renderEnd(true);
-    default:       return renderTitle();
+    case 'rest': return renderRest();
+    case 'dead': return renderEnd(false);
+    case 'won': return renderEnd(true);
+    default: return renderTitle();
   }
 }
 
-// ─── TITLE ───────────────────────────────────────────────────────────────────
-function renderTitle() {
-  const screen = el('div', { class: 'screen center' });
-  // Bard sprite, large
-  const bardWrap = el('div', { style: 'position:relative;' });
-  bardWrap.appendChild(createSpriteCanvas('bard', 3));
-  screen.appendChild(bardWrap);
-  screen.appendChild(el('h1', { class: 'logo', text: 'THE LAST BARD' }));
-  screen.appendChild(el('p', { class: 'subtitle', text: 'The world has gone silent.\nOne melody remains.' }));
-  screen.appendChild(el('button', { class: 'btn big primary', onclick: () => setRun(newRun(rnd())) }, 'Begin'));
-  if (run === null) {
-    screen.appendChild(el('p', { class: 'hint', text: 'Climb 8 floors.\nBuild your melody.\nBreak The Hush.' }));
-  }
-  app.appendChild(screen);
+function teardownArena() {
+  if (arena) arena.stop();
+  if (resizeObs) { try { resizeObs.disconnect(); } catch {} resizeObs = null; }
+  arena = null; arenaCanvas = null; mountedKey = null;
 }
 
-// ─── MAP ─────────────────────────────────────────────────────────────────────
-function renderMap() {
-  const screen = el('div', { class: 'screen' });
-  screen.appendChild(topBar());
-
-  const list = el('div', { class: 'map-list' });
-  run.nodes.forEach((node, i) => {
-    const done = i < run.floor;
-    const here = i === run.floor;
-    const row = el('div', { class: `map-node ${done?'done':''} ${here?'here':''}` });
-    row.appendChild(el('span', { class: 'map-icon', text: nodeIcon(node.type) }));
-    row.appendChild(el('span', { class: 'map-label', text: nodeLabel(node, i) }));
-    if (here) row.appendChild(el('span', { class: 'map-here', text: '◀' }));
-    list.appendChild(row);
-  });
-  screen.appendChild(list);
-
-  const node = currentNode(run);
-  const cta = node.type === 'rest' ? 'Rest Here' : node.type === 'boss' ? 'Face the Hush' : 'Enter';
-  screen.appendChild(footer([
-    el('button', { class: 'btn tiny', onclick: () => setRun({ ...run, _deckView: true }) },
-      `Deck (${run.player.deck.length})`),
-    el('button', { class: 'btn primary', onclick: () => setRun(enterNode(run)) }, cta),
-  ]));
-  app.appendChild(screen);
-}
-
-// ─── COMBAT ──────────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+//  COMBAT
+// ════════════════════════════════════════════════════════════════════════════
 function renderCombat() {
   const c = run.combat;
-  const screen = el('div', { class: 'screen combat' });
+  const key = `${run.seed}:${run.floor}`;
 
-  // Enemies row
-  const enemyRow = el('div', { class: 'enemies-row' });
-  c.enemies.forEach((e) => {
-    const dead = e.hp <= 0;
-    const targetable = selectedHand !== null && !dead && needsTarget(c.hand[selectedHand]);
-    const card = el('div', {
-      class: `enemy-card ${dead?'dead':''} ${targetable?'targetable':''}`,
-      onclick: targetable ? () => playSelected(e.slot) : undefined,
-    });
-    const spriteWrap = el('div', { class: 'enemy-sprite-wrap' });
-    spriteWrap.appendChild(createSpriteCanvas(spriteKey(e.id), 3));
-    card.appendChild(el('div', { class: 'intent-text', text: dead ? '' : intentText(e) }));
-    card.appendChild(spriteWrap);
-    card.appendChild(el('div', { class: 'enemy-name', text: e.name }));
-    card.appendChild(hpBar(e.hp, e.maxHp, e.block));
-    card.appendChild(statusChips(e.statuses, false));
-    enemyRow.appendChild(card);
-  });
-  screen.appendChild(enemyRow);
+  const root = el('div', { class: 'combat' });
+  const arenaWrap = el('div', { class: 'arena-wrap' });
 
-  // Chain strip
-  screen.appendChild(buildChainStrip(c));
+  // (re)mount arena for a new fight, else reuse the live canvas
+  if (key !== mountedKey || !arena) {
+    teardownArena();
+    arenaCanvas = el('canvas', { class: 'arena-canvas' });
+    arenaWrap.appendChild(arenaCanvas);
+    arena = new Arena(arenaCanvas);
+    arena.onActorTap = onArenaTap;
+    arena.setCombatants({ sprite: 'bard', hp: c.player.hp, maxHp: c.player.maxHp, block: c.player.block },
+      enemyDescs(c));
+    arena.start();
+    mountedKey = key;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObs = new ResizeObserver(() => arena && arena.resize());
+      resizeObs.observe(arenaWrap);
+    }
+    requestAnimationFrame(() => arena && arena.resize());
+  } else {
+    arenaWrap.appendChild(arenaCanvas); // move existing canvas into fresh DOM
+    if (!animating) arena.syncStats(c.player, enemyDescs(c));
+    requestAnimationFrame(() => arena && arena.resize());
+  }
 
-  // Player bar
-  const pBar = el('div', { class: 'player-bar' });
-  pBar.appendChild(el('span', { class: 'pstat hp', text: `♥ ${c.player.hp}/${c.player.maxHp}` }));
-  if (c.player.block) pBar.appendChild(el('span', { class: 'pstat block', text: `◼ ${c.player.block}` }));
-  pBar.appendChild(el('span', { class: 'pstat tempo', text: `♩ ${c.player.tempo}/${c.player.maxTempo}` }));
-  pBar.appendChild(statusChips(c.player.statuses, true));
-  screen.appendChild(pBar);
+  // HUD overlay (top): hp + tempo orbs + floor + menu
+  arenaWrap.appendChild(buildHudTop(c));
+  // HUD overlay (chain strip)
+  arenaWrap.appendChild(buildChainStrip(c));
+  root.appendChild(arenaWrap);
 
-  // Hand
-  const hand = el('div', { class: 'hand' });
-  c.hand.forEach((inst, i) => {
-    const def = effectiveCard(inst);
-    const playable = canPlay(c, i);
-    const isSel = selectedHand === i;
-    const isMuted = (c.player.muted[def.note] || 0) > 0;
-    const chainPreview = playable ? previewChain(c, def.note, isMuted) : 'neutral';
-    const cardEl = buildCard(def, inst, {
-      playable, selected: isSel, mini: false,
-      chainPreview: chainPreview !== 'neutral' ? chainPreview : null,
-      muted: isMuted,
-    });
-    if (playable) cardEl.addEventListener('click', () => onCardTap(i));
-    hand.appendChild(cardEl);
-  });
-  screen.appendChild(hand);
-
-  screen.appendChild(footer([
-    el('div', { class: 'pile-info' }, [
-      `Draw ${c.drawPile.length}`,
-      el('br'),
-      `Disc ${c.discardPile.length}`,
-    ]),
-    el('button', { class: 'btn primary', onclick: onEndTurn }, 'End Turn'),
-  ]));
-
-  app.appendChild(screen);
-  if (isOver(c)) setTimeout(() => setRun(resolveCombat(run)), 400);
+  // tray: fanned hand + footer
+  root.appendChild(buildTray(c));
+  app.appendChild(root);
 }
 
-// ─── chain strip widget ───────────────────────────────────────────────────────
-function buildChainStrip(c) {
-  const wrap = el('div', { class: 'chain-strip' });
+function enemyDescs(c) {
+  return c.enemies.map((e) => ({
+    id: `e${e.slot}`, slot: e.slot, sprite: ENEMY_SPRITE[e.id] || 'hushWisp',
+    hp: e.hp, maxHp: e.maxHp, block: e.block, intent: e.hp > 0 ? intentPreview(e) : null,
+  }));
+}
 
-  // 3 slots showing last 3 notes in chain (or padded with empty)
+function buildHudTop(c) {
+  const hud = el('div', { class: 'hud-top' });
+  const left = el('div', { class: 'hud-left' });
+  left.appendChild(el('div', { class: 'hud-hp' }, [
+    el('span', { class: 'heart', text: '♥' }),
+    el('span', { text: `${c.player.hp}/${c.player.maxHp}` }),
+    c.player.block ? el('span', { class: 'hud-block', text: `▢${c.player.block}` }) : null,
+  ]));
+  // tempo orbs
+  const orbs = el('div', { class: 'tempo-orbs' });
+  for (let i = 0; i < c.player.maxTempo; i++) {
+    orbs.appendChild(el('div', { class: `orb ${i < c.player.tempo ? 'full' : ''}` }));
+  }
+  left.appendChild(orbs);
+  // player statuses
+  left.appendChild(statusChips(c.player.statuses, true));
+  hud.appendChild(left);
+
+  const right = el('div', { class: 'hud-right' });
+  right.appendChild(el('div', { class: 'hud-floor', text: `F${run.floor + 1}/${run.nodes.length}` }));
+  right.appendChild(el('button', { class: 'icon-btn', onclick: () => { if (confirm('Abandon run?')) setRun(null); } }, '✕'));
+  hud.appendChild(right);
+  return hud;
+}
+
+function buildChainStrip(c) {
+  const wrap = el('div', { class: 'hud-chain' });
+  const strip = el('div', { class: 'chain-row' });
   const chain = c.chain.slice(-3);
   while (chain.length < 3) chain.unshift(null);
   chain.forEach((note, i) => {
-    const slot = el('div', { class: `chain-slot ${note ? `filled-${note}` : ''}` });
-    if (note) {
-      slot.appendChild(createSpriteCanvas(`note${cap(note)}`, 2));
-    } else {
-      slot.appendChild(el('div', { class: 'chain-dot' }));
-    }
-    wrap.appendChild(slot);
-    if (i < 2) wrap.appendChild(el('div', { style: 'width:6px;height:4px;background:var(--border);margin-top:10px;' }));
+    if (i > 0) strip.appendChild(el('div', { class: 'chain-link' }));
+    const slot = el('div', { class: `chain-slot ${note ? 'f-' + note : ''}` });
+    if (note) slot.appendChild(noteIcon(note, 2));
+    else slot.appendChild(el('div', { class: 'chain-dot' }));
+    strip.appendChild(slot);
   });
-
-  // Chain status label
   const status = chainStatus(c);
-  let label = '';
-  if (status === 'harmony') label = 'HARMONY';
-  else if (status === 'crescendo') label = '✦ CRESCENDO';
-  if (label) wrap.appendChild(el('span', { class: `chain-label ${status}`, text: label }));
+  if (status === 'harmony') strip.appendChild(el('div', { class: 'chain-tag harmony', text: 'HARMONY' }));
+  else if (status === 'crescendo') strip.appendChild(el('div', { class: 'chain-tag crescendo', text: '✦CRESCENDO' }));
+  wrap.appendChild(strip);
 
-  // Muted indicator
-  const muteRow = el('div', { class: 'muted-bar' });
-  ['strike', 'ward', 'verse'].forEach((note) => {
-    const n = c.player.muted[note] || 0;
-    muteRow.appendChild(el('span', {
-      class: `muted-chip ${n > 0 ? 'active' : ''}`,
-      text: `${noteSymbol(note)}${n > 0 ? ' MUTED' : ''}`,
-    }));
-  });
-  const container = el('div');
-  container.appendChild(wrap);
-  container.appendChild(muteRow);
-  return container;
+  // muted note indicators (only show if any active)
+  const anyMuted = ['strike', 'ward', 'verse'].some((nt) => c.player.muted[nt] > 0);
+  if (anyMuted) {
+    const mrow = el('div', { class: 'muted-row' });
+    ['strike', 'ward', 'verse'].forEach((nt) => {
+      const n = c.player.muted[nt] || 0;
+      if (n > 0) mrow.appendChild(el('div', { class: 'muted-tag', text: `${noteGlyph(nt)} MUTED ${n}` }));
+    });
+    wrap.appendChild(mrow);
+  }
+  return wrap;
 }
 
-// ─── REWARD ───────────────────────────────────────────────────────────────────
-function renderReward() {
-  const screen = el('div', { class: 'screen' });
-  screen.appendChild(topBar());
-  screen.appendChild(el('h2', { class: 'screen-title', text: 'VICTORY' }));
-  screen.appendChild(el('p', { class: 'hint', text: `+${run.reward.gold} gold  |  Choose a card` }));
+function buildTray(c) {
+  const tray = el('div', { class: 'tray' });
 
+  const hand = el('div', { class: 'hand' });
+  const n = c.hand.length;
+  c.hand.forEach((inst, i) => {
+    const def = effectiveCard(inst);
+    const playable = canPlay(c, i) && !animating;
+    const isSel = selectedHand === i;
+    const isMuted = (c.player.muted[def.note] || 0) > 0;
+    const preview = playable ? previewChain(c, def.note, isMuted) : 'neutral';
+    const card = buildCard(def, inst, { playable, selected: isSel, chainPreview: preview !== 'neutral' ? preview : null, muted: isMuted });
+    // fan layout
+    const mid = (n - 1) / 2;
+    const off = i - mid;
+    const rot = off * 4;
+    const ty = Math.abs(off) ** 1.4 * 5;
+    card.style.setProperty('--rot', `${rot}deg`);
+    card.style.setProperty('--ty', `${ty}px`);
+    card.style.zIndex = String(isSel ? 100 : 10 + i);
+    if (playable) card.addEventListener('click', () => onCardTap(i));
+    hand.appendChild(card);
+  });
+  tray.appendChild(hand);
+
+  const foot = el('div', { class: 'tray-foot' });
+  foot.appendChild(el('div', { class: 'piles' }, [
+    el('span', { class: 'pile', text: `⛁ ${c.drawPile.length}` }),
+    el('span', { class: 'pile', text: `♺ ${c.discardPile.length}` }),
+    el('button', { class: 'mini-btn', onclick: () => setRun({ ...run, _deckView: true }) }, 'Deck'),
+  ]));
+  foot.appendChild(el('button', { class: 'btn end-turn', onclick: onEndTurn }, 'END TURN ▸'));
+  tray.appendChild(foot);
+  return tray;
+}
+
+// ── combat interactions ───────────────────────────────────────────────────────
+function onCardTap(i) {
+  if (animating) return;
+  const c = run.combat;
+  const inst = c.hand[i];
+  if (!inst || !canPlay(c, i)) return;
+  if (!needsTarget(inst) || aliveEnemies(c).length <= 1) {
+    const t = aliveEnemies(c)[0];
+    doPlay(i, t ? t.slot : 0);
+    return;
+  }
+  if (selectedHand === i) { selectedHand = null; arena.setTargetable([]); renderCombatOverlayOnly(); return; }
+  selectedHand = i;
+  arena.setTargetable(aliveEnemies(c).map((e) => `e${e.slot}`));
+  renderCombatOverlayOnly();
+}
+
+function onArenaTap(actorId) {
+  if (animating) return;
+  if (selectedHand === null) return;
+  if (!actorId.startsWith('e')) return;
+  const slot = parseInt(actorId.slice(1), 10);
+  const e = run.combat.enemies.find((x) => x.slot === slot && x.hp > 0);
+  if (!e) return;
+  const idx = selectedHand;
+  selectedHand = null;
+  arena.setTargetable([]);
+  doPlay(idx, slot);
+}
+
+// Lightweight refresh that keeps the arena but rebuilds HUD/tray (e.g. selection)
+function renderCombatOverlayOnly() { render(); }
+
+async function doPlay(handIndex, targetSlot) {
+  if (animating) return;
+  const prev = run.combat;
+  if (!canPlay(prev, handIndex)) return;
+  const inst = prev.hand[handIndex];
+  const def = effectiveCard(inst);
+  const next = playCard(prev, handIndex, targetSlot);
+  if (next === prev) return;
+
+  animating = true;
+  arena.setTargetable([]);
+  await animateCardPlay(prev, next, def, targetSlot);
+  run = { ...run, combat: next };
+  saveRun();
+  animating = false;
+
+  if (isOver(next)) {
+    setTimeout(() => setRun(resolveCombat(run)), 450);
+  } else {
+    arena.syncStats(next.player, enemyDescs(next));
+    render();
+  }
+}
+
+async function animateCardPlay(prev, next, def, targetSlot) {
+  const note = def.note;
+  const color = NOTE_COLOR[note];
+  const crescendoNow = next.crescendoFired && !prev.crescendoFired;
+  const chainAdvanced = next.chain.length > prev.chain.length;
+  const harmonyNow = !crescendoNow && chainAdvanced && chainStatus(next) === 'harmony';
+
+  // enemy hp deltas by slot
+  const deltas = prev.enemies.map((e) => {
+    const after = next.enemies.find((x) => x.slot === e.slot);
+    return { slot: e.slot, id: `e${e.slot}`, dmg: e.hp - (after ? after.hp : 0), killed: after && after.hp <= 0 && e.hp > 0 };
+  });
+
+  const applyImpact = () => {
+    let any = false;
+    for (const d of deltas) {
+      if (d.dmg > 0) {
+        any = true;
+        arena.hurt(d.id, 'player', d.dmg);
+        arena.floatText(d.id, `-${d.dmg}`, '#ff8a9e');
+        const a = arena.actors.get(d.id); if (a) a.hp = next.enemies.find((x) => x.slot === d.slot).hp;
+      }
+    }
+    if (any) arena.hitstop(70);
+    if (crescendoNow) arena.crescendo();
+    else if (harmonyNow) arena.harmonyPing(color);
+  };
+
+  if (note === 'strike') {
+    const tslot = next.enemies.find((e) => e.slot === targetSlot) ? targetSlot : (aliveEnemies(prev)[0] || {}).slot;
+    await arena.attack('player', `e${tslot}`, applyImpact);
+    if (crescendoNow) { arena.floatText('player', '✦ CRESCENDO', '#ffd23f', true); }
+  } else if (note === 'ward') {
+    await arena.guard('player');
+    const blockGain = next.player.block - prev.player.block;
+    if (blockGain > 0) arena.floatText('player', `▢ +${blockGain}`, '#7fdcff');
+    applyImpact(); // wards can still chain into crescendo (heal+block handled by stat sync)
+    if (crescendoNow) arena.floatText('player', '✦ CRESCENDO', '#ffd23f', true);
+  } else { // verse
+    await arena.cast('player', color);
+    applyImpact();
+    if (crescendoNow) arena.floatText('player', '✦ CRESCENDO', '#ffd23f', true);
+    else if (harmonyNow) arena.floatText('player', 'HARMONY', color);
+  }
+
+  // reconcile remaining stats (block/heal/intents/kills)
+  arena.syncStats(next.player, enemyDescs(next));
+  const heal = next.player.hp - prev.player.hp;
+  if (heal > 0) arena.floatText('player', `+${heal}`, '#8fff9e');
+  await wait(140);
+}
+
+async function onEndTurn() {
+  if (animating) return;
+  const prev = run.combat;
+  if (prev.phase !== 'player') return;
+  animating = true;
+  arena.setTargetable([]);
+
+  // gather telegraphed intents before resolving
+  const actors = aliveEnemies(prev).map((e) => ({ id: `e${e.slot}`, slot: e.slot, preview: intentPreview(e) }));
+  const next = endTurn(prev);
+
+  for (const act of actors) {
+    const pv = act.preview;
+    if (!pv) continue;
+    if (pv.damage > 0) {
+      await arena.attack(act.id, 'player', () => {
+        const dmg = pv.times > 1 ? pv.damage * pv.times : pv.damage;
+        arena.hurt('player', 'enemy', dmg);
+        arena.floatText('player', `-${dmg}`, '#ff5e7a');
+        arena.hitstop(60);
+      });
+    } else if (pv.intent === 'defend' || pv.block > 0) {
+      await arena.guard(act.id);
+      arena.floatText(act.id, `▢ +${pv.block}`, '#7fdcff');
+    } else {
+      await arena.cast(act.id, '#b6b6cc');
+      arena.floatText(act.id, pv.intent === 'buff' ? 'STR↑' : 'HEX', '#c9a0ff');
+    }
+    await wait(120);
+  }
+
+  // settle to truth
+  run = { ...run, combat: next };
+  saveRun();
+  animating = false;
+
+  if (isOver(next)) {
+    arena.floatText('player', 'SILENCED', '#ff5e7a', true);
+    setTimeout(() => setRun(resolveCombat(run)), 700);
+  } else {
+    arena.syncStats(next.player, enemyDescs(next));
+    render();
+  }
+}
+
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ════════════════════════════════════════════════════════════════════════════
+//  NON-COMBAT SCREENS
+// ════════════════════════════════════════════════════════════════════════════
+function renderTitle() {
+  const s = el('div', { class: 'screen center title-screen' });
+  const stage = el('div', { class: 'title-stage' });
+  stage.appendChild(createSpriteCanvas('bard', 5));
+  s.appendChild(stage);
+  s.appendChild(el('h1', { class: 'logo', text: 'THE LAST BARD' }));
+  s.appendChild(el('p', { class: 'subtitle', text: 'The world has gone silent.\nOne melody remains.' }));
+  s.appendChild(el('button', { class: 'btn big primary', onclick: () => setRun(newRun(rnd())) }, 'BEGIN'));
+  app.appendChild(s);
+}
+
+function renderMap() {
+  const s = el('div', { class: 'screen' });
+  s.appendChild(topBar());
+  const list = el('div', { class: 'map-list' });
+  run.nodes.forEach((node, i) => {
+    const done = i < run.floor, here = i === run.floor;
+    const row = el('div', { class: `map-node ${done ? 'done' : ''} ${here ? 'here' : ''}` });
+    row.appendChild(el('span', { class: 'map-icon', text: nodeIcon(node.type) }));
+    row.appendChild(el('span', { class: 'map-label', text: nodeLabel(node) }));
+    if (here) row.appendChild(el('span', { class: 'map-here', text: '◀' }));
+    list.appendChild(row);
+  });
+  s.appendChild(list);
+  const node = currentNode(run);
+  const cta = node.type === 'rest' ? 'REST' : node.type === 'boss' ? 'FACE THE HUSH' : 'ENTER';
+  s.appendChild(footer([
+    el('button', { class: 'btn ghost', onclick: () => setRun({ ...run, _deckView: true }) }, `Deck ${run.player.deck.length}`),
+    el('button', { class: 'btn primary', onclick: () => setRun(enterNode(run)) }, cta),
+  ]));
+  app.appendChild(s);
+}
+
+function renderReward() {
+  const s = el('div', { class: 'screen' });
+  s.appendChild(topBar());
+  s.appendChild(el('h2', { class: 'screen-title', text: 'VICTORY' }));
+  s.appendChild(el('p', { class: 'hint', text: `+${run.reward.gold} gold  ·  choose a card` }));
   const cards = el('div', { class: 'reward-cards' });
   run.reward.cards.forEach((id) => {
     const def = getCard(id);
-    const cardEl = buildCard(def, { id, upgraded: false }, { playable: true });
-    cardEl.classList.add('reward-card');
-    cardEl.addEventListener('click', () => setRun(chooseReward(run, id, null)));
-    cards.appendChild(cardEl);
+    const card = buildCard(def, { id, upgraded: false }, { playable: true });
+    card.addEventListener('click', () => setRun(chooseReward(run, id, null)));
+    cards.appendChild(card);
   });
-  screen.appendChild(cards);
-
-  if (run.reward.relicOffer && run.reward.relicOffer.length) {
-    screen.appendChild(el('p', { class: 'hint', text: 'Elite relic  —  choose one:' }));
-    const relicRow = el('div', { class: 'relic-row' });
+  s.appendChild(cards);
+  if (run.reward.relicOffer?.length) {
+    s.appendChild(el('p', { class: 'hint', text: 'elite relic — choose one' }));
+    const row = el('div', { class: 'relic-row' });
     run.reward.relicOffer.forEach((relic) => {
-      const rc = el('div', { class: 'relic-card', onclick: () => setRun(chooseReward(run, null, relic.id)) });
-      rc.appendChild(el('div', { class: 'relic-name', text: relic.name }));
-      rc.appendChild(el('div', { class: 'relic-text', text: relic.text }));
-      relicRow.appendChild(rc);
-    });
-    screen.appendChild(relicRow);
-  }
-
-  screen.appendChild(footer([
-    el('button', { class: 'btn tiny', onclick: () => setRun({ ...run, _deckView: true }) }, 'View Deck'),
-    el('button', { class: 'btn', onclick: () => setRun(chooseReward(run, null, null)) }, 'Skip'),
-  ]));
-  app.appendChild(screen);
-}
-
-// ─── REST ─────────────────────────────────────────────────────────────────────
-function renderRest() {
-  const screen = el('div', { class: 'screen' });
-  screen.appendChild(topBar());
-  screen.appendChild(el('h2', { class: 'screen-title', text: 'CAMPFIRE' }));
-  screen.appendChild(el('p', { class: 'hint', text: 'Catch your breath.' }));
-
-  const choices = el('div', { class: 'rest-choices' });
-
-  const heal = Math.floor(run.player.maxHp * 0.30);
-  addRestChoice(choices, 'RECOVER', `Heal ${heal} HP (${run.player.hp}→${Math.min(run.player.maxHp, run.player.hp+heal)})`,
-    () => setRun(rest(run)));
-  addRestChoice(choices, 'COMPOSE', 'Peek your next 5 draws and pin 1 to the top.',
-    () => setRun(startCompose(run)));
-  const upgradeable = run.player.deck.filter((c) => !c.upgraded && getCard(c.id).upgrade).length;
-  if (upgradeable > 0) {
-    addRestChoice(choices, 'TRANSCRIBE', `Upgrade a card in your deck (${upgradeable} eligible).`,
-      () => setRun(startTranscribe(run)));
-  }
-  screen.appendChild(choices);
-  app.appendChild(screen);
-}
-
-function addRestChoice(parent, title, desc, fn) {
-  const opt = el('div', { class: 'rest-option', onclick: fn });
-  opt.appendChild(el('div', { class: 'rest-option-title', text: title }));
-  opt.appendChild(el('div', { class: 'rest-option-desc', text: desc }));
-  parent.appendChild(opt);
-}
-
-// ─── COMPOSE ─────────────────────────────────────────────────────────────────
-function renderCompose() {
-  const screen = el('div', { class: 'screen' });
-  screen.appendChild(topBar());
-  screen.appendChild(el('h2', { class: 'screen-title', text: 'COMPOSE' }));
-  screen.appendChild(el('p', { class: 'hint', text: 'Tap a card to pin it as your first draw next fight.' }));
-  const cards = el('div', { class: 'compose-cards' });
-  run.compose.peeked.forEach((inst) => {
-    const def = effectiveCard(inst);
-    const c = buildCard(def, inst, { playable: true, mini: false });
-    c.classList.add('compose-card');
-    c.addEventListener('click', () => setRun(finishCompose(run, inst.uid)));
-    cards.appendChild(c);
-  });
-  screen.appendChild(cards);
-  screen.appendChild(footer([
-    el('button', { class: 'btn', onclick: () => setRun(finishCompose(run, null)) }, 'Skip'),
-  ]));
-  app.appendChild(screen);
-}
-
-// ─── TRANSCRIBE ───────────────────────────────────────────────────────────────
-function renderTranscribe() {
-  const screen = el('div', { class: 'screen' });
-  screen.appendChild(topBar());
-  screen.appendChild(el('h2', { class: 'screen-title', text: 'TRANSCRIBE' }));
-  screen.appendChild(el('p', { class: 'hint', text: 'Upgrade one card.' }));
-  const grid = el('div', { class: 'deck-grid' });
-  run.transcribe.options.forEach((inst) => {
-    const def = getCard(inst.id);
-    const c = buildCard(def, inst, { mini: true, playable: true });
-    c.addEventListener('click', () => setRun(finishTranscribe(run, inst.uid)));
-    grid.appendChild(c);
-  });
-  screen.appendChild(grid);
-  screen.appendChild(footer([
-    el('button', { class: 'btn', onclick: () => setRun(finishTranscribe(run, null)) }, 'Skip'),
-  ]));
-  app.appendChild(screen);
-}
-
-// ─── DECK VIEW ───────────────────────────────────────────────────────────────
-function renderDeckView() {
-  const screen = el('div', { class: 'screen' });
-  const isInCombat = run.phase === 'combat';
-  screen.appendChild(el('h2', { class: 'screen-title', text: `DECK (${run.player.deck.length})` }));
-  const grid = el('div', { class: 'deck-grid' });
-  run.player.deck.forEach((inst) => {
-    const def = effectiveCard(inst);
-    grid.appendChild(buildCard(def, inst, { mini: true }));
-  });
-  screen.appendChild(grid);
-  screen.appendChild(footer([
-    el('button', { class: 'btn primary', onclick: () => setRun({ ...run, _deckView: false }) }, 'Back'),
-  ]));
-  if (run.player.relics.length) {
-    const relicBar = el('div', { style: 'padding:6px 2px;' });
-    relicBar.appendChild(el('p', { class: 'hint', text: 'Relics:' }));
-    run.player.relics.forEach((r) => {
-      relicBar.appendChild(el('div', { class: 'relic-card', style: 'cursor:default;' }, [
-        el('div', { class: 'relic-name', text: r.name }),
-        el('div', { class: 'relic-text', text: r.text }),
+      row.appendChild(el('div', { class: 'relic-card', onclick: () => setRun(chooseReward(run, null, relic.id)) }, [
+        el('div', { class: 'relic-name', text: relic.name }),
+        el('div', { class: 'relic-text', text: relic.text }),
       ]));
     });
-    screen.appendChild(relicBar);
+    s.appendChild(row);
   }
-  app.appendChild(screen);
+  s.appendChild(footer([
+    el('button', { class: 'btn ghost', onclick: () => setRun({ ...run, _deckView: true }) }, 'Deck'),
+    el('button', { class: 'btn', onclick: () => setRun(chooseReward(run, null, null)) }, 'Skip'),
+  ]));
+  app.appendChild(s);
 }
 
-// ─── END ─────────────────────────────────────────────────────────────────────
+function renderRest() {
+  const s = el('div', { class: 'screen' });
+  s.appendChild(topBar());
+  s.appendChild(el('h2', { class: 'screen-title', text: 'CAMPFIRE' }));
+  const choices = el('div', { class: 'rest-choices' });
+  const heal = Math.floor(run.player.maxHp * 0.3);
+  restOpt(choices, 'RECOVER', `Heal ${heal} HP`, () => setRun(rest(run)));
+  restOpt(choices, 'COMPOSE', 'Peek your next 5 draws, pin 1 to the top.', () => setRun(startCompose(run)));
+  const up = run.player.deck.filter((c) => !c.upgraded && getCard(c.id).upgrade).length;
+  if (up > 0) restOpt(choices, 'TRANSCRIBE', `Upgrade a card (${up} eligible).`, () => setRun(startTranscribe(run)));
+  s.appendChild(choices);
+  app.appendChild(s);
+}
+function restOpt(parent, title, desc, fn) {
+  parent.appendChild(el('div', { class: 'rest-option', onclick: fn }, [
+    el('div', { class: 'rest-title', text: title }),
+    el('div', { class: 'rest-desc', text: desc }),
+  ]));
+}
+
+function renderCompose() {
+  const s = el('div', { class: 'screen' });
+  s.appendChild(topBar());
+  s.appendChild(el('h2', { class: 'screen-title', text: 'COMPOSE' }));
+  s.appendChild(el('p', { class: 'hint', text: 'Pin one card as your first draw next fight.' }));
+  const cards = el('div', { class: 'reward-cards' });
+  run.compose.peeked.forEach((inst) => {
+    const card = buildCard(effectiveCard(inst), inst, { playable: true });
+    card.addEventListener('click', () => setRun(finishCompose(run, inst.uid)));
+    cards.appendChild(card);
+  });
+  s.appendChild(cards);
+  s.appendChild(footer([el('button', { class: 'btn', onclick: () => setRun(finishCompose(run, null)) }, 'Skip')]));
+  app.appendChild(s);
+}
+
+function renderTranscribe() {
+  const s = el('div', { class: 'screen' });
+  s.appendChild(topBar());
+  s.appendChild(el('h2', { class: 'screen-title', text: 'TRANSCRIBE' }));
+  s.appendChild(el('p', { class: 'hint', text: 'Upgrade one card.' }));
+  const grid = el('div', { class: 'deck-grid' });
+  run.transcribe.options.forEach((inst) => {
+    const card = buildCard(getCard(inst.id), inst, { mini: true, playable: true });
+    card.addEventListener('click', () => setRun(finishTranscribe(run, inst.uid)));
+    grid.appendChild(card);
+  });
+  s.appendChild(grid);
+  s.appendChild(footer([el('button', { class: 'btn', onclick: () => setRun(finishTranscribe(run, null)) }, 'Skip')]));
+  app.appendChild(s);
+}
+
+function renderDeckView() {
+  const s = el('div', { class: 'screen' });
+  s.appendChild(el('h2', { class: 'screen-title', text: `DECK · ${run.player.deck.length}` }));
+  const grid = el('div', { class: 'deck-grid' });
+  run.player.deck.forEach((inst) => grid.appendChild(buildCard(effectiveCard(inst), inst, { mini: true })));
+  s.appendChild(grid);
+  if (run.player.relics.length) {
+    const rb = el('div', { class: 'relic-strip' });
+    run.player.relics.forEach((r) => rb.appendChild(el('div', { class: 'relic-card mini' }, [
+      el('div', { class: 'relic-name', text: r.name }), el('div', { class: 'relic-text', text: r.text }),
+    ])));
+    s.appendChild(rb);
+  }
+  s.appendChild(footer([el('button', { class: 'btn primary', onclick: () => setRun({ ...run, _deckView: false }) }, 'Back')]));
+  app.appendChild(s);
+}
+
 function renderEnd(won) {
-  const screen = el('div', { class: 'screen' });
-  const end = el('div', { class: 'end-screen' });
-  // Show bard sprite or Hush depending on outcome
-  end.appendChild(createSpriteCanvas(won ? 'bard' : 'theHush', won ? 4 : 2));
-  end.appendChild(el('div', { class: `end-title ${won?'won':'lost'}`, text: won ? 'THE HUSH FALLS' : 'SILENCED' }));
-  end.appendChild(el('p', { class: 'hint', text: won ? 'The Last Melody echoes forever.' : `Fell on floor ${run.floor + 1}.` }));
-  end.appendChild(el('button', { class: 'btn big primary', onclick: () => setRun(newRun(rnd())) }, 'Play Again'));
-  screen.appendChild(end);
-  app.appendChild(screen);
+  const s = el('div', { class: 'screen center' });
+  const stage = el('div', { class: 'title-stage' });
+  stage.appendChild(createSpriteCanvas(won ? 'bard' : 'theHush', won ? 6 : 3));
+  s.appendChild(stage);
+  s.appendChild(el('h1', { class: `logo ${won ? 'won' : 'lost'}`, text: won ? 'THE HUSH FALLS' : 'SILENCED' }));
+  s.appendChild(el('p', { class: 'hint', text: won ? 'The Last Melody echoes forever.' : `Fell on floor ${run.floor + 1}.` }));
+  s.appendChild(el('button', { class: 'btn big primary', onclick: () => setRun(newRun(rnd())) }, 'PLAY AGAIN'));
+  app.appendChild(s);
 }
 
-// ─── shared widgets ──────────────────────────────────────────────────────────
+// ── shared widgets ────────────────────────────────────────────────────────────
 function topBar() {
-  const bar = el('div', { class: 'topbar' });
-  bar.appendChild(el('span', { class: 'pstat hp', text: `♥ ${run.player.hp}/${run.player.maxHp}` }));
-  bar.appendChild(el('span', { class: 'pstat gold', text: `$ ${run.player.gold}` }));
-  bar.appendChild(el('span', { class: 'pstat', text: `F${run.floor + 1}/${run.nodes.length}` }));
-  bar.appendChild(el('button', {
-    class: 'btn tiny',
-    onclick: () => { if (confirm('Abandon run?')) setRun(null); },
-  }, '✕'));
-  return bar;
+  return el('div', { class: 'topbar' }, [
+    el('span', { class: 'pstat hp', text: `♥ ${run.player.hp}/${run.player.maxHp}` }),
+    el('span', { class: 'pstat gold', text: `$ ${run.player.gold}` }),
+    el('span', { class: 'pstat', text: `F${run.floor + 1}/${run.nodes.length}` }),
+    el('button', { class: 'icon-btn', onclick: () => { if (confirm('Abandon run?')) setRun(null); } }, '✕'),
+  ]);
 }
+function footer(kids) { return el('div', { class: 'footer' }, kids); }
 
-function footer(children) {
-  return el('div', { class: 'footer' }, children);
-}
-
-function hpBar(hp, maxHp, block = 0) {
-  const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
-  const bar = el('div', { class: 'hpbar' });
-  bar.appendChild(el('div', { class: 'hpfill', style: `width:${pct}%` }));
-  bar.appendChild(el('div', { class: 'hptext', text: block > 0 ? `◼${block} ${hp}/${maxHp}` : `${hp}/${maxHp}` }));
-  return bar;
-}
-
-function statusChips(statuses, isPlayer) {
+function statusChips(st, isPlayer) {
   const row = el('div', { class: 'statuses' });
-  if (statuses.forte)     row.appendChild(el('span', { class: 'chip forte',   text: `FRT ${statuses.forte}` }));
-  if (statuses.exposed)   row.appendChild(el('span', { class: 'chip exposed', text: `EXP ${statuses.exposed}` }));
-  if (statuses.diminuendo)row.appendChild(el('span', { class: 'chip diminu',  text: `DIM ${statuses.diminuendo}` }));
-  if (statuses.discordant)row.appendChild(el('span', { class: 'chip discord', text: `DIS ${statuses.discordant}` }));
-  if (isPlayer && statuses.resonant) row.appendChild(el('span', { class: 'chip resonant', text: `RES ${statuses.resonant}` }));
+  if (st.forte) row.appendChild(chip('forte', `FRT ${st.forte}`));
+  if (st.exposed) row.appendChild(chip('exposed', `EXP ${st.exposed}`));
+  if (st.diminuendo) row.appendChild(chip('diminu', `DIM ${st.diminuendo}`));
+  if (st.discordant) row.appendChild(chip('discord', `DIS ${st.discordant}`));
+  if (isPlayer && st.resonant) row.appendChild(chip('resonant', `RES ${st.resonant}`));
   return row;
 }
+function chip(kind, text) { return el('span', { class: `chip ${kind}`, text }); }
 
 function buildCard(def, inst, { playable = false, selected = false, mini = false, chainPreview = null, muted = false } = {}) {
   const upgraded = inst && inst.upgraded;
   const card = el('div', {
-    class: [
-      'card',
-      `note-${def.note}`,
-      !playable && !mini ? 'unplayable' : '',
-      selected ? 'selected' : '',
-      mini ? 'mini' : '',
-      upgraded ? 'upgraded' : '',
-    ].filter(Boolean).join(' '),
+    class: ['card', `note-${def.note}`, !playable && !mini ? 'unplayable' : '', selected ? 'selected' : '',
+      mini ? 'mini' : '', upgraded ? 'upgraded' : ''].filter(Boolean).join(' '),
   });
   card.appendChild(el('div', { class: 'card-cost', text: String(def.cost) }));
-  // Note icon via sprite canvas
-  const noteCanvas = createSpriteCanvas(`note${cap(def.note)}`, 2);
-  noteCanvas.className = 'card-note-icon';
-  card.appendChild(noteCanvas);
+  const ni = noteIcon(def.note, 2); ni.className = 'card-note';
+  card.appendChild(ni);
   card.appendChild(el('div', { class: 'card-name', text: def.name + (upgraded ? '+' : '') }));
   if (!mini) {
     card.appendChild(el('div', { class: 'card-text', text: def.text + (muted ? ' [MUTED +1]' : '') }));
-    card.appendChild(el('div', { class: 'card-type-badge', text: def.note.toUpperCase() }));
-    if (chainPreview) {
-      card.appendChild(el('div', {
-        class: `card-chain-preview ${chainPreview}`,
-        text: chainPreview === 'crescendo' ? '✦ CRESCENDO' : '♦ HARMONY',
-      }));
-    }
+    card.appendChild(el('div', { class: 'card-note-label', text: def.note }));
+    if (chainPreview) card.appendChild(el('div', { class: `card-chain ${chainPreview}`, text: chainPreview === 'crescendo' ? '✦ CRESCENDO' : '♦ HARMONY' }));
   }
   return card;
 }
 
-// ─── interaction handlers ─────────────────────────────────────────────────────
-function onCardTap(i) {
-  const c = run.combat;
-  const inst = c.hand[i];
-  if (!inst) return;
-  if (!needsTarget(inst) || aliveEnemies(c).length <= 1) {
-    const target = aliveEnemies(c)[0];
-    doPlay(i, target ? target.slot : 0);
-    return;
-  }
-  selectedHand = selectedHand === i ? null : i;
-  render();
-}
-
-function playSelected(slot) {
-  if (selectedHand === null) return;
-  doPlay(selectedHand, slot);
-}
-
-function doPlay(handIndex, targetSlot) {
-  const next = playCard(run.combat, handIndex, targetSlot);
-  run = { ...run, combat: next };
-  selectedHand = null;
-  saveRun();
-  if (isOver(next)) { setTimeout(() => setRun(resolveCombat(run)), 400); }
-  else render();
-}
-
-function onEndTurn() {
-  const next = endTurn(run.combat);
-  run = { ...run, combat: next };
-  selectedHand = null;
-  saveRun();
-  if (isOver(next)) setRun(resolveCombat(run));
-  else render();
-}
-
-// ─── helpers ─────────────────────────────────────────────────────────────────
+// ── helpers ───────────────────────────────────────────────────────────────────
 function needsTarget(inst) {
-  if (!inst) return false;
   return effectiveCard(inst).effects.some((e) =>
-    (e.kind === 'damage' && e.target === 'enemy')
-    || e.kind === 'damageFromBlock'
-    || (e.kind === 'status' && e.target === 'enemy'),
-  );
+    (e.kind === 'damage' && e.target === 'enemy') || e.kind === 'damageFromBlock' || (e.kind === 'status' && e.target === 'enemy'));
 }
-
-function intentText(e) {
-  const p = intentPreview(e);
-  if (!p) return '?';
-  const parts = [];
-  if (p.damage > 0) parts.push(p.times > 1 ? `⚔ ${p.damage}×${p.times}` : `⚔ ${p.damage}`);
-  if (p.block > 0)  parts.push(`◼ ${p.block}`);
-  if (!parts.length) {
-    const icons = { buff:'💪', debuff:'☣', defend:'◼' };
-    return icons[p.intent] || '…';
-  }
-  return parts.join(' ');
-}
-
-function nodeIcon(t) { return { combat:'⚔', elite:'☠', rest:'🔥', boss:'💀' }[t] || '•'; }
-function nodeLabel(node, i) {
-  const labels = { combat:`Fight`, elite:`Elite`, rest:`Campfire`, boss:`THE HUSH` };
-  return labels[node.type] || node.type;
-}
-function spriteKey(id) {
-  const map = {
-    hushWisp:'hushWisp', paleMinstrel:'paleMinstrel',
-    echoPhantom:'echoPhantom', discordSprite:'discordSprite',
-    brokenConductor:'brokenConductor', theHush:'theHush',
-  };
-  return map[id] || 'hushWisp';
-}
-function noteSymbol(note) { return { strike:'♩', ward:'♪', verse:'♫' }[note] || '•'; }
+function noteIcon(note, scale) { return createSpriteCanvas(`note${cap(note)}`, scale); }
+function noteGlyph(note) { return { strike: '♩', ward: '♪', verse: '♫' }[note] || '•'; }
+function nodeIcon(t) { return { combat: '⚔', elite: '☠', rest: '🔥', boss: '💀' }[t] || '•'; }
+function nodeLabel(node) { return { combat: 'Fight', elite: 'Elite', rest: 'Campfire', boss: 'THE HUSH' }[node.type] || node.type; }
 function cap(s) { return s[0].toUpperCase() + s.slice(1); }
 function rnd() { return (Math.random() * 0x7fffffff) >>> 0; }
 

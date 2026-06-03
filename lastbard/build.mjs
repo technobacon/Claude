@@ -15,6 +15,7 @@ const MODULES = [
   'src/core/combat.js',
   'src/core/run.js',
   'src/ui/sprites.js',
+  'src/ui/arena.js',
   'src/ui/app.js',
 ];
 

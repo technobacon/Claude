@@ -1,300 +1,271 @@
-// sprites.js — canvas-based pixel art sprites.
+// src/ui/sprites.js
 //
-// Each sprite is defined as an array of equal-length strings (one per row).
-// Each character maps to a colour via the palette; '.' is transparent.
-// renderSprite(ctx, name, x, y, scale) draws to a 2D canvas context.
-// createSpriteCanvas(name, scale) returns a ready-to-append <canvas>.
+// Pixel-art sprite data + an offscreen-canvas cache. Each sprite is a grid of
+// characters mapped to a palette ('.' = transparent). On first use we bake the
+// grid into a 1px-per-cell offscreen <canvas>; the arena then drawImages it at
+// any scale with imageSmoothing off, so we get crisp scaling, squash & stretch,
+// rotation and tinting for free (animation is procedural, not frame-by-frame).
+//
+// Design language: the WORLD is desaturated greys/blue-greys. The BARD and the
+// musical NOTES are the only vivid colour — the player's eye is always drawn to
+// what matters (the "juice echoes the mechanic" principle).
 
 const P = {
   '.': null,
-  // Grayscale world
-  '0': '#080810', '1': '#14141e', '2': '#1e1e2c', '3': '#2c2c3e',
-  '4': '#3a3a50', '5': '#4e4e68', '6': '#666680', '7': '#8888a0',
-  '8': '#aaaabc', '9': '#d0d0e0',
-  // Bard — vibrant against the grey world
-  'b': '#5a9fe8', 'B': '#3a6db8', 'D': '#1e3f7a',   // blue hat
-  'g': '#ffd700', 'G': '#b89000',                     // gold
-  'v': '#9b3ef5', 'V': '#6b1bc5', 'W': '#4a0da0',    // violet cloak
-  'r': '#e04444', 'R': '#a02020',                     // red tunic
-  'c': '#00ffcc', 'C': '#00c09a',                     // cyan glow eyes
-  's': '#d4a080', 'S': '#a07050',                     // warm skin
-  // Note colours
-  'N': '#ff6b6b',  // Strike note (red)
-  'T': '#4ecdc4',  // Ward note (teal)
-  'Y': '#ffe66d',  // Verse note (yellow)
-  // Enemy accents
-  'w': '#c8c8d8', 'x': '#e8e8f8',  // wisp highlight
-  'e': '#7070d0', 'E': '#5050a8',  // echo phantom
-  'd': '#d05050', 'F': '#602020',  // discord sprite
-  'm': '#505070',                   // minstrel mid
-  'H': '#101018',                   // hush black
-  'Z': '#302840',                   // hush dark purple edge
+  // ── greyscale world ──
+  '0': '#06060c', '1': '#101019', '2': '#1b1b2a', '3': '#28283c',
+  '4': '#393952', '5': '#4d4d6a', '6': '#646483', '7': '#84849e',
+  '8': '#a6a6bd', '9': '#cfcfde', 'W': '#ececf6',
+  // ── bard: vivid ──
+  'h': '#6aa9ff', 'H': '#3f73d6', 'j': '#274a9e',           // hat blues
+  'k': '#ffd23f', 'K': '#c89414',                            // gold trim
+  'c': '#a85bff', 'C': '#7a2fe0', 'X': '#521aa8',            // violet cloak
+  'r': '#ff5e7a', 'R': '#c0304e',                            // rose tunic
+  'g': '#3afae0', 'G': '#16c9b4',                            // glowing cyan (eyes)
+  's': '#ffce9e', 'S': '#c98f63',                            // skin
+  'l': '#b9763a', 'L': '#7c4a20',                            // lute wood
+  'y': '#fff4c2',                                            // lute string highlight
+  // ── note colours ──
+  'N': '#ff5e5e', 'n': '#ffa1a1',   // strike (red)
+  'T': '#3afae0', 't': '#9bfff2',   // ward (teal)
+  'Y': '#ffe24a', 'y2': '#fff6b0',  // verse (yellow)  (y2 unused key safeguard)
+  // ── enemy accents (all muted, ghostly) ──
+  'p': '#b9b9cc', 'q': '#d8d8e8',   // pale wisp
+  'e': '#6f6f9e', 'E': '#4a4a72',   // echo phantom
+  'd': '#9a5560', 'D': '#5e2f37',   // discord (desaturated red)
+  'm': '#5c5c74', 'M': '#3c3c50',   // minstrel grey
+  'u': '#7a7a92', 'U': '#54546c',   // conductor
+  'z': '#231b33', 'Z': '#15101f',   // hush void
+  'v': '#3a2f55', 'V': '#2a2140',   // hush rim purple
 };
 
 const SPRITES = {
-  // ─── Bard (14×20) ─────────────────────────────────────────────────────────
+  // ── BARD (16×26) — hooded, lute across body, glowing eyes ─────────────────
   bard: [
-    '......DDD.....',
-    '.....DBBBD....',
-    '....DBBgBBD...',
-    '.....DBDBD....',
-    '.....8ss58....',
-    '....8sSCCS8...',
-    '....85sCCs5...',
-    '....855558....',
-    '...VVVrRrVVV..',
-    '..VVVrRGRrVVV.',
-    '.VVVVrrrrrVVVV',
-    'VVVVVrrrrrVVVVV',
-    '.VVVVvvvvvVVVV.',
-    '..VVVvvvvvVVV..',
-    '..VVV.....VVV..',
-    '..433.....334..',
-    '.4433.....3344.',
-    '44333.....33344',
-    '.433.......334.',
-    '..3.........3..',
+    '......jjjj......',
+    '.....jHHHHj.....',
+    '....jHHhhHHj....',
+    '...jHHhhhhHHj...',
+    '...jHhhkkhhHj...',
+    '....jHhkkhHj....',
+    '.....8ssss8.....',
+    '....8sSggSs8....',
+    '....8sSggSs8....',
+    '....88sssS88....',
+    '...XcccccccX....',
+    '..Xccc rr cccX..',
+    '..XccrRRRRrccX..',
+    '.XcccrRRRRrcccX.',
+    '.XcclLLrRrccccX.',
+    '.XcclyyLLLcccccX',
+    'XccclyylLLLccccX',
+    'XcccLyyl LLccccX',
+    '.XccLLll  ccccX.',
+    '.XXcc kk  ccXX..',
+    '..Xc  kk  cX....',
+    '..4c  44  c4....',
+    '..44  44  44....',
+    '.444  44  444...',
+    '.43.   .   .34..',
+    '.3.         .3..',
   ],
 
-  // ─── Hush Wisp (12×12) ─── ghostly translucent orb ───────────────────────
+  // ── HUSH WISP (14×14) — translucent floating orb wraith ───────────────────
   hushWisp: [
-    '....7777....',
-    '...7wwww7...',
-    '..7wwxx.w7..',
-    '.7wwx....w7.',
-    '.7wx.....w7.',
-    '77wx......77',
-    '77w......w77',
-    '.7w......77.',
-    '.7ww....w7..',
-    '..7wwwww7...',
-    '....7777....',
-    '....5554....',
+    '.....pppp.....',
+    '...ppqqqqpp...',
+    '..pqq qq qqp..',
+    '.pqq  WW  qqp.',
+    '.pq   WW   qp.',
+    'pq    qq    qp',
+    'pq          qp',
+    'pq    qq    qp',
+    '.pq  qqqq  qp.',
+    '.pqq qqqq qqp.',
+    '..pqq    qqp..',
+    '...pq qq qp...',
+    '....p q q p...',
+    '.....6 5 6....',
   ],
 
-  // ─── Pale Minstrel (12×18) ─── hollow ghost with broken lute ─────────────
+  // ── PALE MINSTREL (14×22) — hollow ghost, ribcage, broken lute ───────────
   paleMinstrel: [
-    '....9999....',
-    '...9m8m89...',
-    '...9m.m.9...',
-    '...9mmm89...',
-    '....8889....',
-    '..99mmm99...',
-    '..9mmmmm9...',
-    '.99mmmmm99..',
-    '.9mm...mm9..',
-    '..9m...m9...',
-    '..99.m.99...',
-    '...9mmm9....',
-    '....9m9.....',
-    '..44.m.44...',
-    '.444.m.444..',
-    '4444.m.4444.',
-    '...3.m.3....',
-    '....333.....',
+    '....9999 9....',
+    '...9MmmM89....',
+    '...9m gg m9...',
+    '...9m gg m9...',
+    '....9mmmm9....',
+    '.....9889.....',
+    '...99mmmm99...',
+    '..9MmmmmmmM9..',
+    '.9Mm m m m mM9',
+    '.9m mmmmmm m9.',
+    '.9m m m m m9..',
+    '..9 mmmmmm 9..',
+    '..9m m m m9...',
+    '...99mmmm9....',
+    '....9 mm 9....',
+    '...4M mm M4...',
+    '..44m mm m44..',
+    '.44 m mm m 44.',
+    '44  m mm m  44',
+    '..  M mm M ...',
+    '...4 4mm4 4...',
+    '....44  44....',
   ],
 
-  // ─── Echo Phantom (12×14) ─── shifting mirror shadow ─────────────────────
+  // ── ECHO PHANTOM (14×16) — duplicating shadow with mirror seams ──────────
   echoPhantom: [
-    '....EEEE....',
-    '..EEeeeEEE..',
-    '.EEee...eeE.',
-    'EEe.E.E..eE.',
-    'Ee.E...E.eEE',
-    'Ee..eee..eEE',
-    'Ee..eee..eE.',
-    'EEe.....eEE.',
-    '.EEeee.eEE..',
-    '..EEeeeEE...',
-    '...EEEEEE...',
-    '....EEEE....',
-    '....3443....',
-    '...33.333...',
+    '....EEEEEE....',
+    '..EEeeeeeeEE..',
+    '.Eeee g g eeE.',
+    'Eeee  ggg  eeE',
+    'Eee  gg gg  eE',
+    'Eee g  e  g eE',
+    'Ee e  eee  e e',
+    'Ee ee eee ee e',
+    'Eee  eeeee  eE',
+    'Eeee eeeee eeE',
+    '.Eee eeeee eE.',
+    '..EEe eee eEE.',
+    '...EE eee EE..',
+    '....EEE EEE...',
+    '...4E E E E4..',
+    '..44 4 4 4 44.',
   ],
 
-  // ─── Discord Sprite (12×14) ─── spiky chaos creature ─────────────────────
+  // ── DISCORD SPRITE (14×16) — jagged chaotic spiky imp ────────────────────
   discordSprite: [
-    '.d..d..d.d..',
-    'd.dd.dd..dd.',
-    '.dFFFFFFFd..',
-    'd.FFFFFFF.d.',
-    '.dFF.d.FFd..',
-    'd.FF...FFdd.',
-    '.dFF.d.FFd..',
-    'd.FFFFFFFd..',
-    '.dFFFFFFd...',
-    'dd.FFFdd.d..',
-    'd..d.dd..dd.',
-    'dd..d...dd..',
-    '.d.3.3.3.d..',
-    '..333.333...',
+    '..d..d..d..d..',
+    '.d.dd.dd.dd.d.',
+    'd.dDDDDDDDDd.d',
+    '.dDD g  g DDd.',
+    'd.D  gggg  D.d',
+    '.dD g e e g Dd',
+    'd.D  geeg   .d',
+    '.dD g eeee gDd',
+    'd.DD gggggDDd.',
+    '.dDDDDDDDDDDd.',
+    'd..dDDDDDDd..d',
+    '.dd.dDDDDd.dd.',
+    'd..d.dDDd.d..d',
+    '.dd..d.d..dd..',
+    '..d.4.d.d.4d..',
+    '....44.d.44...',
   ],
 
-  // ─── Broken Conductor (14×22) ─── tall imposing grey figure ──────────────
+  // ── BROKEN CONDUCTOR (16×26) — tall grey maestro, snapped baton ───────────
   brokenConductor: [
-    '......888.....',
-    '.....88888....',
-    '.....8m8m8....',
-    '....88888m8...',
-    '....8m888m8...',
-    '...8888mmm8...',
-    '..888mmmmm88..',
-    '.88mmmmmmmm8..',
-    '88mmm...mmm88.',
-    '.8mm.....mm8..',
-    '..8m.....m8...',
-    '..8mm...mm8...',
-    '..888mmm888...',
-    '..7mmmmmmm7...',
-    '..7mm...mm7...',
-    '..7m.....m7...',
-    '..7m.....m7...',
-    '..7m..6..m7...',  // broken baton
-    '..44.666.44...',
-    '.444..6..444..',
-    '4444.....4444.',
-    '...3.....3....',
+    '......8888......',
+    '.....8MUUM8.....',
+    '....8UMggMU8....',
+    '....8UMggMU8....',
+    '....8UMmmMU8....',
+    '.....8UmmU8.....',
+    '......8UU8......',
+    '....88UmmU88....',
+    '...8UUmmmmUU8...',
+    '..8UUmmmmmmUU8..',
+    '.8Uum m m m muU8',
+    '8Uum mmmmmm muU8',
+    '8Uu m m m m u uU',
+    '8U  mmmmmmmm  U8',
+    '.8U mm m m mmU8.',
+    '..8Um m m m mU..',
+    '..8U mmmmmm U8..',
+    '...8U m  m U8...',
+    '...8Uu7  u U8...',  // broken baton (7)
+    '...8U 7    U8...',
+    '...4U  7   U4...',
+    '..44u  7   u44..',
+    '.44 U      U 44.',
+    '44  Uu    uU  44',
+    '..  4U    U4 ...',
+    '...44 4  4 44...',
   ],
 
-  // ─── The Hush (18×24) ─── vast void entity ───────────────────────────────
+  // ── THE HUSH (20×26) — vast silence entity, void core, hollow eyes ───────
   theHush: [
-    '.....ZZZZZZZZ.....',
-    '...ZZH000000ZZ....',
-    '..ZHH00000000HZ...',
-    '.ZHH0000000000HZ..',
-    'ZZH00..00000..0HZ.',
-    'ZH000..H00H0..0HZZ',
-    'ZH0000H0000H0000HZ',
-    'ZH000000000000000H',
-    'ZH000000000000000H',
-    'ZZH0000000000000HZ',
-    '.ZH00.0000000.00HZ',
-    '.ZHH0.0.00.0.00HZ.',
-    '..ZH0..000000..HZ.',
-    '..ZZH00000000HZZ..',
-    '...ZHH000000HHZ...',
-    '....ZHHH00HHHZ....',
-    '.....ZZZHHZZZ.....',
-    '......ZZ33ZZ......',
-    '......Z3333Z......',
-    '.....Z333333Z.....',
-    '....ZZ......ZZ....',
-    '...Z..........Z...',
-    '..............Z...',
-    '..................',
-  ],
-
-  // ─── Note symbols (8×8) ──────────────────────────────────────────────────
-  noteStrike: [
-    '.NNN....',
-    'NNNNN...',
-    'N.NNN...',
-    '.NNNN...',
-    '...NN...',
-    '...NN...',
-    '..NNNNN.',
-    '..NNNNN.',
-  ],
-  noteWard: [
-    '.TTT....',
-    'TTTTT...',
-    'T.TTT...',
-    '.TTTT...',
-    '...TT...',
-    '..TTT...',
-    '.TTTTT..',
-    '.TTTTT..',
-  ],
-  noteVerse: [
-    '.YYY.YYY',
-    'YYYYYYY.',
-    'Y.YYYY..',
-    '.YYYYYYY',
-    '...YY.YY',
-    '...YYYY.',
-    '..YYYYYY',
-    '..YYYYYY',
-  ],
-
-  // ─── Chain link (8×8) ─────────────────────────────────────────────────────
-  chainEmpty: [
-    '..3333..',
-    '.3....3.',
-    '3......3',
-    '3......3',
-    '3......3',
-    '3......3',
-    '.3....3.',
-    '..3333..',
-  ],
-  harmonyGlow: [
-    '..7777..',
-    '.7cccc7.',
-    '7c....c7',
-    '7c....c7',
-    '7c....c7',
-    '7c....c7',
-    '.7cccc7.',
-    '..7777..',
-  ],
-  crescendoGlow: [
-    '..gggg..',
-    '.gYYYYg.',
-    'gY....Yg',
-    'gY....Yg',
-    'gY....Yg',
-    'gY....Yg',
-    '.gYYYYg.',
-    '..gggg..',
+    '......vvvvvvvv......',
+    '....vvVzzzzzzVvv....',
+    '...vVzzzzzzzzzzVv...',
+    '..vVzzzzzzzzzzzzVv..',
+    '.vVzzzz zz zz zzzVv.',
+    '.vzzz z      z zzzv.',
+    'vVzz z   gg   z zzVv',
+    'vzz z   gggg   z zzv',
+    'vzz    g    g    zzv',
+    'vzz   g  zz  g   zzv',
+    'vzz    g zz g    zzv',
+    'vVz     gggg     zVv',
+    '.vz      gg      zv.',
+    '.vVz   zzzzzz   zVv.',
+    '..vz  z      z  zv..',
+    '..vVz z zzzz z zVv..',
+    '...vVz zz  zz zVv...',
+    '....vVzz    zzVv....',
+    '.....vVzzzzzzVv.....',
+    '......vVzzzzVv......',
+    '.......vVzzVv.......',
+    '......4 vVVv 4......',
+    '.....44 v  v 44.....',
+    '....44  4  4  44....',
+    '...44   4  4   44...',
+    '..4.    4  4    .4..',
   ],
 };
 
-// ─── renderer ───────────────────────────────────────────────────────────────
+// Note glyphs (8×9) — small, vivid, used in chain slots & card corners.
+const NOTE_SPRITES = {
+  noteStrike: ['.NNNNN..','.NnnnN..','.NNNNN..','.N......','.N......','.N......','NNN.....','NNNNn...','.NNN....'],
+  noteWard:   ['.TTT.TTT','TtttTttt','TTTTTTTT','.T...T..','.T...T..','.T...T..','TTT.TTT.','NNN.NNN.','.TT..TT.'].map(r=>r.replace(/N/g,'T')),
+  noteVerse:  ['.YYYYY..','.YyyyY..','.YYYYY..','.Y...Y..','.Y...Y..','YYY.YYY.','YYY.YYY.','.Y...Y..','........'],
+};
+Object.assign(SPRITES, NOTE_SPRITES);
 
-export function renderSprite(ctx, name, x, y, scale = 1) {
+// ── offscreen-canvas cache ───────────────────────────────────────────────────
+const cache = new Map();
+
+function bake(name) {
   const rows = SPRITES[name];
-  if (!rows) return;
-  for (let row = 0; row < rows.length; row++) {
-    for (let col = 0; col < rows[row].length; col++) {
-      const colour = P[rows[row][col]];
-      if (!colour) continue;
-      ctx.fillStyle = colour;
-      ctx.fillRect(x + col * scale, y + row * scale, scale, scale);
+  if (!rows) return null;
+  const w = rows[0].length;
+  const h = rows.length;
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d');
+  for (let y = 0; y < h; y++) {
+    const row = rows[y];
+    for (let x = 0; x < w; x++) {
+      const col = P[row[x]];
+      if (!col) continue;
+      ctx.fillStyle = col;
+      ctx.fillRect(x, y, 1, 1);
     }
   }
+  return { canvas: cv, w, h };
 }
 
-export function spriteSize(name, scale = 1) {
-  const rows = SPRITES[name];
-  if (!rows) return { w: 0, h: 0 };
-  return { w: rows[0].length * scale, h: rows.length * scale };
+/** Return { canvas, w, h } for a sprite (w,h in pixel-cells). Cached. */
+export function getFrame(name) {
+  if (!cache.has(name)) cache.set(name, bake(name));
+  return cache.get(name);
 }
 
+/** Convenience for menus/cards: a DOM <canvas> drawn at integer scale. */
 export function createSpriteCanvas(name, scale = 1) {
-  const rows = SPRITES[name];
-  if (!rows) return document.createElement('canvas');
-  const w = rows[0].length * scale;
-  const h = rows.length * scale;
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  canvas.style.cssText = `width:${w}px;height:${h}px;image-rendering:pixelated;display:block;`;
-  const ctx = canvas.getContext('2d');
-  renderSprite(ctx, name, 0, 0, scale);
-  return canvas;
+  const f = getFrame(name);
+  if (!f) return document.createElement('canvas');
+  const cv = document.createElement('canvas');
+  cv.width = f.w * scale; cv.height = f.h * scale;
+  cv.style.cssText = `width:${f.w*scale}px;height:${f.h*scale}px;image-rendering:pixelated;display:block;`;
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(f.canvas, 0, 0, f.w * scale, f.h * scale);
+  return cv;
 }
 
-/** Animated glow: pulsing alpha on a second canvas layer. Returns { canvas, stop() }. */
-export function createGlowCanvas(name, scale = 1) {
-  const canvas = createSpriteCanvas(name, scale);
-  let raf = null;
-  let start = null;
-  function tick(ts) {
-    if (!start) start = ts;
-    const alpha = 0.5 + 0.5 * Math.sin((ts - start) / 400);
-    canvas.style.opacity = String(alpha);
-    raf = requestAnimationFrame(tick);
-  }
-  raf = requestAnimationFrame(tick);
-  return { canvas, stop: () => { if (raf) cancelAnimationFrame(raf); canvas.style.opacity = '1'; } };
-}
+export const ENEMY_SPRITE = {
+  hushWisp: 'hushWisp', paleMinstrel: 'paleMinstrel', echoPhantom: 'echoPhantom',
+  discordSprite: 'discordSprite', brokenConductor: 'brokenConductor', theHush: 'theHush',
+};

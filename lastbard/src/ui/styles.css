@@ -1,0 +1,363 @@
+/* The Last Bard — pixel art UI.
+   World is grey and muted; the Bard and note colours are vivid contrast points. */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  --bg:     #0d0d14;
+  --bg2:    #14141e;
+  --panel:  #1a1a28;
+  --panel2: #22223a;
+  --border: #2e2e4a;
+  --border2:#4a4a6a;
+  --ink:    #d8d8ec;
+  --muted:  #7070a0;
+  --hp:     #cc4444;
+  --hp-bg:  #3a1818;
+  --block:  #4488aa;
+  --tempo:  #ccaa44;
+  --gold:   #ccaa22;
+
+  /* Note colours */
+  --strike: #ff6b6b;
+  --ward:   #4ecdc4;
+  --verse:  #ffe66d;
+
+  /* Chain states */
+  --harmony:   #4ecdc4;
+  --crescendo: #ffd700;
+
+  /* Rarity */
+  --common:   #888890;
+  --uncommon: #4a8fd4;
+  --rare:     #d4a040;
+  --starter:  #505060;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  overscroll-behavior: none;
+  user-select: none; -webkit-user-select: none;
+  image-rendering: pixelated;
+}
+
+/* Pixel borders: 4px solid, no radius → chunky */
+.px-border  { border: 4px solid var(--border); }
+.px-border2 { border: 4px solid var(--border2); }
+
+#app {
+  max-width: 520px;
+  margin: 0 auto;
+  min-height: 100%;
+  display: flex; flex-direction: column;
+}
+
+/* ── screens ─────────────────────────────────────────────────── */
+.screen {
+  display: flex; flex-direction: column;
+  min-height: 100vh;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  padding-top: calc(8px + env(safe-area-inset-top));
+}
+.screen.center { justify-content: center; align-items: center; gap: 16px; text-align: center; }
+
+/* ── typography ──────────────────────────────────────────────── */
+.logo {
+  font-size: 1.8rem; letter-spacing: .12em;
+  color: var(--verse); text-shadow: 0 0 20px rgba(255,230,109,.6), 0 0 40px rgba(255,230,109,.3);
+  margin: 0; line-height: 1.4;
+}
+.subtitle { color: var(--muted); font-size: .7rem; line-height: 1.8; }
+.screen-title { font-size: .9rem; color: var(--ink); margin: 8px 0; }
+.hint { color: var(--muted); font-size: .65rem; line-height: 1.7; }
+
+/* ── buttons ─────────────────────────────────────────────────── */
+.btn {
+  appearance: none;
+  font-family: 'Press Start 2P', monospace;
+  font-size: .7rem;
+  background: var(--panel2);
+  color: var(--ink);
+  border: 4px solid var(--border2);
+  padding: 10px 14px;
+  cursor: pointer;
+  min-height: 44px;
+  image-rendering: pixelated;
+  /* pixel shadow effect */
+  box-shadow: 4px 4px 0 #000;
+}
+.btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #000; }
+.btn.primary { border-color: var(--verse); color: var(--verse); box-shadow: 4px 4px 0 var(--gold); }
+.btn.danger  { border-color: var(--hp);    color: var(--hp); }
+.btn.big     { font-size: .8rem; padding: 14px 20px; }
+.btn.tiny    { font-size: .55rem; padding: 6px 8px; min-height: 32px; box-shadow: 2px 2px 0 #000; }
+
+/* ── top bar ─────────────────────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 4px 8px;
+  border-bottom: 4px solid var(--border);
+  flex-wrap: wrap;
+}
+.pstat         { font-size: .6rem; font-weight: 700; }
+.pstat.hp      { color: var(--hp); }
+.pstat.block   { color: var(--block); }
+.pstat.tempo   { color: var(--tempo); }
+.pstat.gold    { color: var(--gold); }
+.topbar .btn.tiny { margin-left: auto; }
+
+/* ── chain strip ─────────────────────────────────────────────── */
+.chain-strip {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 6px 4px;
+  border-bottom: 4px solid var(--border);
+  background: var(--bg2);
+}
+.chain-slot {
+  position: relative;
+  width: 24px; height: 24px;
+  border: 3px solid var(--border2);
+  background: var(--panel);
+  display: flex; align-items: center; justify-content: center;
+}
+.chain-slot.filled-strike { border-color: var(--strike); background: rgba(255,107,107,.15); }
+.chain-slot.filled-ward   { border-color: var(--ward);   background: rgba(78,205,196,.15); }
+.chain-slot.filled-verse  { border-color: var(--verse);  background: rgba(255,230,109,.15); }
+.chain-dot { width: 6px; height: 6px; background: var(--border2); }
+
+.chain-label {
+  font-size: .5rem; color: var(--muted); text-align: center;
+  padding: 0 4px;
+}
+.chain-label.harmony   { color: var(--harmony); }
+.chain-label.crescendo { color: var(--crescendo); text-shadow: 0 0 8px var(--gold); }
+
+.muted-bar {
+  display: flex; gap: 4px; justify-content: center;
+  padding: 4px 4px 0;
+  font-size: .5rem;
+}
+.muted-chip {
+  padding: 2px 5px;
+  border: 2px solid #444460;
+  color: var(--muted);
+}
+.muted-chip.active { border-color: var(--hp); color: var(--hp); }
+
+/* ── combat ──────────────────────────────────────────────────── */
+.enemies-row {
+  display: flex; gap: 8px; justify-content: center;
+  padding: 10px 2px;
+  flex-wrap: wrap;
+}
+.enemy-card {
+  flex: 1 1 0; min-width: 100px; max-width: 180px;
+  background: var(--bg2);
+  border: 4px solid var(--border);
+  padding: 6px;
+  text-align: center;
+}
+.enemy-card.targetable {
+  border-color: var(--hp);
+  box-shadow: 0 0 12px rgba(204,68,68,.5), 4px 4px 0 var(--hp-bg);
+  cursor: pointer;
+}
+.enemy-card.targetable:active { transform: scale(.97); }
+.enemy-card.dead { opacity: .35; filter: grayscale(1); }
+
+.enemy-sprite-wrap {
+  display: flex; justify-content: center; align-items: flex-end;
+  height: 60px; margin-bottom: 4px;
+}
+.enemy-name  { font-size: .55rem; color: var(--muted); margin-bottom: 4px; }
+.intent-text {
+  font-size: .6rem; color: var(--hp); min-height: 1.2em;
+  margin-bottom: 4px; line-height: 1.5;
+}
+
+/* hp bar */
+.hpbar {
+  position: relative; height: 16px;
+  border: 3px solid var(--border2);
+  background: var(--hp-bg); overflow: hidden;
+}
+.hpfill {
+  position: absolute; inset: 0 auto 0 0;
+  background: var(--hp); transition: width .12s;
+}
+.hptext {
+  position: relative; font-size: .52rem;
+  text-align: center; line-height: 10px; padding-top: 3px;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.statuses {
+  display: flex; gap: 3px; justify-content: center; flex-wrap: wrap;
+  margin-top: 4px; min-height: 4px;
+}
+.chip {
+  font-size: .5rem; padding: 2px 4px;
+  border: 2px solid rgba(255,255,255,.15);
+  background: var(--panel2);
+}
+.chip.forte    { color: #e09050; border-color: #a06030; }
+.chip.exposed  { color: #e06060; border-color: #903030; }
+.chip.diminu   { color: #a0a050; border-color: #606020; }
+.chip.discord  { color: #c070c0; border-color: #703070; }
+.chip.resonant { color: var(--harmony); border-color: var(--harmony); }
+
+/* player status row in combat */
+.player-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 6px 4px;
+  border-top: 4px solid var(--border);
+  border-bottom: 4px solid var(--border);
+  background: var(--bg2);
+}
+
+/* ── hand ───────────────────────────────────────────────────── */
+.hand {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding: 8px 2px 10px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.card {
+  flex: 0 0 auto; width: 100px; min-height: 140px;
+  background: var(--panel2);
+  border: 4px solid var(--border2);
+  padding: 6px;
+  position: relative; cursor: pointer;
+  scroll-snap-align: center;
+  display: flex; flex-direction: column;
+  box-shadow: 3px 3px 0 #000;
+}
+.card.note-strike { border-color: var(--strike); }
+.card.note-ward   { border-color: var(--ward); }
+.card.note-verse  { border-color: var(--verse); }
+.card.selected    {
+  transform: translateY(-12px);
+  box-shadow: 0 8px 0 #000, 0 0 20px var(--crescendo);
+}
+.card.unplayable  { opacity: .4; cursor: default; }
+.card:not(.unplayable):active { transform: translateY(-4px); }
+
+.card-cost {
+  position: absolute; top: -8px; left: -8px;
+  width: 22px; height: 22px;
+  background: var(--tempo); color: #1a1410;
+  border: 3px solid var(--bg);
+  font-size: .65rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.card-note-icon {
+  position: absolute; top: -8px; right: -8px;
+  width: 16px; height: 16px;
+}
+.card-name { font-size: .55rem; margin: 6px 0 4px; line-height: 1.4; }
+.card-text { font-size: .48rem; color: var(--muted); line-height: 1.6; flex: 1; }
+.card-type-badge {
+  font-size: .42rem; color: var(--border2);
+  text-align: right; margin-top: 4px;
+}
+.card.note-strike .card-type-badge { color: var(--strike); }
+.card.note-ward   .card-type-badge { color: var(--ward); }
+.card.note-verse  .card-type-badge { color: var(--verse); }
+
+/* preview chain label on card */
+.card-chain-preview {
+  position: absolute; bottom: -14px; left: 0; right: 0;
+  text-align: center; font-size: .45rem;
+}
+.card-chain-preview.harmony   { color: var(--harmony); }
+.card-chain-preview.crescendo { color: var(--crescendo); }
+
+/* ── footer ─────────────────────────────────────────────────── */
+.footer {
+  margin-top: auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 2px calc(8px + env(safe-area-inset-bottom));
+}
+.pile-info { font-size: .5rem; color: var(--muted); line-height: 1.8; }
+
+/* ── map ─────────────────────────────────────────────────────── */
+.map-list { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 8px 2px; overflow-y: auto; }
+.map-node {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg2);
+  border: 4px solid var(--border);
+}
+.map-node.done { opacity: .4; }
+.map-node.here {
+  border-color: var(--verse);
+  box-shadow: 4px 4px 0 var(--gold), inset 0 0 0 2px rgba(255,230,109,.1);
+}
+.map-icon  { font-size: 1.1rem; width: 24px; text-align: center; flex-shrink: 0; }
+.map-label { font-size: .6rem; flex: 1; }
+.map-here  { font-size: .5rem; color: var(--verse); }
+
+/* ── reward / rest screens ───────────────────────────────────── */
+.reward-cards { display: flex; gap: 8px; justify-content: center; padding: 12px 2px; flex-wrap: wrap; }
+.reward-card  { width: 120px; }
+
+.relic-row { display: flex; gap: 8px; justify-content: center; padding: 8px 2px; flex-wrap: wrap; }
+.relic-card {
+  flex: 1 1 0; min-width: 100px; max-width: 200px;
+  background: var(--panel2); border: 4px solid var(--rare);
+  padding: 8px; cursor: pointer;
+  box-shadow: 3px 3px 0 #000;
+}
+.relic-card:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #000; }
+.relic-name { font-size: .55rem; color: var(--rare); margin-bottom: 6px; }
+.relic-text { font-size: .48rem; color: var(--muted); line-height: 1.6; }
+
+/* ── rest choices ────────────────────────────────────────────── */
+.rest-choices { display: flex; flex-direction: column; gap: 10px; padding: 10px 2px; }
+.rest-option {
+  background: var(--bg2); border: 4px solid var(--border2);
+  padding: 12px; cursor: pointer;
+  box-shadow: 3px 3px 0 #000;
+}
+.rest-option:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #000; }
+.rest-option-title { font-size: .65rem; color: var(--verse); margin-bottom: 6px; }
+.rest-option-desc  { font-size: .52rem; color: var(--muted); line-height: 1.7; }
+
+/* ── compose / transcribe ────────────────────────────────────── */
+.compose-cards { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 2px; justify-content: center; }
+.compose-card  { width: 90px; cursor: pointer; }
+.compose-card.pinned { border-color: var(--crescendo) !important; }
+
+.deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; padding: 8px 2px; overflow-y: auto; }
+.card.mini { width: auto; min-height: 60px; }
+.card.mini .card-text { display: none; }
+.card.mini .card-chain-preview { display: none; }
+.card.upgraded { box-shadow: 3px 3px 0 #000, 0 0 12px var(--rare); }
+
+/* ── end screens ─────────────────────────────────────────────── */
+.end-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+.end-icon { font-size: 4rem; line-height: 1; }
+.end-title { font-size: 1.2rem; line-height: 1.6; }
+.end-title.won  { color: var(--crescendo); text-shadow: 0 0 20px var(--gold); }
+.end-title.lost { color: var(--hp); }
+
+/* ── scanline overlay ────────────────────────────────────────── */
+#app::after {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,.08) 3px,
+    rgba(0,0,0,.08) 4px
+  );
+  z-index: 9999;
+}

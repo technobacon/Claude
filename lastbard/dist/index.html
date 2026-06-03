@@ -1,0 +1,2491 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#0d0d14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>The Last Bard</title>
+  <style>/* The Last Bard — pixel art UI.
+   World is grey and muted; the Bard and note colours are vivid contrast points. */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  --bg:     #0d0d14;
+  --bg2:    #14141e;
+  --panel:  #1a1a28;
+  --panel2: #22223a;
+  --border: #2e2e4a;
+  --border2:#4a4a6a;
+  --ink:    #d8d8ec;
+  --muted:  #7070a0;
+  --hp:     #cc4444;
+  --hp-bg:  #3a1818;
+  --block:  #4488aa;
+  --tempo:  #ccaa44;
+  --gold:   #ccaa22;
+
+  /* Note colours */
+  --strike: #ff6b6b;
+  --ward:   #4ecdc4;
+  --verse:  #ffe66d;
+
+  /* Chain states */
+  --harmony:   #4ecdc4;
+  --crescendo: #ffd700;
+
+  /* Rarity */
+  --common:   #888890;
+  --uncommon: #4a8fd4;
+  --rare:     #d4a040;
+  --starter:  #505060;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  overscroll-behavior: none;
+  user-select: none; -webkit-user-select: none;
+  image-rendering: pixelated;
+}
+
+/* Pixel borders: 4px solid, no radius → chunky */
+.px-border  { border: 4px solid var(--border); }
+.px-border2 { border: 4px solid var(--border2); }
+
+#app {
+  max-width: 520px;
+  margin: 0 auto;
+  min-height: 100%;
+  display: flex; flex-direction: column;
+}
+
+/* ── screens ─────────────────────────────────────────────────── */
+.screen {
+  display: flex; flex-direction: column;
+  min-height: 100vh;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  padding-top: calc(8px + env(safe-area-inset-top));
+}
+.screen.center { justify-content: center; align-items: center; gap: 16px; text-align: center; }
+
+/* ── typography ──────────────────────────────────────────────── */
+.logo {
+  font-size: 1.8rem; letter-spacing: .12em;
+  color: var(--verse); text-shadow: 0 0 20px rgba(255,230,109,.6), 0 0 40px rgba(255,230,109,.3);
+  margin: 0; line-height: 1.4;
+}
+.subtitle { color: var(--muted); font-size: .7rem; line-height: 1.8; }
+.screen-title { font-size: .9rem; color: var(--ink); margin: 8px 0; }
+.hint { color: var(--muted); font-size: .65rem; line-height: 1.7; }
+
+/* ── buttons ─────────────────────────────────────────────────── */
+.btn {
+  appearance: none;
+  font-family: 'Press Start 2P', monospace;
+  font-size: .7rem;
+  background: var(--panel2);
+  color: var(--ink);
+  border: 4px solid var(--border2);
+  padding: 10px 14px;
+  cursor: pointer;
+  min-height: 44px;
+  image-rendering: pixelated;
+  /* pixel shadow effect */
+  box-shadow: 4px 4px 0 #000;
+}
+.btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #000; }
+.btn.primary { border-color: var(--verse); color: var(--verse); box-shadow: 4px 4px 0 var(--gold); }
+.btn.danger  { border-color: var(--hp);    color: var(--hp); }
+.btn.big     { font-size: .8rem; padding: 14px 20px; }
+.btn.tiny    { font-size: .55rem; padding: 6px 8px; min-height: 32px; box-shadow: 2px 2px 0 #000; }
+
+/* ── top bar ─────────────────────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 4px 8px;
+  border-bottom: 4px solid var(--border);
+  flex-wrap: wrap;
+}
+.pstat         { font-size: .6rem; font-weight: 700; }
+.pstat.hp      { color: var(--hp); }
+.pstat.block   { color: var(--block); }
+.pstat.tempo   { color: var(--tempo); }
+.pstat.gold    { color: var(--gold); }
+.topbar .btn.tiny { margin-left: auto; }
+
+/* ── chain strip ─────────────────────────────────────────────── */
+.chain-strip {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 6px 4px;
+  border-bottom: 4px solid var(--border);
+  background: var(--bg2);
+}
+.chain-slot {
+  position: relative;
+  width: 24px; height: 24px;
+  border: 3px solid var(--border2);
+  background: var(--panel);
+  display: flex; align-items: center; justify-content: center;
+}
+.chain-slot.filled-strike { border-color: var(--strike); background: rgba(255,107,107,.15); }
+.chain-slot.filled-ward   { border-color: var(--ward);   background: rgba(78,205,196,.15); }
+.chain-slot.filled-verse  { border-color: var(--verse);  background: rgba(255,230,109,.15); }
+.chain-dot { width: 6px; height: 6px; background: var(--border2); }
+
+.chain-label {
+  font-size: .5rem; color: var(--muted); text-align: center;
+  padding: 0 4px;
+}
+.chain-label.harmony   { color: var(--harmony); }
+.chain-label.crescendo { color: var(--crescendo); text-shadow: 0 0 8px var(--gold); }
+
+.muted-bar {
+  display: flex; gap: 4px; justify-content: center;
+  padding: 4px 4px 0;
+  font-size: .5rem;
+}
+.muted-chip {
+  padding: 2px 5px;
+  border: 2px solid #444460;
+  color: var(--muted);
+}
+.muted-chip.active { border-color: var(--hp); color: var(--hp); }
+
+/* ── combat ──────────────────────────────────────────────────── */
+.enemies-row {
+  display: flex; gap: 8px; justify-content: center;
+  padding: 10px 2px;
+  flex-wrap: wrap;
+}
+.enemy-card {
+  flex: 1 1 0; min-width: 100px; max-width: 180px;
+  background: var(--bg2);
+  border: 4px solid var(--border);
+  padding: 6px;
+  text-align: center;
+}
+.enemy-card.targetable {
+  border-color: var(--hp);
+  box-shadow: 0 0 12px rgba(204,68,68,.5), 4px 4px 0 var(--hp-bg);
+  cursor: pointer;
+}
+.enemy-card.targetable:active { transform: scale(.97); }
+.enemy-card.dead { opacity: .35; filter: grayscale(1); }
+
+.enemy-sprite-wrap {
+  display: flex; justify-content: center; align-items: flex-end;
+  height: 60px; margin-bottom: 4px;
+}
+.enemy-name  { font-size: .55rem; color: var(--muted); margin-bottom: 4px; }
+.intent-text {
+  font-size: .6rem; color: var(--hp); min-height: 1.2em;
+  margin-bottom: 4px; line-height: 1.5;
+}
+
+/* hp bar */
+.hpbar {
+  position: relative; height: 16px;
+  border: 3px solid var(--border2);
+  background: var(--hp-bg); overflow: hidden;
+}
+.hpfill {
+  position: absolute; inset: 0 auto 0 0;
+  background: var(--hp); transition: width .12s;
+}
+.hptext {
+  position: relative; font-size: .52rem;
+  text-align: center; line-height: 10px; padding-top: 3px;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.statuses {
+  display: flex; gap: 3px; justify-content: center; flex-wrap: wrap;
+  margin-top: 4px; min-height: 4px;
+}
+.chip {
+  font-size: .5rem; padding: 2px 4px;
+  border: 2px solid rgba(255,255,255,.15);
+  background: var(--panel2);
+}
+.chip.forte    { color: #e09050; border-color: #a06030; }
+.chip.exposed  { color: #e06060; border-color: #903030; }
+.chip.diminu   { color: #a0a050; border-color: #606020; }
+.chip.discord  { color: #c070c0; border-color: #703070; }
+.chip.resonant { color: var(--harmony); border-color: var(--harmony); }
+
+/* player status row in combat */
+.player-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 6px 4px;
+  border-top: 4px solid var(--border);
+  border-bottom: 4px solid var(--border);
+  background: var(--bg2);
+}
+
+/* ── hand ───────────────────────────────────────────────────── */
+.hand {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding: 8px 2px 10px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.card {
+  flex: 0 0 auto; width: 100px; min-height: 140px;
+  background: var(--panel2);
+  border: 4px solid var(--border2);
+  padding: 6px;
+  position: relative; cursor: pointer;
+  scroll-snap-align: center;
+  display: flex; flex-direction: column;
+  box-shadow: 3px 3px 0 #000;
+}
+.card.note-strike { border-color: var(--strike); }
+.card.note-ward   { border-color: var(--ward); }
+.card.note-verse  { border-color: var(--verse); }
+.card.selected    {
+  transform: translateY(-12px);
+  box-shadow: 0 8px 0 #000, 0 0 20px var(--crescendo);
+}
+.card.unplayable  { opacity: .4; cursor: default; }
+.card:not(.unplayable):active { transform: translateY(-4px); }
+
+.card-cost {
+  position: absolute; top: -8px; left: -8px;
+  width: 22px; height: 22px;
+  background: var(--tempo); color: #1a1410;
+  border: 3px solid var(--bg);
+  font-size: .65rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.card-note-icon {
+  position: absolute; top: -8px; right: -8px;
+  width: 16px; height: 16px;
+}
+.card-name { font-size: .55rem; margin: 6px 0 4px; line-height: 1.4; }
+.card-text { font-size: .48rem; color: var(--muted); line-height: 1.6; flex: 1; }
+.card-type-badge {
+  font-size: .42rem; color: var(--border2);
+  text-align: right; margin-top: 4px;
+}
+.card.note-strike .card-type-badge { color: var(--strike); }
+.card.note-ward   .card-type-badge { color: var(--ward); }
+.card.note-verse  .card-type-badge { color: var(--verse); }
+
+/* preview chain label on card */
+.card-chain-preview {
+  position: absolute; bottom: -14px; left: 0; right: 0;
+  text-align: center; font-size: .45rem;
+}
+.card-chain-preview.harmony   { color: var(--harmony); }
+.card-chain-preview.crescendo { color: var(--crescendo); }
+
+/* ── footer ─────────────────────────────────────────────────── */
+.footer {
+  margin-top: auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 2px calc(8px + env(safe-area-inset-bottom));
+}
+.pile-info { font-size: .5rem; color: var(--muted); line-height: 1.8; }
+
+/* ── map ─────────────────────────────────────────────────────── */
+.map-list { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 8px 2px; overflow-y: auto; }
+.map-node {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg2);
+  border: 4px solid var(--border);
+}
+.map-node.done { opacity: .4; }
+.map-node.here {
+  border-color: var(--verse);
+  box-shadow: 4px 4px 0 var(--gold), inset 0 0 0 2px rgba(255,230,109,.1);
+}
+.map-icon  { font-size: 1.1rem; width: 24px; text-align: center; flex-shrink: 0; }
+.map-label { font-size: .6rem; flex: 1; }
+.map-here  { font-size: .5rem; color: var(--verse); }
+
+/* ── reward / rest screens ───────────────────────────────────── */
+.reward-cards { display: flex; gap: 8px; justify-content: center; padding: 12px 2px; flex-wrap: wrap; }
+.reward-card  { width: 120px; }
+
+.relic-row { display: flex; gap: 8px; justify-content: center; padding: 8px 2px; flex-wrap: wrap; }
+.relic-card {
+  flex: 1 1 0; min-width: 100px; max-width: 200px;
+  background: var(--panel2); border: 4px solid var(--rare);
+  padding: 8px; cursor: pointer;
+  box-shadow: 3px 3px 0 #000;
+}
+.relic-card:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #000; }
+.relic-name { font-size: .55rem; color: var(--rare); margin-bottom: 6px; }
+.relic-text { font-size: .48rem; color: var(--muted); line-height: 1.6; }
+
+/* ── rest choices ────────────────────────────────────────────── */
+.rest-choices { display: flex; flex-direction: column; gap: 10px; padding: 10px 2px; }
+.rest-option {
+  background: var(--bg2); border: 4px solid var(--border2);
+  padding: 12px; cursor: pointer;
+  box-shadow: 3px 3px 0 #000;
+}
+.rest-option:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #000; }
+.rest-option-title { font-size: .65rem; color: var(--verse); margin-bottom: 6px; }
+.rest-option-desc  { font-size: .52rem; color: var(--muted); line-height: 1.7; }
+
+/* ── compose / transcribe ────────────────────────────────────── */
+.compose-cards { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 2px; justify-content: center; }
+.compose-card  { width: 90px; cursor: pointer; }
+.compose-card.pinned { border-color: var(--crescendo) !important; }
+
+.deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; padding: 8px 2px; overflow-y: auto; }
+.card.mini { width: auto; min-height: 60px; }
+.card.mini .card-text { display: none; }
+.card.mini .card-chain-preview { display: none; }
+.card.upgraded { box-shadow: 3px 3px 0 #000, 0 0 12px var(--rare); }
+
+/* ── end screens ─────────────────────────────────────────────── */
+.end-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+.end-icon { font-size: 4rem; line-height: 1; }
+.end-title { font-size: 1.2rem; line-height: 1.6; }
+.end-title.won  { color: var(--crescendo); text-shadow: 0 0 20px var(--gold); }
+.end-title.lost { color: var(--hp); }
+
+/* ── scanline overlay ────────────────────────────────────────── */
+#app::after {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,.08) 3px,
+    rgba(0,0,0,.08) 4px
+  );
+  z-index: 9999;
+}
+</style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+(function () {
+'use strict';
+// === src/core/rng.js ===
+// core/rng.js
+//
+// Seeded, serializable pseudo-random number generator. The entire game is
+// deterministic given a seed: same seed → same shuffles, same enemy moves,
+// same card rewards. That makes runs reproducible and — crucially — lets the
+// combat/run logic be unit-tested without flakiness.
+//
+// The generator is mulberry32: tiny, fast, and its whole state is a single
+// 32-bit integer, so we can stash it inside a (JSON-serializable) game state
+// and thread it through pure transitions instead of relying on a hidden global.
+
+/**
+ * Create a PRNG from a numeric seed.
+ * The returned function yields floats in [0, 1). `next.state()` reads back the
+ * current internal state so it can be persisted and resumed later.
+ * @param {number} seed
+ * @returns {(() => number) & { state: () => number }}
+ */
+function makeRng(seed) {
+  let s = seed >>> 0;
+  const next = () => {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  next.state = () => s >>> 0;
+  return next;
+}
+
+/**
+ * Integer in [0, n). Uses one draw from `rng`.
+ * @param {() => number} rng
+ * @param {number} n
+ * @returns {number}
+ */
+function randInt(rng, n) {
+  return Math.floor(rng() * n);
+}
+
+/**
+ * Pick a random element from a non-empty array. Returns undefined if empty.
+ * @template T
+ * @param {() => number} rng
+ * @param {T[]} arr
+ * @returns {T｜undefined}
+ */
+function pick(rng, arr) {
+  if (!arr || arr.length === 0) return undefined;
+  return arr[randInt(rng, arr.length)];
+}
+
+/**
+ * Return a NEW array that is a Fisher–Yates shuffle of `arr`. Does not mutate
+ * the input. Deterministic for a given rng state.
+ * @template T
+ * @param {T[]} arr
+ * @param {() => number} rng
+ * @returns {T[]}
+ */
+function shuffle(arr, rng) {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = randInt(rng, i + 1);
+    const tmp = out[i];
+    out[i] = out[j];
+    out[j] = tmp;
+  }
+  return out;
+}
+
+/**
+ * Weighted pick. `weighted` is an array of [item, weight] pairs.
+ * @template T
+ * @param {() => number} rng
+ * @param {Array<[T, number]>} weighted
+ * @returns {T｜undefined}
+ */
+function pickWeighted(rng, weighted) {
+  const total = weighted.reduce((sum, [, w]) => sum + w, 0);
+  if (total <= 0) return undefined;
+  let r = rng() * total;
+  for (const [item, w] of weighted) {
+    r -= w;
+    if (r < 0) return item;
+  }
+  return weighted[weighted.length - 1][0];
+}
+
+
+// === src/core/cards.js ===
+// core/cards.js — The Last Bard card catalog.
+//
+// Each card has a `note` ('strike'|'ward'|'verse') for the chain system,
+// and a `type` ('attack'|'skill'|'power') for mechanical rules (powers exhaust).
+// Effects are declarative; combat.js interprets them.
+//
+// Effect kinds:
+//   { kind:'damage', amount, target, times?, forteMult? }
+//   { kind:'damageFromBlock', target }
+//   { kind:'block', amount }
+//   { kind:'draw', amount }
+//   { kind:'tempo', amount }        gain tempo mid-turn
+//   { kind:'hpLoss', amount }
+//   { kind:'status', status, amount, target }  forte/exposed/diminuendo/resonant/discordant
+//   { kind:'power', power, amount }
+//   { kind:'mute', note, amount, target }      mute a note type
+//   { kind:'allDamage', amount }    hit all enemies
+//   { kind:'reaper', amount }       hit all, heal unblocked
+
+
+const CARDS = {
+  // --- Starter ------------------------------------------------------------
+  simpleStrike: {
+    id: 'simpleStrike', name: 'Simple Strike', note: 'strike', type: 'attack',
+    cost: 1, rarity: 'starter', text: 'Deal 7 damage.',
+    effects: [{ kind: 'damage', amount: 7, target: 'enemy' }],
+    upgrade: { text: 'Deal 10 damage.', effects: [{ kind: 'damage', amount: 10, target: 'enemy' }] },
+  },
+  tuneUp: {
+    id: 'tuneUp', name: 'Tune Up', note: 'verse', type: 'skill',
+    cost: 1, rarity: 'starter', text: 'Draw 2 cards.',
+    effects: [{ kind: 'draw', amount: 2 }],
+    upgrade: { text: 'Draw 3 cards.', effects: [{ kind: 'draw', amount: 3 }] },
+  },
+  restChord: {
+    id: 'restChord', name: 'Rest Chord', note: 'ward', type: 'skill',
+    cost: 1, rarity: 'starter', text: 'Gain 6 Block.',
+    effects: [{ kind: 'block', amount: 6 }],
+    upgrade: { text: 'Gain 9 Block.', effects: [{ kind: 'block', amount: 9 }] },
+  },
+  ballad: {
+    id: 'ballad', name: 'Ballad', note: 'strike', type: 'power',
+    cost: 2, rarity: 'starter', text: 'Gain 2 Forte each turn.',
+    effects: [{ kind: 'power', power: 'ballad', amount: 2 }],
+    upgrade: { text: 'Gain 3 Forte each turn.', effects: [{ kind: 'power', power: 'ballad', amount: 3 }] },
+  },
+
+  // --- Common -------------------------------------------------------------
+  sharpVerse: {
+    id: 'sharpVerse', name: 'Sharp Verse', note: 'strike', type: 'attack',
+    cost: 1, rarity: 'common', text: 'Deal 9 damage.',
+    effects: [{ kind: 'damage', amount: 9, target: 'enemy' }],
+    upgrade: { text: 'Deal 12 damage.', effects: [{ kind: 'damage', amount: 12, target: 'enemy' }] },
+  },
+  twinNotes: {
+    id: 'twinNotes', name: 'Twin Notes', note: 'strike', type: 'attack',
+    cost: 1, rarity: 'common', text: 'Deal 5 damage twice.',
+    effects: [{ kind: 'damage', amount: 5, target: 'enemy', times: 2 }],
+    upgrade: { text: 'Deal 6 damage twice.', effects: [{ kind: 'damage', amount: 6, target: 'enemy', times: 2 }] },
+  },
+  staccato: {
+    id: 'staccato', name: 'Staccato', note: 'strike', type: 'attack',
+    cost: 1, rarity: 'common', text: 'Deal 6 damage. Apply 1 Discordant.',
+    effects: [
+      { kind: 'damage', amount: 6, target: 'enemy' },
+      { kind: 'status', status: 'discordant', amount: 1, target: 'enemy' },
+    ],
+    upgrade: { text: 'Deal 8 damage. Apply 2 Discordant.', effects: [
+      { kind: 'damage', amount: 8, target: 'enemy' },
+      { kind: 'status', status: 'discordant', amount: 2, target: 'enemy' },
+    ]},
+  },
+  lullaby: {
+    id: 'lullaby', name: 'Lullaby', note: 'ward', type: 'skill',
+    cost: 1, rarity: 'common', text: 'Gain 8 Block.',
+    effects: [{ kind: 'block', amount: 8 }],
+    upgrade: { text: 'Gain 11 Block.', effects: [{ kind: 'block', amount: 11 }] },
+  },
+  counterpoint: {
+    id: 'counterpoint', name: 'Counterpoint', note: 'ward', type: 'skill',
+    cost: 1, rarity: 'common', text: 'Gain 5 Block. Draw 1.',
+    effects: [{ kind: 'block', amount: 5 }, { kind: 'draw', amount: 1 }],
+    upgrade: { text: 'Gain 7 Block. Draw 1.', effects: [{ kind: 'block', amount: 7 }, { kind: 'draw', amount: 1 }] },
+  },
+  sostenuto: {
+    id: 'sostenuto', name: 'Sostenuto', note: 'ward', type: 'skill',
+    cost: 0, rarity: 'common', text: 'Gain 4 Block.',
+    effects: [{ kind: 'block', amount: 4 }],
+    upgrade: { text: 'Gain 6 Block.', effects: [{ kind: 'block', amount: 6 }] },
+  },
+  quickVerse: {
+    id: 'quickVerse', name: 'Quick Verse', note: 'verse', type: 'skill',
+    cost: 0, rarity: 'common', text: 'Draw 2 cards.',
+    effects: [{ kind: 'draw', amount: 2 }],
+    upgrade: { text: 'Draw 3 cards.', effects: [{ kind: 'draw', amount: 3 }] },
+  },
+  tempoMark: {
+    id: 'tempoMark', name: 'Tempo Mark', note: 'verse', type: 'skill',
+    cost: 1, rarity: 'common', text: 'Gain 2 Tempo.',
+    effects: [{ kind: 'tempo', amount: 2 }],
+    upgrade: { text: 'Gain 3 Tempo.', effects: [{ kind: 'tempo', amount: 3 }] },
+  },
+  diminuendoCard: {
+    id: 'diminuendoCard', name: 'Diminuendo', note: 'verse', type: 'skill',
+    cost: 1, rarity: 'common', text: 'Apply 2 Diminuendo to enemy. Draw 1.',
+    effects: [
+      { kind: 'status', status: 'diminuendo', amount: 2, target: 'enemy' },
+      { kind: 'draw', amount: 1 },
+    ],
+    upgrade: { text: 'Apply 3 Diminuendo to enemy. Draw 1.', effects: [
+      { kind: 'status', status: 'diminuendo', amount: 3, target: 'enemy' },
+      { kind: 'draw', amount: 1 },
+    ]},
+  },
+
+  // --- Uncommon -----------------------------------------------------------
+  fortissimo: {
+    id: 'fortissimo', name: 'Fortissimo', note: 'strike', type: 'attack',
+    cost: 2, rarity: 'uncommon', text: 'Deal 14 damage. Forte applies ×3.',
+    effects: [{ kind: 'damage', amount: 14, target: 'enemy', forteMult: 3 }],
+    upgrade: { text: 'Deal 18 damage. Forte applies ×3.', effects: [{ kind: 'damage', amount: 18, target: 'enemy', forteMult: 3 }] },
+  },
+  bodyOfSong: {
+    id: 'bodyOfSong', name: 'Body of Song', note: 'ward', type: 'attack',
+    cost: 1, rarity: 'uncommon', text: 'Deal damage equal to your Block.',
+    effects: [{ kind: 'damageFromBlock', target: 'enemy' }],
+    upgrade: { cost: 0, text: '(0) Deal damage equal to your Block.', effects: [{ kind: 'damageFromBlock', target: 'enemy' }] },
+  },
+  dissonantBlade: {
+    id: 'dissonantBlade', name: 'Dissonant Blade', note: 'strike', type: 'attack',
+    cost: 1, rarity: 'uncommon', text: 'Deal 10 damage. Apply 2 Exposed.',
+    effects: [
+      { kind: 'damage', amount: 10, target: 'enemy' },
+      { kind: 'status', status: 'exposed', amount: 2, target: 'enemy' },
+    ],
+    upgrade: { text: 'Deal 13 damage. Apply 3 Exposed.', effects: [
+      { kind: 'damage', amount: 13, target: 'enemy' },
+      { kind: 'status', status: 'exposed', amount: 3, target: 'enemy' },
+    ]},
+  },
+  battleHymn: {
+    id: 'battleHymn', name: 'Battle Hymn', note: 'strike', type: 'attack',
+    cost: 1, rarity: 'uncommon', text: 'Deal 8 damage. Gain 4 Block.',
+    effects: [
+      { kind: 'damage', amount: 8, target: 'enemy' },
+      { kind: 'block', amount: 4 },
+    ],
+    upgrade: { text: 'Deal 10 damage. Gain 6 Block.', effects: [
+      { kind: 'damage', amount: 10, target: 'enemy' },
+      { kind: 'block', amount: 6 },
+    ]},
+  },
+  resonantWall: {
+    id: 'resonantWall', name: 'Resonant Wall', note: 'ward', type: 'skill',
+    cost: 1, rarity: 'uncommon', text: 'Gain 11 Block. Gain Resonant.',
+    effects: [
+      { kind: 'block', amount: 11 },
+      { kind: 'status', status: 'resonant', amount: 1, target: 'self' },
+    ],
+    upgrade: { text: 'Gain 14 Block. Gain Resonant.', effects: [
+      { kind: 'block', amount: 14 },
+      { kind: 'status', status: 'resonant', amount: 1, target: 'self' },
+    ]},
+  },
+  interlude: {
+    id: 'interlude', name: 'Interlude', note: 'ward', type: 'skill',
+    cost: 2, rarity: 'uncommon', text: 'Gain 20 Block.',
+    effects: [{ kind: 'block', amount: 20 }],
+    upgrade: { cost: 1, text: '(1) Gain 20 Block.', effects: [{ kind: 'block', amount: 20 }] },
+  },
+  aria: {
+    id: 'aria', name: 'Aria', note: 'verse', type: 'skill',
+    cost: 1, rarity: 'uncommon', text: 'Draw 3 cards.',
+    effects: [{ kind: 'draw', amount: 3 }],
+    upgrade: { cost: 0, text: '(0) Draw 3 cards.', effects: [{ kind: 'draw', amount: 3 }] },
+  },
+  coda: {
+    id: 'coda', name: 'Coda', note: 'verse', type: 'skill',
+    cost: 1, rarity: 'uncommon', text: 'Gain 2 Forte. Draw 2.',
+    effects: [
+      { kind: 'status', status: 'forte', amount: 2, target: 'self' },
+      { kind: 'draw', amount: 2 },
+    ],
+    upgrade: { text: 'Gain 3 Forte. Draw 2.', effects: [
+      { kind: 'status', status: 'forte', amount: 3, target: 'self' },
+      { kind: 'draw', amount: 2 },
+    ]},
+  },
+  crescendoPower: {
+    id: 'crescendoPower', name: 'Crescendo', note: 'verse', type: 'power',
+    cost: 1, rarity: 'uncommon', text: 'Crescendo bonuses are +4.',
+    effects: [{ kind: 'power', power: 'crescendoBonus', amount: 4 }],
+    upgrade: { text: 'Crescendo bonuses are +6.', effects: [{ kind: 'power', power: 'crescendoBonus', amount: 6 }] },
+  },
+
+  // --- Rare ---------------------------------------------------------------
+  requiem: {
+    id: 'requiem', name: 'Requiem', note: 'strike', type: 'attack',
+    cost: 2, rarity: 'rare', text: 'Deal 6 damage to ALL. Heal HP equal to unblocked damage.',
+    effects: [{ kind: 'reaper', amount: 6 }],
+    upgrade: { text: 'Deal 9 damage to ALL. Heal HP equal to unblocked damage.', effects: [{ kind: 'reaper', amount: 9 }] },
+  },
+  theLastNote: {
+    id: 'theLastNote', name: 'The Last Note', note: 'strike', type: 'attack',
+    cost: 3, rarity: 'rare', text: 'Deal 30 damage. Can only play on a Crescendo turn.',
+    effects: [{ kind: 'damage', amount: 30, target: 'enemy' }],
+    crescendoOnly: true,
+    upgrade: { text: 'Deal 40 damage. Can only play on a Crescendo turn.', effects: [{ kind: 'damage', amount: 40, target: 'enemy' }] },
+  },
+  maestro: {
+    id: 'maestro', name: 'Maestro', note: 'strike', type: 'power',
+    cost: 3, rarity: 'rare', text: 'Gain 2 Forte at the start of each turn.',
+    effects: [{ kind: 'power', power: 'maestro', amount: 2 }],
+    upgrade: { text: 'Gain 3 Forte at the start of each turn.', effects: [{ kind: 'power', power: 'maestro', amount: 3 }] },
+  },
+  eternalRefrain: {
+    id: 'eternalRefrain', name: 'Eternal Refrain', note: 'ward', type: 'power',
+    cost: 1, rarity: 'rare', text: 'Gain 4 Block at the end of each turn.',
+    effects: [{ kind: 'power', power: 'eternalRefrain', amount: 4 }],
+    upgrade: { text: 'Gain 6 Block at the end of each turn.', effects: [{ kind: 'power', power: 'eternalRefrain', amount: 6 }] },
+  },
+  perfectPitch: {
+    id: 'perfectPitch', name: 'Perfect Pitch', note: 'verse', type: 'power',
+    cost: 1, rarity: 'rare', text: 'Each Harmony draws 1 extra card.',
+    effects: [{ kind: 'power', power: 'perfectPitch', amount: 1 }],
+    upgrade: { text: 'Each Harmony draws 2 extra cards.', effects: [{ kind: 'power', power: 'perfectPitch', amount: 2 }] },
+  },
+  improvise: {
+    id: 'improvise', name: 'Improvise', note: 'verse', type: 'skill',
+    cost: 0, rarity: 'rare', text: 'Copy the last card you played.',
+    effects: [{ kind: 'copyLast' }],
+    upgrade: { text: 'Copy the last card you played twice.', effects: [{ kind: 'copyLast', times: 2 }] },
+  },
+};
+
+const STARTER_DECK = [
+  'simpleStrike', 'simpleStrike', 'simpleStrike', 'simpleStrike',
+  'tuneUp', 'tuneUp',
+  'restChord', 'restChord', 'restChord',
+  'ballad',
+];
+
+const REWARD_POOL = {
+  common: ['sharpVerse','twinNotes','staccato','lullaby','counterpoint','sostenuto','quickVerse','tempoMark','diminuendoCard'],
+  uncommon: ['fortissimo','bodyOfSong','dissonantBlade','battleHymn','resonantWall','interlude','aria','coda','crescendoPower'],
+  rare: ['requiem','theLastNote','maestro','eternalRefrain','perfectPitch','improvise'],
+};
+
+function getCard(id) {
+  const c = CARDS[id];
+  if (!c) throw new Error(`Unknown card id: ${id}`);
+  return c;
+}
+
+/** Build card instances from id list. Each gets a unique uid. */
+function makeDeck(ids, startUid = 1) {
+  return ids.map((id, i) => ({ uid: startUid + i, id, upgraded: false }));
+}
+
+/** Roll 3 distinct reward cards weighted by rarity. */
+function rollRewards(rng) {
+  const out = [];
+  let guard = 0;
+  while (out.length < 3 && guard++ < 50) {
+    const roll = rng();
+    const rarity = roll < 0.58 ? 'common' : roll < 0.88 ? 'uncommon' : 'rare';
+    const id = pick(rng, REWARD_POOL[rarity]);
+    if (id && !out.includes(id)) out.push(id);
+  }
+  return out;
+}
+
+/** Effective stats for a card instance (applies upgrade if flagged). */
+function effectiveCard(instance) {
+  const base = getCard(instance.id);
+  if (!instance.upgraded || !base.upgrade) return base;
+  return { ...base, ...base.upgrade };
+}
+
+
+// === src/core/enemies.js ===
+// core/enemies.js — The Last Bard enemy definitions.
+//
+// Enemies are creatures of The Hush — mostly grey, silence-themed, and several
+// directly attack the player's chain system by applying Muted.
+// Move effects targeting 'player' deal damage or apply debuffs to the player.
+
+
+const ENEMIES = {
+  // --- Normal -------------------------------------------------------------
+  hushWisp: {
+    id: 'hushWisp', name: 'Hush Wisp', hp: [28, 34], tier: 'normal',
+    moves: {
+      whisper: {
+        id: 'whisper', name: 'Whisper', intent: 'debuff',
+        effects: [{ kind: 'mute', note: 'strike', amount: 2, target: 'player' }],
+      },
+      drain: {
+        id: 'drain', name: 'Drain', intent: 'attack',
+        effects: [{ kind: 'damage', amount: 6, target: 'player' }],
+      },
+    },
+    chooseMove(self) {
+      // Whisper first turn, then alternate
+      if (self.history.length === 0) return 'whisper';
+      return self.history[self.history.length - 1] === 'whisper' ? 'drain' : 'whisper';
+    },
+  },
+
+  paleMinstrel: {
+    id: 'paleMinstrel', name: 'Pale Minstrel', hp: [36, 42], tier: 'normal',
+    moves: {
+      offKey: {
+        id: 'offKey', name: 'Off-Key', intent: 'attackdebuff',
+        effects: [
+          { kind: 'damage', amount: 7, target: 'player' },
+          { kind: 'status', status: 'discordant', amount: 1, target: 'player' },
+        ],
+      },
+      wail: {
+        id: 'wail', name: 'Wail', intent: 'attack',
+        effects: [{ kind: 'damage', amount: 10, target: 'player' }],
+      },
+    },
+    chooseMove(self) {
+      const idx = self.history.length;
+      // Pattern: offKey, wail, wail, offKey, wail, wail …
+      return idx % 3 === 0 ? 'offKey' : 'wail';
+    },
+  },
+
+  echoPhantom: {
+    id: 'echoPhantom', name: 'Echo Phantom', hp: [24, 30], tier: 'normal',
+    moves: {
+      fade: {
+        id: 'fade', name: 'Fade', intent: 'defend',
+        effects: [{ kind: 'block', amount: 8 }],
+      },
+      mirror: {
+        id: 'mirror', name: 'Mirror', intent: 'attack',
+        // Special: copies last card played. Handled in combat.js executeEnemyMove.
+        effects: [{ kind: 'mirrorLast' }],
+      },
+    },
+    chooseMove(self) {
+      if (self.history.length === 0) return 'fade';
+      return 'mirror';
+    },
+  },
+
+  discordSprite: {
+    id: 'discordSprite', name: 'Discord Sprite', hp: [30, 36], tier: 'normal',
+    // Passive: gains 2 Forte each time the player achieves Crescendo.
+    crescendoEnrage: 2,
+    moves: {
+      feedback: {
+        id: 'feedback', name: 'Feedback', intent: 'attack',
+        effects: [{ kind: 'damage', amount: 8, target: 'player' }],
+      },
+      cacophony: {
+        id: 'cacophony', name: 'Cacophony', intent: 'attackdebuff',
+        effects: [
+          { kind: 'damage', amount: 5, target: 'player' },
+          { kind: 'mute', note: 'random', amount: 1, target: 'player' },
+        ],
+      },
+    },
+    chooseMove(self) {
+      const idx = self.history.length;
+      return idx % 3 === 2 ? 'cacophony' : 'feedback';
+    },
+  },
+
+  // --- Elite --------------------------------------------------------------
+  brokenConductor: {
+    id: 'brokenConductor', name: 'Broken Conductor', hp: [90, 96], tier: 'elite',
+    moves: {
+      batonDown: {
+        id: 'batonDown', name: 'Baton Down', intent: 'attackdebuff',
+        effects: [
+          { kind: 'status', status: 'exposed', amount: 2, target: 'player' },
+          { kind: 'block', amount: 8 },
+        ],
+      },
+      diminish: {
+        id: 'diminish', name: 'Diminish', intent: 'attackdebuff',
+        effects: [
+          { kind: 'damage', amount: 9, target: 'player' },
+          { kind: 'mute', note: 'ward', amount: 2, target: 'player' },
+        ],
+      },
+      fortissimoAtk: {
+        id: 'fortissimoAtk', name: 'Fortissimo', intent: 'attack',
+        effects: [{ kind: 'damage', amount: 18, target: 'player' }],
+      },
+    },
+    chooseMove(self) {
+      const cycle = ['batonDown', 'diminish', 'fortissimoAtk'];
+      return cycle[self.history.length % cycle.length];
+    },
+  },
+
+  // --- Boss ---------------------------------------------------------------
+  theHush: {
+    id: 'theHush', name: 'The Hush', hp: [160, 160], tier: 'boss',
+    // Phase 2 kicks in at 80 HP.
+    phase2Threshold: 80,
+    moves: {
+      silence: {
+        id: 'silence', name: 'Grand Silence', intent: 'debuff',
+        effects: [
+          { kind: 'mute', note: 'strike', amount: 2, target: 'player' },
+          { kind: 'mute', note: 'ward', amount: 2, target: 'player' },
+          { kind: 'mute', note: 'verse', amount: 2, target: 'player' },
+        ],
+      },
+      consume: {
+        id: 'consume', name: 'Consume', intent: 'attackbuff',
+        effects: [
+          { kind: 'damage', amount: 12, target: 'player' },
+          { kind: 'status', status: 'forte', amount: 2, target: 'self' },
+        ],
+      },
+      voidPulse: {
+        id: 'voidPulse', name: 'Void Pulse', intent: 'attack',
+        // Special: deals 10 + 10 if player hasn't Crescendoed this turn.
+        effects: [{ kind: 'voidPulse', base: 10, bonus: 10 }],
+      },
+      erasure: {
+        id: 'erasure', name: 'Erasure', intent: 'attackdebuff',
+        // Clears player's chain strip in addition to dealing damage.
+        effects: [
+          { kind: 'damage', amount: 12, target: 'player' },
+          { kind: 'clearChain' },
+        ],
+      },
+      grandPause: {
+        id: 'grandPause', name: 'Grand Pause', intent: 'buff',
+        // Does nothing this turn; next turn plays two moves.
+        effects: [{ kind: 'chargeUp' }],
+      },
+      finalSilence: {
+        id: 'finalSilence', name: 'Final Silence', intent: 'debuff',
+        effects: [
+          { kind: 'damage', amount: 16, target: 'player' },
+          { kind: 'mute', note: 'strike', amount: 3, target: 'player' },
+          { kind: 'mute', note: 'ward', amount: 3, target: 'player' },
+          { kind: 'mute', note: 'verse', amount: 3, target: 'player' },
+        ],
+      },
+    },
+    chooseMove(self) {
+      const phase1 = ['silence', 'consume', 'voidPulse', 'erasure', 'consume', 'voidPulse'];
+      const phase2 = ['silence', 'consume', 'voidPulse', 'grandPause', 'finalSilence', 'erasure', 'consume', 'voidPulse'];
+      const cycle = self.phase2 ? phase2 : phase1;
+      return cycle[self.history.length % cycle.length];
+    },
+  },
+};
+
+function getEnemy(id) {
+  const e = ENEMIES[id];
+  if (!e) throw new Error(`Unknown enemy id: ${id}`);
+  return e;
+}
+
+function spawnEnemy(id, rng, index) {
+  const def = getEnemy(id);
+  const [lo, hi] = def.hp;
+  const maxHp = lo + Math.floor(rng() * (hi - lo + 1));
+  return {
+    slot: index, id, name: def.name, tier: def.tier,
+    hp: maxHp, maxHp, block: 0,
+    statuses: { forte: 0, exposed: 0, diminuendo: 0, discordant: 0 },
+    history: [], intent: null,
+    phase2: false,  // for The Hush
+    chargedUp: false,  // for Grand Pause
+  };
+}
+
+function resolveIntent(enemy, rng) {
+  const def = getEnemy(enemy.id);
+  // Check phase2 transition for The Hush
+  if (def.phase2Threshold && enemy.hp <= def.phase2Threshold) {
+    enemy.phase2 = true;
+  }
+  const moveId = def.chooseMove(enemy, rng) ?? pick(rng, Object.keys(def.moves));
+  enemy.intent = moveId;
+  return def.moves[moveId];
+}
+
+const ENCOUNTERS = {
+  normal: [
+    ['hushWisp'],
+    ['paleMinstrel'],
+    ['echoPhantom'],
+    ['discordSprite'],
+    ['hushWisp', 'echoPhantom'],
+    ['paleMinstrel', 'hushWisp'],
+  ],
+  elite: [['brokenConductor']],
+  boss: [['theHush']],
+};
+
+
+// === src/core/combat.js ===
+// core/combat.js — The Last Bard combat engine.
+//
+// The key addition over a standard roguelike engine is the CHAIN SYSTEM:
+//   chain[]         note types played this turn (chronological)
+//   crescendoFired  true once Crescendo triggers; resets each turn
+//
+// Chain resolution (checked after each card play):
+//   neutral  – same note as last play OR note is muted → no bonus
+//   harmony  – different note from last play            → small bonus
+//   crescendo– all 3 note types appear in last 3 plays  → big bonus (once/turn)
+//
+// Statuses: forte (damage up), exposed (incoming ×1.5), diminuendo (outgoing ×0.75),
+//           resonant (next chain bonus doubled), discordant (enemy outgoing ×0.75).
+// Muted: per note-type counter on the player; muted notes cost +1 tempo and
+//        are transparent to chain tracking.
+
+
+const HAND_SIZE = 5;
+const BASE_TEMPO = 3;
+const MAX_HAND = 10;
+
+// --- setup ------------------------------------------------------------------
+
+function startCombat({ player, deck, enemyIds, seed }) {
+  const rng = makeRng((seed >>> 0) || 1);
+  const state = {
+    rngSeed: 0,
+    turn: 1,
+    phase: 'player',
+    player: {
+      hp: player.hp, maxHp: player.maxHp,
+      block: 0, tempo: BASE_TEMPO, maxTempo: BASE_TEMPO,
+      statuses: { forte: 0, exposed: 0, diminuendo: 0, resonant: 0 },
+      muted: { strike: 0, ward: 0, verse: 0 },
+      powers: {},
+    },
+    enemies: enemyIds.map((id, i) => spawnEnemy(id, rng, i)),
+    chain: [],
+    crescendoFired: false,
+    lastPlayed: null,   // { id, note } – for Improvise / Echo Phantom mirror
+    drawPile: shuffle(deck.map((c) => ({ ...c })), rng),
+    hand: [],
+    discardPile: [],
+    exhaustPile: [],
+    log: [],
+  };
+  drawCards(state, HAND_SIZE, rng);
+  for (const e of state.enemies) resolveIntent(e, rng);
+  state.rngSeed = rng.state();
+  return state;
+}
+
+// --- queries ----------------------------------------------------------------
+
+function aliveEnemies(state) {
+  return state.enemies.filter((e) => e.hp > 0);
+}
+
+function isOver(state) {
+  return state.phase === 'won' || state.phase === 'lost';
+}
+
+function canPlay(state, handIndex) {
+  if (state.phase !== 'player') return false;
+  const inst = state.hand[handIndex];
+  if (!inst) return false;
+  const def = effectiveCard(inst);
+  if (def.crescendoOnly && !state.crescendoFired) return false;
+  const muted = (state.player.muted[def.note] || 0) > 0;
+  return (def.cost + (muted ? 1 : 0)) <= state.player.tempo;
+}
+
+function chainStatus(state) {
+  const len = state.chain.length;
+  if (len === 0) return 'empty';
+  if (len >= 2 && state.chain[len - 1] !== state.chain[len - 2]) {
+    if (len >= 3 && new Set(state.chain.slice(-3)).size === 3) return 'crescendo';
+    return 'harmony';
+  }
+  return 'neutral';
+}
+
+/** Preview what would happen to chain if `noteType` is played next. */
+function previewChain(state, noteType, isMuted) {
+  if (isMuted) return 'neutral';
+  const prev = state.chain[state.chain.length - 1];
+  if (!prev || prev === noteType) return 'neutral';
+  const projected = [...state.chain, noteType];
+  if (projected.length >= 3 && new Set(projected.slice(-3)).size === 3) return 'crescendo';
+  return 'harmony';
+}
+
+function intentPreview(enemy) {
+  const def = getEnemy(enemy.id);
+  const move = def.moves[enemy.intent];
+  if (!move) return null;
+  let damage = 0, times = 1, block = 0;
+  for (const eff of move.effects) {
+    if (eff.kind === 'damage') {
+      times = eff.times || 1;
+      let d = eff.amount + (enemy.statuses.forte || 0);
+      if ((enemy.statuses.diminuendo || 0) > 0) d = Math.floor(d * 0.75);
+      if ((enemy.statuses.discordant || 0) > 0) d = Math.floor(d * 0.75);
+      damage = Math.max(0, d);
+    } else if (eff.kind === 'block') {
+      block += eff.amount;
+    } else if (eff.kind === 'voidPulse') {
+      damage = eff.base + eff.bonus; // worst case shown
+    } else if (eff.kind === 'finalSilence') {
+      damage = eff.amount || 16;
+    }
+  }
+  return { name: move.name, intent: move.intent, damage, times, block };
+}
+
+// --- player turn ------------------------------------------------------------
+
+function playCard(state, handIndex, targetSlot) {
+  if (state.phase !== 'player') return state;
+  const inst = state.hand[handIndex];
+  if (!inst) return state;
+  const def = effectiveCard(inst);
+  const noteType = def.note;
+  const isMuted = (state.player.muted[noteType] || 0) > 0;
+  const effectiveCost = def.cost + (isMuted ? 1 : 0);
+  if (effectiveCost > state.player.tempo) return state;
+  if (def.crescendoOnly && !state.crescendoFired) return state;
+
+  const s = structuredClone(state);
+  const rng = makeRng(s.rngSeed);
+  s.player.tempo -= effectiveCost;
+
+  // Determine chain result BEFORE mutating chain
+  const chainResult = isMuted ? 'neutral' : computeChainResult(s.chain, noteType);
+
+  // Apply card effects
+  for (const eff of def.effects) {
+    applyCardEffect(s, eff, targetSlot, rng, inst);
+    if (s.player.hp <= 0) break;
+  }
+
+  // Update chain (muted cards don't contribute)
+  if (!isMuted) s.chain.push(noteType);
+  s.lastPlayed = { id: inst.id, note: noteType };
+
+  // Apply chain bonus
+  if (chainResult !== 'neutral') {
+    applyChainBonus(s, chainResult, noteType, targetSlot, rng);
+  }
+
+  // Move card out of hand
+  s.hand.splice(handIndex, 1);
+  const isPower = getCard(inst.id).type === 'power';
+  if (isPower) s.exhaustPile.push(inst);
+  else s.discardPile.push(inst);
+
+  settleOutcome(s);
+  s.rngSeed = rng.state();
+  return s;
+}
+
+function endTurn(state) {
+  if (state.phase !== 'player') return state;
+  const s = structuredClone(state);
+  const rng = makeRng(s.rngSeed);
+
+  // End-of-turn powers
+  if (s.player.powers.eternalRefrain) s.player.block += s.player.powers.eternalRefrain;
+
+  tickPlayerDebuffs(s.player);
+  tickMuted(s.player);
+
+  s.discardPile.push(...s.hand);
+  s.hand = [];
+  s.phase = 'enemy';
+
+  for (const enemy of s.enemies) {
+    if (enemy.hp <= 0) continue;
+    enemy.block = 0;
+    executeEnemyMove(s, enemy, rng);
+    enemy.history.push(enemy.intent);
+    tickEnemyDebuffs(enemy.statuses);
+    if (s.player.hp <= 0) {
+      s.player.hp = 0;
+      s.phase = 'lost';
+      s.rngSeed = rng.state();
+      return s;
+    }
+  }
+
+  // Start next player turn
+  s.turn += 1;
+  s.player.block = 0;
+  s.chain = [];
+  s.crescendoFired = false;
+  if (s.player.powers.maestro) s.player.statuses.forte += s.player.powers.maestro;
+  if (s.player.powers.ballad) s.player.statuses.forte += s.player.powers.ballad;
+  s.player.tempo = s.player.maxTempo;
+  drawCards(s, HAND_SIZE, rng);
+  for (const e of aliveEnemies(s)) resolveIntent(e, rng);
+  s.phase = 'player';
+
+  s.rngSeed = rng.state();
+  return s;
+}
+
+// --- chain ------------------------------------------------------------------
+
+function computeChainResult(chain, newNote) {
+  const prev = chain[chain.length - 1];
+  if (!prev || prev === newNote) return 'neutral';
+  const projected = [...chain, newNote];
+  if (projected.length >= 3 && new Set(projected.slice(-3)).size === 3) return 'crescendo';
+  return 'harmony';
+}
+
+function applyChainBonus(s, result, noteType, targetSlot, rng) {
+  const resonant = (s.player.statuses.resonant || 0) > 0;
+  const mult = resonant ? 2 : 1;
+  if (resonant) s.player.statuses.resonant -= 1;
+
+  // Harmony bonus (always applied for harmony and crescendo)
+  let harmonyDraw = 0;
+  if (noteType === 'strike') {
+    const e = chosenEnemy(s, targetSlot);
+    if (e) dealToEnemy(e, 3 * mult);
+  } else if (noteType === 'ward') {
+    s.player.block += 3 * mult;
+  } else if (noteType === 'verse') {
+    harmonyDraw = 1 * mult;
+  }
+  // Perfect Pitch: extra draw on Harmony for non-verse notes
+  const ppBonus = s.player.powers.perfectPitch || 0;
+  if (ppBonus && noteType !== 'verse') harmonyDraw += ppBonus;
+  if (harmonyDraw > 0) drawCards(s, harmonyDraw, rng);
+
+  // Crescendo bonus (once per turn, in addition to Harmony)
+  if (result === 'crescendo' && !s.crescendoFired) {
+    s.crescendoFired = true;
+    const bonus = s.player.powers.crescendoBonus || 0;
+    if (noteType === 'strike') {
+      const dmg = 8 + bonus;
+      for (const e of aliveEnemies(s)) dealToEnemy(e, dmg);
+      // Discord Sprite passive: gains forte when player crescendos
+      for (const e of aliveEnemies(s)) {
+        const def = getEnemy(e.id);
+        if (def.crescendoEnrage) e.statuses.forte += def.crescendoEnrage;
+      }
+    } else if (noteType === 'ward') {
+      s.player.block += 8 + bonus;
+      s.player.hp = Math.min(s.player.maxHp, s.player.hp + 4 + Math.floor(bonus / 2));
+    } else if (noteType === 'verse') {
+      drawCards(s, 3 + Math.floor(bonus / 2), rng);
+      s.player.tempo = Math.min(s.player.tempo + 1, s.player.maxTempo + 2);
+    }
+  }
+}
+
+// --- card effects -----------------------------------------------------------
+
+function applyCardEffect(s, eff, targetSlot, rng, sourceInst) {
+  switch (eff.kind) {
+    case 'damage': {
+      const times = eff.times || 1;
+      const base = attackPower(eff.amount, s.player.statuses, eff.forteMult || 1);
+      for (let t = 0; t < times; t++) {
+        if (eff.target === 'allEnemies') {
+          for (const e of aliveEnemies(s)) dealToEnemy(e, base);
+        } else {
+          const e = chosenEnemy(s, targetSlot);
+          if (e) dealToEnemy(e, base);
+        }
+      }
+      break;
+    }
+    case 'allDamage': {
+      const base = attackPower(eff.amount, s.player.statuses, 1);
+      for (const e of aliveEnemies(s)) dealToEnemy(e, base);
+      break;
+    }
+    case 'damageFromBlock': {
+      let base = s.player.block;
+      if ((s.player.statuses.diminuendo || 0) > 0) base = Math.floor(base * 0.75);
+      const e = chosenEnemy(s, targetSlot);
+      if (e) dealToEnemy(e, Math.max(0, base));
+      break;
+    }
+    case 'reaper': {
+      const base = attackPower(eff.amount, s.player.statuses, 1);
+      let healed = 0;
+      for (const e of aliveEnemies(s)) healed += dealToEnemy(e, base);
+      s.player.hp = Math.min(s.player.maxHp, s.player.hp + healed);
+      break;
+    }
+    case 'block':
+      s.player.block += eff.amount;
+      break;
+    case 'draw':
+      drawCards(s, eff.amount, rng);
+      break;
+    case 'tempo':
+      s.player.tempo += eff.amount;
+      break;
+    case 'hpLoss':
+      s.player.hp -= eff.amount;
+      break;
+    case 'status':
+      if (eff.target === 'self') {
+        s.player.statuses[eff.status] = (s.player.statuses[eff.status] || 0) + eff.amount;
+      } else {
+        const e = chosenEnemy(s, targetSlot);
+        if (e) e.statuses[eff.status] = (e.statuses[eff.status] || 0) + eff.amount;
+      }
+      break;
+    case 'power':
+      s.player.powers[eff.power] = (s.player.powers[eff.power] || 0) + eff.amount;
+      break;
+    case 'mute':
+      applyMute(s, eff, rng);
+      break;
+    case 'copyLast': {
+      if (!s.lastPlayed) break;
+      const copyDef = effectiveCard({ id: s.lastPlayed.id, upgraded: false });
+      const times = eff.times || 1;
+      for (let t = 0; t < times; t++) {
+        for (const cEff of copyDef.effects) {
+          applyCardEffect(s, cEff, targetSlot, rng, null);
+        }
+      }
+      break;
+    }
+    default:
+      // clearChain, chargeUp, voidPulse handled in enemy execution
+      break;
+  }
+}
+
+function applyMute(s, eff, rng) {
+  // 'random' note type picks one that isn't already muted (or just picks randomly)
+  let note = eff.note;
+  if (note === 'random') {
+    const candidates = ['strike', 'ward', 'verse'].filter((n) => !s.player.muted[n]);
+    note = candidates.length > 0 ? pick(rng, candidates) : pick(rng, ['strike', 'ward', 'verse']);
+  }
+  if (eff.target === 'player') {
+    s.player.muted[note] = (s.player.muted[note] || 0) + eff.amount;
+  }
+}
+
+// --- enemy execution --------------------------------------------------------
+
+function executeEnemyMove(s, enemy, rng) {
+  const def = getEnemy(enemy.id);
+  const move = def.moves[enemy.intent];
+  if (!move) return;
+
+  // Grand Pause charges up; next turn the enemy acts twice
+  if (enemy.chargedUp) {
+    enemy.chargedUp = false;
+    // Execute the NEXT move in cycle as well
+    const nextMoveId = def.chooseMove({ ...enemy, history: [...enemy.history, enemy.intent] }, rng);
+    const nextMove = def.moves[nextMoveId];
+    if (nextMove) executeMovEffects(s, enemy, nextMove.effects, rng);
+  }
+
+  executeMovEffects(s, enemy, move.effects, rng);
+}
+
+function executeMovEffects(s, enemy, effects, rng) {
+  for (const eff of effects) {
+    switch (eff.kind) {
+      case 'damage': {
+        const times = eff.times || 1;
+        let d = eff.amount + (enemy.statuses.forte || 0);
+        if ((enemy.statuses.diminuendo || 0) > 0) d = Math.floor(d * 0.75);
+        if ((enemy.statuses.discordant || 0) > 0) d = Math.floor(d * 0.75);
+        d = Math.max(0, d);
+        for (let t = 0; t < times; t++) {
+          dealToUnit(s.player, d);
+          if (s.player.hp <= 0) return;
+        }
+        break;
+      }
+      case 'block':
+        enemy.block += eff.amount;
+        break;
+      case 'status':
+        if (eff.target === 'self') {
+          enemy.statuses[eff.status] = (enemy.statuses[eff.status] || 0) + eff.amount;
+        } else {
+          s.player.statuses[eff.status] = (s.player.statuses[eff.status] || 0) + eff.amount;
+        }
+        break;
+      case 'mute':
+        applyMute(s, eff, rng);
+        break;
+      case 'mirrorLast': {
+        if (!s.lastPlayed) break;
+        const mirrorDef = getCard(s.lastPlayed.id);
+        // Mirror only damage effects, and deal them to the player
+        for (const mEff of mirrorDef.effects) {
+          if (mEff.kind === 'damage') {
+            let d = mEff.amount + (enemy.statuses.forte || 0);
+            d = Math.max(0, d);
+            dealToUnit(s.player, d);
+          }
+        }
+        break;
+      }
+      case 'voidPulse': {
+        let d = eff.base + (enemy.statuses.forte || 0);
+        if (!s.crescendoFired) d += eff.bonus;
+        d = Math.max(0, d);
+        dealToUnit(s.player, d);
+        break;
+      }
+      case 'clearChain':
+        // Deals damage then clears chain
+        if (eff.amount) {
+          let d = eff.amount + (enemy.statuses.forte || 0);
+          d = Math.max(0, d);
+          dealToUnit(s.player, d);
+        }
+        s.chain = [];
+        s.crescendoFired = false;
+        break;
+      case 'chargeUp':
+        enemy.chargedUp = true;
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+// --- damage math ------------------------------------------------------------
+
+function attackPower(base, attackerStatuses, forteMult) {
+  let dmg = base + (attackerStatuses.forte || 0) * forteMult;
+  if ((attackerStatuses.diminuendo || 0) > 0) dmg = Math.floor(dmg * 0.75);
+  return Math.max(0, dmg);
+}
+
+function dealToEnemy(enemy, base) {
+  let dmg = base;
+  if ((enemy.statuses.exposed || 0) > 0) dmg = Math.floor(dmg * 1.5);
+  return dealToUnit(enemy, dmg);
+}
+
+function dealToUnit(unit, dmg) {
+  const blocked = Math.min(unit.block, dmg);
+  unit.block -= blocked;
+  const hpLoss = dmg - blocked;
+  unit.hp -= hpLoss;
+  return hpLoss;
+}
+
+// --- piles ------------------------------------------------------------------
+
+function drawCards(s, n, rng) {
+  for (let i = 0; i < n; i++) {
+    if (s.hand.length >= MAX_HAND) break;
+    if (s.drawPile.length === 0) {
+      if (s.discardPile.length === 0) break;
+      s.drawPile = shuffle(s.discardPile, rng);
+      s.discardPile = [];
+    }
+    s.hand.push(s.drawPile.shift());
+  }
+}
+
+function tickPlayerDebuffs(player) {
+  const st = player.statuses;
+  if (st.exposed > 0) st.exposed -= 1;
+  if (st.diminuendo > 0) st.diminuendo -= 1;
+  if (st.discordant > 0) st.discordant -= 1;
+}
+
+function tickMuted(player) {
+  for (const note of ['strike', 'ward', 'verse']) {
+    if (player.muted[note] > 0) player.muted[note] -= 1;
+  }
+}
+
+function tickEnemyDebuffs(statuses) {
+  if (statuses.exposed > 0) statuses.exposed -= 1;
+  if (statuses.diminuendo > 0) statuses.diminuendo -= 1;
+  if (statuses.discordant > 0) statuses.discordant -= 1;
+}
+
+function chosenEnemy(s, targetSlot) {
+  const target = s.enemies.find((e) => e.slot === targetSlot && e.hp > 0);
+  return target ?? (aliveEnemies(s)[0] || null);
+}
+
+function settleOutcome(s) {
+  if (s.player.hp <= 0) { s.player.hp = 0; s.phase = 'lost'; }
+  else if (aliveEnemies(s).length === 0) s.phase = 'won';
+}
+
+
+// === src/core/run.js ===
+// core/run.js — The Last Bard run/map layer.
+//
+// Run phases: 'map' | 'combat' | 'reward' | 'rest' | 'dead' | 'won'.
+// Rest choices: 'recover' (heal) | 'compose' (peek top 5, pin 1) | 'transcribe' (upgrade card).
+
+
+const START_HP = 72;
+const REST_HEAL = 0.30;
+
+// Act layout: 8 nodes, last is always boss.
+const LAYOUT = ['combat', 'combat', 'rest', 'combat', 'elite', 'rest', 'combat', 'boss'];
+
+const RELICS = [
+  { id: 'brokenLute',   name: 'Broken Lute String',    text: 'First Strike card each combat deals double damage.' },
+  { id: 'metronome',    name: 'Metronome',              text: 'Each Harmony grants +1 Block.' },
+  { id: 'ancientScore', name: 'Ancient Score',          text: 'Start each combat with 1 extra Tempo.' },
+  { id: 'reedFragment', name: 'Reed Fragment',          text: 'If ≥3 Ward cards in hand at turn start, gain 5 Block.' },
+  { id: 'conductorBaton', name: "Conductor's Baton",   text: 'Crescendo bonuses are 50% stronger.' },
+  { id: 'tuningFork',   name: 'Resonant Tuning Fork',  text: 'Start each combat Resonant.' },
+];
+
+function newRun(seed) {
+  const rng = makeRng((seed >>> 0) || 1);
+  const nodes = LAYOUT.map((type) => ({
+    type,
+    group: type === 'combat' ? pick(rng, ENCOUNTERS.normal)
+         : type === 'elite'  ? pick(rng, ENCOUNTERS.elite)
+         : type === 'boss'   ? pick(rng, ENCOUNTERS.boss)
+         : null,
+  }));
+  const deck = makeDeck(STARTER_DECK);
+  return {
+    seed: (seed >>> 0) || 1,
+    rngSeed: rng.state(),
+    floor: 0,
+    nodes,
+    player: { hp: START_HP, maxHp: START_HP, gold: 0, deck, nextUid: deck.length + 1, relics: [] },
+    phase: 'map',
+    combat: null,
+    reward: null,
+    compose: null,   // { peeked: [{uid,id}], remaining: [...] }
+    transcribe: null, // { options: [{uid,id,upgraded}] }  — deck cards to pick from
+  };
+}
+
+function currentNode(run) {
+  return run.nodes[run.floor] ?? null;
+}
+
+function enterNode(run) {
+  if (run.phase !== 'map') return run;
+  const node = currentNode(run);
+  if (!node) return run;
+
+  const s = structuredClone(run);
+  if (node.type === 'rest') {
+    s.phase = 'rest';
+    return s;
+  }
+
+  const rng = makeRng(s.rngSeed);
+  const combatSeed = (randInt(rng, 0x7fffffff) ^ (s.floor + 1)) >>> 0;
+  s.rngSeed = rng.state();
+
+  // Apply relic: Ancient Score → +1 max tempo (handled in startCombat via player obj)
+  const hasAncientScore = s.player.relics.some((r) => r.id === 'ancientScore');
+  const hasTuningFork = s.player.relics.some((r) => r.id === 'tuningFork');
+
+  s.combat = startCombat({
+    player: { hp: s.player.hp, maxHp: s.player.maxHp },
+    deck: structuredClone(s.player.deck),
+    enemyIds: node.group,
+    seed: combatSeed,
+  });
+
+  // Post-spawn relic effects
+  if (hasAncientScore) {
+    s.combat.player.tempo += 1;
+    s.combat.player.maxTempo += 1;
+  }
+  if (hasTuningFork) {
+    s.combat.player.statuses.resonant = (s.combat.player.statuses.resonant || 0) + 1;
+  }
+
+  s.phase = 'combat';
+  return s;
+}
+
+function resolveCombat(run) {
+  if (run.phase !== 'combat' || !run.combat) return run;
+  const combat = run.combat;
+  if (combat.phase !== 'won' && combat.phase !== 'lost') return run;
+
+  const s = structuredClone(run);
+  s.player.hp = Math.max(0, combat.player.hp);
+
+  if (combat.phase === 'lost') { s.phase = 'dead'; return s; }
+  if (currentNode(s).type === 'boss') { s.phase = 'won'; return s; }
+
+  const rng = makeRng(s.rngSeed);
+  const gold = 10 + randInt(rng, 16);
+  s.player.gold += gold;
+
+  let relicOffer = null;
+  if (currentNode(s).type === 'elite') {
+    const available = RELICS.filter((r) => !s.player.relics.find((pr) => pr.id === r.id));
+    if (available.length >= 2) {
+      relicOffer = [pick(rng, available)];
+      const remaining = available.filter((r) => r.id !== relicOffer[0].id);
+      if (remaining.length) relicOffer.push(pick(rng, remaining));
+    }
+  }
+
+  s.reward = { cards: rollRewards(rng), gold, relicOffer };
+  s.rngSeed = rng.state();
+  s.phase = 'reward';
+  return s;
+}
+
+function chooseReward(run, cardId, relicId) {
+  if (run.phase !== 'reward' || !run.reward) return run;
+  const s = structuredClone(run);
+  if (cardId && s.reward.cards.includes(cardId)) {
+    s.player.deck.push({ uid: s.player.nextUid, id: cardId, upgraded: false });
+    s.player.nextUid += 1;
+  }
+  if (relicId && s.reward.relicOffer) {
+    const relic = s.reward.relicOffer.find((r) => r.id === relicId);
+    if (relic) s.player.relics.push(relic);
+  }
+  s.reward = null;
+  return advance(s);
+}
+
+// --- rest choices -----------------------------------------------------------
+
+/** Start the Compose flow: peek top 5 cards; player will pin one. */
+function startCompose(run) {
+  if (run.phase !== 'rest') return run;
+  const s = structuredClone(run);
+  const rng = makeRng(s.rngSeed);
+  const shuffled = shuffle(structuredClone(s.player.deck), rng);
+  s.rngSeed = rng.state();
+  const peeked = shuffled.slice(0, Math.min(5, shuffled.length));
+  s.compose = { peeked };
+  return s;
+}
+
+/** Finish Compose: pin `pinnedUid` as guaranteed first draw next combat. */
+function finishCompose(run, pinnedUid) {
+  if (!run.compose) return run;
+  const s = structuredClone(run);
+  // Move pinned card to front of deck
+  const idx = s.player.deck.findIndex((c) => c.uid === pinnedUid);
+  if (idx !== -1) {
+    const [card] = s.player.deck.splice(idx, 1);
+    s.player.deck.unshift(card);
+  }
+  s.compose = null;
+  return advance(s);
+}
+
+/** Start Transcribe: choose a card in deck to upgrade. */
+function startTranscribe(run) {
+  if (run.phase !== 'rest') return run;
+  const s = structuredClone(run);
+  // Only cards that have an upgrade and aren't already upgraded
+  const upgradeable = s.player.deck.filter((c) => {
+    const def = effectiveCard(c);
+    return !c.upgraded && def.upgrade;
+  });
+  s.transcribe = { options: upgradeable };
+  return s;
+}
+
+/** Finish Transcribe: upgrade card with `uid`. */
+function finishTranscribe(run, uid) {
+  if (!run.transcribe) return run;
+  const s = structuredClone(run);
+  const card = s.player.deck.find((c) => c.uid === uid);
+  if (card) card.upgraded = true;
+  s.transcribe = null;
+  return advance(s);
+}
+
+/** Standard rest: heal then advance. */
+function rest(run) {
+  if (run.phase !== 'rest') return run;
+  const s = structuredClone(run);
+  s.player.hp = Math.min(s.player.maxHp, s.player.hp + Math.floor(s.player.maxHp * REST_HEAL));
+  return advance(s);
+}
+
+function advance(s) {
+  s.combat = null;
+  s.compose = null;
+  s.transcribe = null;
+  s.floor += 1;
+  s.phase = s.floor >= s.nodes.length ? 'won' : 'map';
+  return s;
+}
+
+
+// === src/ui/sprites.js ===
+// sprites.js — canvas-based pixel art sprites.
+//
+// Each sprite is defined as an array of equal-length strings (one per row).
+// Each character maps to a colour via the palette; '.' is transparent.
+// renderSprite(ctx, name, x, y, scale) draws to a 2D canvas context.
+// createSpriteCanvas(name, scale) returns a ready-to-append <canvas>.
+
+const P = {
+  '.': null,
+  // Grayscale world
+  '0': '#080810', '1': '#14141e', '2': '#1e1e2c', '3': '#2c2c3e',
+  '4': '#3a3a50', '5': '#4e4e68', '6': '#666680', '7': '#8888a0',
+  '8': '#aaaabc', '9': '#d0d0e0',
+  // Bard — vibrant against the grey world
+  'b': '#5a9fe8', 'B': '#3a6db8', 'D': '#1e3f7a',   // blue hat
+  'g': '#ffd700', 'G': '#b89000',                     // gold
+  'v': '#9b3ef5', 'V': '#6b1bc5', 'W': '#4a0da0',    // violet cloak
+  'r': '#e04444', 'R': '#a02020',                     // red tunic
+  'c': '#00ffcc', 'C': '#00c09a',                     // cyan glow eyes
+  's': '#d4a080', 'S': '#a07050',                     // warm skin
+  // Note colours
+  'N': '#ff6b6b',  // Strike note (red)
+  'T': '#4ecdc4',  // Ward note (teal)
+  'Y': '#ffe66d',  // Verse note (yellow)
+  // Enemy accents
+  'w': '#c8c8d8', 'x': '#e8e8f8',  // wisp highlight
+  'e': '#7070d0', 'E': '#5050a8',  // echo phantom
+  'd': '#d05050', 'F': '#602020',  // discord sprite
+  'm': '#505070',                   // minstrel mid
+  'H': '#101018',                   // hush black
+  'Z': '#302840',                   // hush dark purple edge
+};
+
+const SPRITES = {
+  // ─── Bard (14×20) ─────────────────────────────────────────────────────────
+  bard: [
+    '......DDD.....',
+    '.....DBBBD....',
+    '....DBBgBBD...',
+    '.....DBDBD....',
+    '.....8ss58....',
+    '....8sSCCS8...',
+    '....85sCCs5...',
+    '....855558....',
+    '...VVVrRrVVV..',
+    '..VVVrRGRrVVV.',
+    '.VVVVrrrrrVVVV',
+    'VVVVVrrrrrVVVVV',
+    '.VVVVvvvvvVVVV.',
+    '..VVVvvvvvVVV..',
+    '..VVV.....VVV..',
+    '..433.....334..',
+    '.4433.....3344.',
+    '44333.....33344',
+    '.433.......334.',
+    '..3.........3..',
+  ],
+
+  // ─── Hush Wisp (12×12) ─── ghostly translucent orb ───────────────────────
+  hushWisp: [
+    '....7777....',
+    '...7wwww7...',
+    '..7wwxx.w7..',
+    '.7wwx....w7.',
+    '.7wx.....w7.',
+    '77wx......77',
+    '77w......w77',
+    '.7w......77.',
+    '.7ww....w7..',
+    '..7wwwww7...',
+    '....7777....',
+    '....5554....',
+  ],
+
+  // ─── Pale Minstrel (12×18) ─── hollow ghost with broken lute ─────────────
+  paleMinstrel: [
+    '....9999....',
+    '...9m8m89...',
+    '...9m.m.9...',
+    '...9mmm89...',
+    '....8889....',
+    '..99mmm99...',
+    '..9mmmmm9...',
+    '.99mmmmm99..',
+    '.9mm...mm9..',
+    '..9m...m9...',
+    '..99.m.99...',
+    '...9mmm9....',
+    '....9m9.....',
+    '..44.m.44...',
+    '.444.m.444..',
+    '4444.m.4444.',
+    '...3.m.3....',
+    '....333.....',
+  ],
+
+  // ─── Echo Phantom (12×14) ─── shifting mirror shadow ─────────────────────
+  echoPhantom: [
+    '....EEEE....',
+    '..EEeeeEEE..',
+    '.EEee...eeE.',
+    'EEe.E.E..eE.',
+    'Ee.E...E.eEE',
+    'Ee..eee..eEE',
+    'Ee..eee..eE.',
+    'EEe.....eEE.',
+    '.EEeee.eEE..',
+    '..EEeeeEE...',
+    '...EEEEEE...',
+    '....EEEE....',
+    '....3443....',
+    '...33.333...',
+  ],
+
+  // ─── Discord Sprite (12×14) ─── spiky chaos creature ─────────────────────
+  discordSprite: [
+    '.d..d..d.d..',
+    'd.dd.dd..dd.',
+    '.dFFFFFFFd..',
+    'd.FFFFFFF.d.',
+    '.dFF.d.FFd..',
+    'd.FF...FFdd.',
+    '.dFF.d.FFd..',
+    'd.FFFFFFFd..',
+    '.dFFFFFFd...',
+    'dd.FFFdd.d..',
+    'd..d.dd..dd.',
+    'dd..d...dd..',
+    '.d.3.3.3.d..',
+    '..333.333...',
+  ],
+
+  // ─── Broken Conductor (14×22) ─── tall imposing grey figure ──────────────
+  brokenConductor: [
+    '......888.....',
+    '.....88888....',
+    '.....8m8m8....',
+    '....88888m8...',
+    '....8m888m8...',
+    '...8888mmm8...',
+    '..888mmmmm88..',
+    '.88mmmmmmmm8..',
+    '88mmm...mmm88.',
+    '.8mm.....mm8..',
+    '..8m.....m8...',
+    '..8mm...mm8...',
+    '..888mmm888...',
+    '..7mmmmmmm7...',
+    '..7mm...mm7...',
+    '..7m.....m7...',
+    '..7m.....m7...',
+    '..7m..6..m7...',  // broken baton
+    '..44.666.44...',
+    '.444..6..444..',
+    '4444.....4444.',
+    '...3.....3....',
+  ],
+
+  // ─── The Hush (18×24) ─── vast void entity ───────────────────────────────
+  theHush: [
+    '.....ZZZZZZZZ.....',
+    '...ZZH000000ZZ....',
+    '..ZHH00000000HZ...',
+    '.ZHH0000000000HZ..',
+    'ZZH00..00000..0HZ.',
+    'ZH000..H00H0..0HZZ',
+    'ZH0000H0000H0000HZ',
+    'ZH000000000000000H',
+    'ZH000000000000000H',
+    'ZZH0000000000000HZ',
+    '.ZH00.0000000.00HZ',
+    '.ZHH0.0.00.0.00HZ.',
+    '..ZH0..000000..HZ.',
+    '..ZZH00000000HZZ..',
+    '...ZHH000000HHZ...',
+    '....ZHHH00HHHZ....',
+    '.....ZZZHHZZZ.....',
+    '......ZZ33ZZ......',
+    '......Z3333Z......',
+    '.....Z333333Z.....',
+    '....ZZ......ZZ....',
+    '...Z..........Z...',
+    '..............Z...',
+    '..................',
+  ],
+
+  // ─── Note symbols (8×8) ──────────────────────────────────────────────────
+  noteStrike: [
+    '.NNN....',
+    'NNNNN...',
+    'N.NNN...',
+    '.NNNN...',
+    '...NN...',
+    '...NN...',
+    '..NNNNN.',
+    '..NNNNN.',
+  ],
+  noteWard: [
+    '.TTT....',
+    'TTTTT...',
+    'T.TTT...',
+    '.TTTT...',
+    '...TT...',
+    '..TTT...',
+    '.TTTTT..',
+    '.TTTTT..',
+  ],
+  noteVerse: [
+    '.YYY.YYY',
+    'YYYYYYY.',
+    'Y.YYYY..',
+    '.YYYYYYY',
+    '...YY.YY',
+    '...YYYY.',
+    '..YYYYYY',
+    '..YYYYYY',
+  ],
+
+  // ─── Chain link (8×8) ─────────────────────────────────────────────────────
+  chainEmpty: [
+    '..3333..',
+    '.3....3.',
+    '3......3',
+    '3......3',
+    '3......3',
+    '3......3',
+    '.3....3.',
+    '..3333..',
+  ],
+  harmonyGlow: [
+    '..7777..',
+    '.7cccc7.',
+    '7c....c7',
+    '7c....c7',
+    '7c....c7',
+    '7c....c7',
+    '.7cccc7.',
+    '..7777..',
+  ],
+  crescendoGlow: [
+    '..gggg..',
+    '.gYYYYg.',
+    'gY....Yg',
+    'gY....Yg',
+    'gY....Yg',
+    'gY....Yg',
+    '.gYYYYg.',
+    '..gggg..',
+  ],
+};
+
+// ─── renderer ───────────────────────────────────────────────────────────────
+
+function renderSprite(ctx, name, x, y, scale = 1) {
+  const rows = SPRITES[name];
+  if (!rows) return;
+  for (let row = 0; row < rows.length; row++) {
+    for (let col = 0; col < rows[row].length; col++) {
+      const colour = P[rows[row][col]];
+      if (!colour) continue;
+      ctx.fillStyle = colour;
+      ctx.fillRect(x + col * scale, y + row * scale, scale, scale);
+    }
+  }
+}
+
+function spriteSize(name, scale = 1) {
+  const rows = SPRITES[name];
+  if (!rows) return { w: 0, h: 0 };
+  return { w: rows[0].length * scale, h: rows.length * scale };
+}
+
+function createSpriteCanvas(name, scale = 1) {
+  const rows = SPRITES[name];
+  if (!rows) return document.createElement('canvas');
+  const w = rows[0].length * scale;
+  const h = rows.length * scale;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.cssText = `width:${w}px;height:${h}px;image-rendering:pixelated;display:block;`;
+  const ctx = canvas.getContext('2d');
+  renderSprite(ctx, name, 0, 0, scale);
+  return canvas;
+}
+
+/** Animated glow: pulsing alpha on a second canvas layer. Returns { canvas, stop() }. */
+function createGlowCanvas(name, scale = 1) {
+  const canvas = createSpriteCanvas(name, scale);
+  let raf = null;
+  let start = null;
+  function tick(ts) {
+    if (!start) start = ts;
+    const alpha = 0.5 + 0.5 * Math.sin((ts - start) / 400);
+    canvas.style.opacity = String(alpha);
+    raf = requestAnimationFrame(tick);
+  }
+  raf = requestAnimationFrame(tick);
+  return { canvas, stop: () => { if (raf) cancelAnimationFrame(raf); canvas.style.opacity = '1'; } };
+}
+
+
+// === src/ui/app.js ===
+// src/ui/app.js — The Last Bard UI layer.
+// Owns no game rules: holds a `run` state, renders it, routes taps.
+
+
+const SAVE_KEY = 'lastbard:run';
+const app = document.getElementById('app');
+let run = loadRun();
+let selectedHand = null;  // hand index selected awaiting a target
+let glowHandle = null;    // for cancelling crescendo glow anim
+
+// ─── persistence ────────────────────────────────────────────────────────────
+function saveRun() {
+  try { if (run) localStorage.setItem(SAVE_KEY, JSON.stringify(run)); else localStorage.removeItem(SAVE_KEY); }
+  catch { /* ok */ }
+}
+function loadRun() {
+  try { const r = localStorage.getItem(SAVE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+}
+function setRun(next) {
+  run = next; selectedHand = null; saveRun(); render();
+}
+
+// ─── tiny DOM helper ─────────────────────────────────────────────────────────
+function el(tag, props = {}, children = []) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') n.className = v;
+    else if (k === 'text') n.textContent = v;
+    else if (k.startsWith('on') && typeof v === 'function') n.addEventListener(k.slice(2), v);
+    else if (v !== null && v !== undefined) n.setAttribute(k, v);
+  }
+  for (const c of [].concat(children)) {
+    if (c == null) continue;
+    n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  }
+  return n;
+}
+function clear() { app.replaceChildren(); if (glowHandle) { glowHandle.stop(); glowHandle = null; } }
+
+// ─── render dispatcher ───────────────────────────────────────────────────────
+function render() {
+  clear();
+  if (!run) return renderTitle();
+  if (run._deckView) return renderDeckView();
+  if (run.compose) return renderCompose();
+  if (run.transcribe) return renderTranscribe();
+  switch (run.phase) {
+    case 'map':    return renderMap();
+    case 'combat': return renderCombat();
+    case 'reward': return renderReward();
+    case 'rest':   return renderRest();
+    case 'dead':   return renderEnd(false);
+    case 'won':    return renderEnd(true);
+    default:       return renderTitle();
+  }
+}
+
+// ─── TITLE ───────────────────────────────────────────────────────────────────
+function renderTitle() {
+  const screen = el('div', { class: 'screen center' });
+  // Bard sprite, large
+  const bardWrap = el('div', { style: 'position:relative;' });
+  bardWrap.appendChild(createSpriteCanvas('bard', 3));
+  screen.appendChild(bardWrap);
+  screen.appendChild(el('h1', { class: 'logo', text: 'THE LAST BARD' }));
+  screen.appendChild(el('p', { class: 'subtitle', text: 'The world has gone silent.\nOne melody remains.' }));
+  screen.appendChild(el('button', { class: 'btn big primary', onclick: () => setRun(newRun(rnd())) }, 'Begin'));
+  if (run === null) {
+    screen.appendChild(el('p', { class: 'hint', text: 'Climb 8 floors.\nBuild your melody.\nBreak The Hush.' }));
+  }
+  app.appendChild(screen);
+}
+
+// ─── MAP ─────────────────────────────────────────────────────────────────────
+function renderMap() {
+  const screen = el('div', { class: 'screen' });
+  screen.appendChild(topBar());
+
+  const list = el('div', { class: 'map-list' });
+  run.nodes.forEach((node, i) => {
+    const done = i < run.floor;
+    const here = i === run.floor;
+    const row = el('div', { class: `map-node ${done?'done':''} ${here?'here':''}` });
+    row.appendChild(el('span', { class: 'map-icon', text: nodeIcon(node.type) }));
+    row.appendChild(el('span', { class: 'map-label', text: nodeLabel(node, i) }));
+    if (here) row.appendChild(el('span', { class: 'map-here', text: '◀' }));
+    list.appendChild(row);
+  });
+  screen.appendChild(list);
+
+  const node = currentNode(run);
+  const cta = node.type === 'rest' ? 'Rest Here' : node.type === 'boss' ? 'Face the Hush' : 'Enter';
+  screen.appendChild(footer([
+    el('button', { class: 'btn tiny', onclick: () => setRun({ ...run, _deckView: true }) },
+      `Deck (${run.player.deck.length})`),
+    el('button', { class: 'btn primary', onclick: () => setRun(enterNode(run)) }, cta),
+  ]));
+  app.appendChild(screen);
+}
+
+// ─── COMBAT ──────────────────────────────────────────────────────────────────
+function renderCombat() {
+  const c = run.combat;
+  const screen = el('div', { class: 'screen combat' });
+
+  // Enemies row
+  const enemyRow = el('div', { class: 'enemies-row' });
+  c.enemies.forEach((e) => {
+    const dead = e.hp <= 0;
+    const targetable = selectedHand !== null && !dead && needsTarget(c.hand[selectedHand]);
+    const card = el('div', {
+      class: `enemy-card ${dead?'dead':''} ${targetable?'targetable':''}`,
+      onclick: targetable ? () => playSelected(e.slot) : undefined,
+    });
+    const spriteWrap = el('div', { class: 'enemy-sprite-wrap' });
+    spriteWrap.appendChild(createSpriteCanvas(spriteKey(e.id), 3));
+    card.appendChild(el('div', { class: 'intent-text', text: dead ? '' : intentText(e) }));
+    card.appendChild(spriteWrap);
+    card.appendChild(el('div', { class: 'enemy-name', text: e.name }));
+    card.appendChild(hpBar(e.hp, e.maxHp, e.block));
+    card.appendChild(statusChips(e.statuses, false));
+    enemyRow.appendChild(card);
+  });
+  screen.appendChild(enemyRow);
+
+  // Chain strip
+  screen.appendChild(buildChainStrip(c));
+
+  // Player bar
+  const pBar = el('div', { class: 'player-bar' });
+  pBar.appendChild(el('span', { class: 'pstat hp', text: `♥ ${c.player.hp}/${c.player.maxHp}` }));
+  if (c.player.block) pBar.appendChild(el('span', { class: 'pstat block', text: `◼ ${c.player.block}` }));
+  pBar.appendChild(el('span', { class: 'pstat tempo', text: `♩ ${c.player.tempo}/${c.player.maxTempo}` }));
+  pBar.appendChild(statusChips(c.player.statuses, true));
+  screen.appendChild(pBar);
+
+  // Hand
+  const hand = el('div', { class: 'hand' });
+  c.hand.forEach((inst, i) => {
+    const def = effectiveCard(inst);
+    const playable = canPlay(c, i);
+    const isSel = selectedHand === i;
+    const isMuted = (c.player.muted[def.note] || 0) > 0;
+    const chainPreview = playable ? previewChain(c, def.note, isMuted) : 'neutral';
+    const cardEl = buildCard(def, inst, {
+      playable, selected: isSel, mini: false,
+      chainPreview: chainPreview !== 'neutral' ? chainPreview : null,
+      muted: isMuted,
+    });
+    if (playable) cardEl.addEventListener('click', () => onCardTap(i));
+    hand.appendChild(cardEl);
+  });
+  screen.appendChild(hand);
+
+  screen.appendChild(footer([
+    el('div', { class: 'pile-info' }, [
+      `Draw ${c.drawPile.length}`,
+      el('br'),
+      `Disc ${c.discardPile.length}`,
+    ]),
+    el('button', { class: 'btn primary', onclick: onEndTurn }, 'End Turn'),
+  ]));
+
+  app.appendChild(screen);
+  if (isOver(c)) setTimeout(() => setRun(resolveCombat(run)), 400);
+}
+
+// ─── chain strip widget ───────────────────────────────────────────────────────
+function buildChainStrip(c) {
+  const wrap = el('div', { class: 'chain-strip' });
+
+  // 3 slots showing last 3 notes in chain (or padded with empty)
+  const chain = c.chain.slice(-3);
+  while (chain.length < 3) chain.unshift(null);
+  chain.forEach((note, i) => {
+    const slot = el('div', { class: `chain-slot ${note ? `filled-${note}` : ''}` });
+    if (note) {
+      slot.appendChild(createSpriteCanvas(`note${cap(note)}`, 2));
+    } else {
+      slot.appendChild(el('div', { class: 'chain-dot' }));
+    }
+    wrap.appendChild(slot);
+    if (i < 2) wrap.appendChild(el('div', { style: 'width:6px;height:4px;background:var(--border);margin-top:10px;' }));
+  });
+
+  // Chain status label
+  const status = chainStatus(c);
+  let label = '';
+  if (status === 'harmony') label = 'HARMONY';
+  else if (status === 'crescendo') label = '✦ CRESCENDO';
+  if (label) wrap.appendChild(el('span', { class: `chain-label ${status}`, text: label }));
+
+  // Muted indicator
+  const muteRow = el('div', { class: 'muted-bar' });
+  ['strike', 'ward', 'verse'].forEach((note) => {
+    const n = c.player.muted[note] || 0;
+    muteRow.appendChild(el('span', {
+      class: `muted-chip ${n > 0 ? 'active' : ''}`,
+      text: `${noteSymbol(note)}${n > 0 ? ' MUTED' : ''}`,
+    }));
+  });
+  const container = el('div');
+  container.appendChild(wrap);
+  container.appendChild(muteRow);
+  return container;
+}
+
+// ─── REWARD ───────────────────────────────────────────────────────────────────
+function renderReward() {
+  const screen = el('div', { class: 'screen' });
+  screen.appendChild(topBar());
+  screen.appendChild(el('h2', { class: 'screen-title', text: 'VICTORY' }));
+  screen.appendChild(el('p', { class: 'hint', text: `+${run.reward.gold} gold  |  Choose a card` }));
+
+  const cards = el('div', { class: 'reward-cards' });
+  run.reward.cards.forEach((id) => {
+    const def = getCard(id);
+    const cardEl = buildCard(def, { id, upgraded: false }, { playable: true });
+    cardEl.classList.add('reward-card');
+    cardEl.addEventListener('click', () => setRun(chooseReward(run, id, null)));
+    cards.appendChild(cardEl);
+  });
+  screen.appendChild(cards);
+
+  if (run.reward.relicOffer && run.reward.relicOffer.length) {
+    screen.appendChild(el('p', { class: 'hint', text: 'Elite relic  —  choose one:' }));
+    const relicRow = el('div', { class: 'relic-row' });
+    run.reward.relicOffer.forEach((relic) => {
+      const rc = el('div', { class: 'relic-card', onclick: () => setRun(chooseReward(run, null, relic.id)) });
+      rc.appendChild(el('div', { class: 'relic-name', text: relic.name }));
+      rc.appendChild(el('div', { class: 'relic-text', text: relic.text }));
+      relicRow.appendChild(rc);
+    });
+    screen.appendChild(relicRow);
+  }
+
+  screen.appendChild(footer([
+    el('button', { class: 'btn tiny', onclick: () => setRun({ ...run, _deckView: true }) }, 'View Deck'),
+    el('button', { class: 'btn', onclick: () => setRun(chooseReward(run, null, null)) }, 'Skip'),
+  ]));
+  app.appendChild(screen);
+}
+
+// ─── REST ─────────────────────────────────────────────────────────────────────
+function renderRest() {
+  const screen = el('div', { class: 'screen' });
+  screen.appendChild(topBar());
+  screen.appendChild(el('h2', { class: 'screen-title', text: 'CAMPFIRE' }));
+  screen.appendChild(el('p', { class: 'hint', text: 'Catch your breath.' }));
+
+  const choices = el('div', { class: 'rest-choices' });
+
+  const heal = Math.floor(run.player.maxHp * 0.30);
+  addRestChoice(choices, 'RECOVER', `Heal ${heal} HP (${run.player.hp}→${Math.min(run.player.maxHp, run.player.hp+heal)})`,
+    () => setRun(rest(run)));
+  addRestChoice(choices, 'COMPOSE', 'Peek your next 5 draws and pin 1 to the top.',
+    () => setRun(startCompose(run)));
+  const upgradeable = run.player.deck.filter((c) => !c.upgraded && getCard(c.id).upgrade).length;
+  if (upgradeable > 0) {
+    addRestChoice(choices, 'TRANSCRIBE', `Upgrade a card in your deck (${upgradeable} eligible).`,
+      () => setRun(startTranscribe(run)));
+  }
+  screen.appendChild(choices);
+  app.appendChild(screen);
+}
+
+function addRestChoice(parent, title, desc, fn) {
+  const opt = el('div', { class: 'rest-option', onclick: fn });
+  opt.appendChild(el('div', { class: 'rest-option-title', text: title }));
+  opt.appendChild(el('div', { class: 'rest-option-desc', text: desc }));
+  parent.appendChild(opt);
+}
+
+// ─── COMPOSE ─────────────────────────────────────────────────────────────────
+function renderCompose() {
+  const screen = el('div', { class: 'screen' });
+  screen.appendChild(topBar());
+  screen.appendChild(el('h2', { class: 'screen-title', text: 'COMPOSE' }));
+  screen.appendChild(el('p', { class: 'hint', text: 'Tap a card to pin it as your first draw next fight.' }));
+  const cards = el('div', { class: 'compose-cards' });
+  run.compose.peeked.forEach((inst) => {
+    const def = effectiveCard(inst);
+    const c = buildCard(def, inst, { playable: true, mini: false });
+    c.classList.add('compose-card');
+    c.addEventListener('click', () => setRun(finishCompose(run, inst.uid)));
+    cards.appendChild(c);
+  });
+  screen.appendChild(cards);
+  screen.appendChild(footer([
+    el('button', { class: 'btn', onclick: () => setRun(finishCompose(run, null)) }, 'Skip'),
+  ]));
+  app.appendChild(screen);
+}
+
+// ─── TRANSCRIBE ───────────────────────────────────────────────────────────────
+function renderTranscribe() {
+  const screen = el('div', { class: 'screen' });
+  screen.appendChild(topBar());
+  screen.appendChild(el('h2', { class: 'screen-title', text: 'TRANSCRIBE' }));
+  screen.appendChild(el('p', { class: 'hint', text: 'Upgrade one card.' }));
+  const grid = el('div', { class: 'deck-grid' });
+  run.transcribe.options.forEach((inst) => {
+    const def = getCard(inst.id);
+    const c = buildCard(def, inst, { mini: true, playable: true });
+    c.addEventListener('click', () => setRun(finishTranscribe(run, inst.uid)));
+    grid.appendChild(c);
+  });
+  screen.appendChild(grid);
+  screen.appendChild(footer([
+    el('button', { class: 'btn', onclick: () => setRun(finishTranscribe(run, null)) }, 'Skip'),
+  ]));
+  app.appendChild(screen);
+}
+
+// ─── DECK VIEW ───────────────────────────────────────────────────────────────
+function renderDeckView() {
+  const screen = el('div', { class: 'screen' });
+  const isInCombat = run.phase === 'combat';
+  screen.appendChild(el('h2', { class: 'screen-title', text: `DECK (${run.player.deck.length})` }));
+  const grid = el('div', { class: 'deck-grid' });
+  run.player.deck.forEach((inst) => {
+    const def = effectiveCard(inst);
+    grid.appendChild(buildCard(def, inst, { mini: true }));
+  });
+  screen.appendChild(grid);
+  screen.appendChild(footer([
+    el('button', { class: 'btn primary', onclick: () => setRun({ ...run, _deckView: false }) }, 'Back'),
+  ]));
+  if (run.player.relics.length) {
+    const relicBar = el('div', { style: 'padding:6px 2px;' });
+    relicBar.appendChild(el('p', { class: 'hint', text: 'Relics:' }));
+    run.player.relics.forEach((r) => {
+      relicBar.appendChild(el('div', { class: 'relic-card', style: 'cursor:default;' }, [
+        el('div', { class: 'relic-name', text: r.name }),
+        el('div', { class: 'relic-text', text: r.text }),
+      ]));
+    });
+    screen.appendChild(relicBar);
+  }
+  app.appendChild(screen);
+}
+
+// ─── END ─────────────────────────────────────────────────────────────────────
+function renderEnd(won) {
+  const screen = el('div', { class: 'screen' });
+  const end = el('div', { class: 'end-screen' });
+  // Show bard sprite or Hush depending on outcome
+  end.appendChild(createSpriteCanvas(won ? 'bard' : 'theHush', won ? 4 : 2));
+  end.appendChild(el('div', { class: `end-title ${won?'won':'lost'}`, text: won ? 'THE HUSH FALLS' : 'SILENCED' }));
+  end.appendChild(el('p', { class: 'hint', text: won ? 'The Last Melody echoes forever.' : `Fell on floor ${run.floor + 1}.` }));
+  end.appendChild(el('button', { class: 'btn big primary', onclick: () => setRun(newRun(rnd())) }, 'Play Again'));
+  screen.appendChild(end);
+  app.appendChild(screen);
+}
+
+// ─── shared widgets ──────────────────────────────────────────────────────────
+function topBar() {
+  const bar = el('div', { class: 'topbar' });
+  bar.appendChild(el('span', { class: 'pstat hp', text: `♥ ${run.player.hp}/${run.player.maxHp}` }));
+  bar.appendChild(el('span', { class: 'pstat gold', text: `$ ${run.player.gold}` }));
+  bar.appendChild(el('span', { class: 'pstat', text: `F${run.floor + 1}/${run.nodes.length}` }));
+  bar.appendChild(el('button', {
+    class: 'btn tiny',
+    onclick: () => { if (confirm('Abandon run?')) setRun(null); },
+  }, '✕'));
+  return bar;
+}
+
+function footer(children) {
+  return el('div', { class: 'footer' }, children);
+}
+
+function hpBar(hp, maxHp, block = 0) {
+  const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
+  const bar = el('div', { class: 'hpbar' });
+  bar.appendChild(el('div', { class: 'hpfill', style: `width:${pct}%` }));
+  bar.appendChild(el('div', { class: 'hptext', text: block > 0 ? `◼${block} ${hp}/${maxHp}` : `${hp}/${maxHp}` }));
+  return bar;
+}
+
+function statusChips(statuses, isPlayer) {
+  const row = el('div', { class: 'statuses' });
+  if (statuses.forte)     row.appendChild(el('span', { class: 'chip forte',   text: `FRT ${statuses.forte}` }));
+  if (statuses.exposed)   row.appendChild(el('span', { class: 'chip exposed', text: `EXP ${statuses.exposed}` }));
+  if (statuses.diminuendo)row.appendChild(el('span', { class: 'chip diminu',  text: `DIM ${statuses.diminuendo}` }));
+  if (statuses.discordant)row.appendChild(el('span', { class: 'chip discord', text: `DIS ${statuses.discordant}` }));
+  if (isPlayer && statuses.resonant) row.appendChild(el('span', { class: 'chip resonant', text: `RES ${statuses.resonant}` }));
+  return row;
+}
+
+function buildCard(def, inst, { playable = false, selected = false, mini = false, chainPreview = null, muted = false } = {}) {
+  const upgraded = inst && inst.upgraded;
+  const card = el('div', {
+    class: [
+      'card',
+      `note-${def.note}`,
+      !playable && !mini ? 'unplayable' : '',
+      selected ? 'selected' : '',
+      mini ? 'mini' : '',
+      upgraded ? 'upgraded' : '',
+    ].filter(Boolean).join(' '),
+  });
+  card.appendChild(el('div', { class: 'card-cost', text: String(def.cost) }));
+  // Note icon via sprite canvas
+  const noteCanvas = createSpriteCanvas(`note${cap(def.note)}`, 2);
+  noteCanvas.className = 'card-note-icon';
+  card.appendChild(noteCanvas);
+  card.appendChild(el('div', { class: 'card-name', text: def.name + (upgraded ? '+' : '') }));
+  if (!mini) {
+    card.appendChild(el('div', { class: 'card-text', text: def.text + (muted ? ' [MUTED +1]' : '') }));
+    card.appendChild(el('div', { class: 'card-type-badge', text: def.note.toUpperCase() }));
+    if (chainPreview) {
+      card.appendChild(el('div', {
+        class: `card-chain-preview ${chainPreview}`,
+        text: chainPreview === 'crescendo' ? '✦ CRESCENDO' : '♦ HARMONY',
+      }));
+    }
+  }
+  return card;
+}
+
+// ─── interaction handlers ─────────────────────────────────────────────────────
+function onCardTap(i) {
+  const c = run.combat;
+  const inst = c.hand[i];
+  if (!inst) return;
+  if (!needsTarget(inst) || aliveEnemies(c).length <= 1) {
+    const target = aliveEnemies(c)[0];
+    doPlay(i, target ? target.slot : 0);
+    return;
+  }
+  selectedHand = selectedHand === i ? null : i;
+  render();
+}
+
+function playSelected(slot) {
+  if (selectedHand === null) return;
+  doPlay(selectedHand, slot);
+}
+
+function doPlay(handIndex, targetSlot) {
+  const next = playCard(run.combat, handIndex, targetSlot);
+  run = { ...run, combat: next };
+  selectedHand = null;
+  saveRun();
+  if (isOver(next)) { setTimeout(() => setRun(resolveCombat(run)), 400); }
+  else render();
+}
+
+function onEndTurn() {
+  const next = endTurn(run.combat);
+  run = { ...run, combat: next };
+  selectedHand = null;
+  saveRun();
+  if (isOver(next)) setRun(resolveCombat(run));
+  else render();
+}
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
+function needsTarget(inst) {
+  if (!inst) return false;
+  return effectiveCard(inst).effects.some((e) =>
+    (e.kind === 'damage' && e.target === 'enemy')
+    || e.kind === 'damageFromBlock'
+    || (e.kind === 'status' && e.target === 'enemy'),
+  );
+}
+
+function intentText(e) {
+  const p = intentPreview(e);
+  if (!p) return '?';
+  const parts = [];
+  if (p.damage > 0) parts.push(p.times > 1 ? `⚔ ${p.damage}×${p.times}` : `⚔ ${p.damage}`);
+  if (p.block > 0)  parts.push(`◼ ${p.block}`);
+  if (!parts.length) {
+    const icons = { buff:'💪', debuff:'☣', defend:'◼' };
+    return icons[p.intent] || '…';
+  }
+  return parts.join(' ');
+}
+
+function nodeIcon(t) { return { combat:'⚔', elite:'☠', rest:'🔥', boss:'💀' }[t] || '•'; }
+function nodeLabel(node, i) {
+  const labels = { combat:`Fight`, elite:`Elite`, rest:`Campfire`, boss:`THE HUSH` };
+  return labels[node.type] || node.type;
+}
+function spriteKey(id) {
+  const map = {
+    hushWisp:'hushWisp', paleMinstrel:'paleMinstrel',
+    echoPhantom:'echoPhantom', discordSprite:'discordSprite',
+    brokenConductor:'brokenConductor', theHush:'theHush',
+  };
+  return map[id] || 'hushWisp';
+}
+function noteSymbol(note) { return { strike:'♩', ward:'♪', verse:'♫' }[note] || '•'; }
+function cap(s) { return s[0].toUpperCase() + s.slice(1); }
+function rnd() { return (Math.random() * 0x7fffffff) >>> 0; }
+
+render();
+
+})();
+  </script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+# Keep dist tracked for GitHub Pages / raw.githack serving
+!dist/

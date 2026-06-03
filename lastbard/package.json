@@ -1,0 +1,11 @@
+{
+  "name": "lastbard",
+  "version": "1.0.0",
+  "description": "The Last Bard — a melody-chain deck-building roguelike for mobile Safari.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "build": "node build.mjs"
+  }
+}

@@ -1,0 +1,2 @@
+# spireling-specific overrides for the root .gitignore
+!dist/

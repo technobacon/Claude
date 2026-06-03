@@ -1,0 +1,1570 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#15131f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Spireling</title>
+  <style>/* src/ui/styles.css — mobile-first, dark, big tap targets. */
+
+:root {
+  --bg: #15131f;
+  --bg2: #211d30;
+  --panel: #2b2640;
+  --ink: #ece8ff;
+  --muted: #9b94c0;
+  --gold: #f5c451;
+  --hp: #e1554f;
+  --hp-bg: #4a2330;
+  --block: #6fb3e0;
+  --energy: #f0d860;
+  --accent: #b083f0;
+  --attack: #c9603f;
+  --skill: #4d8fb0;
+  --power: #cf8b3f;
+  --good: #6fce8f;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  max-width: 560px;
+  margin: 0 auto;
+  height: 100%;
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
+}
+.screen.center {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+/* --- typography / buttons --- */
+.logo { font-size: 2.6rem; letter-spacing: .35em; margin: 0; color: var(--accent); text-shadow: 0 0 18px rgba(176,131,240,.5); }
+.tag { color: var(--muted); margin: 0; }
+.title { font-size: 1.5rem; margin: 14px 4px 6px; }
+.hint { color: var(--muted); font-size: .92rem; margin: 4px 8px; }
+
+.btn {
+  appearance: none;
+  border: 1px solid #3d3656;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 12px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  min-height: 48px;
+}
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #1a1326; }
+.btn.big { font-size: 1.15rem; padding: 16px 30px; }
+.btn.tiny { min-height: 36px; padding: 6px 12px; }
+
+/* --- top bar / footer --- */
+.topbar, .playerbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+  flex-wrap: wrap;
+}
+.topbar { border-bottom: 1px solid #322c48; }
+.pstat { font-weight: 700; font-size: .95rem; }
+.pstat.hp { color: var(--hp); }
+.pstat.block { color: var(--block); }
+.pstat.energy { color: var(--energy); }
+.topbar .btn.tiny { margin-left: auto; }
+
+.footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 2px calc(10px + env(safe-area-inset-bottom));
+}
+.piles { color: var(--muted); font-size: .85rem; }
+
+/* --- map --- */
+.map { flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 14px 2px; overflow-y: auto; }
+.mapnode {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-radius: 12px;
+  background: var(--bg2); border: 1px solid #322c48;
+}
+.mapnode.done { opacity: .45; }
+.mapnode.here { border-color: var(--accent); background: var(--panel); box-shadow: 0 0 0 1px var(--accent); }
+.mapicon { font-size: 1.4rem; width: 28px; text-align: center; }
+.maplabel { font-weight: 600; }
+.maphere { margin-left: auto; color: var(--accent); font-size: .8rem; }
+
+/* --- combat: enemies --- */
+.combat { gap: 6px; }
+.enemies { display: flex; gap: 10px; justify-content: center; padding: 14px 2px; flex-wrap: wrap; }
+.enemy {
+  flex: 1 1 0; min-width: 120px; max-width: 220px;
+  background: var(--bg2); border: 1px solid #322c48; border-radius: 14px;
+  padding: 8px; text-align: center;
+}
+.enemy.targetable { border-color: var(--hp); box-shadow: 0 0 14px rgba(225,85,79,.5); cursor: pointer; }
+.enemy.targetable:active { transform: scale(.97); }
+.enemy.dead { opacity: .4; filter: grayscale(1); }
+.intent { font-size: .95rem; font-weight: 800; color: var(--hp); min-height: 1.2em; }
+.intent:empty::before { content: ""; }
+.sprite { font-size: 2.4rem; line-height: 1.1; }
+.sprite.big { font-size: 4rem; }
+.ename { font-size: .85rem; color: var(--muted); margin-bottom: 4px; }
+
+/* --- hp bars --- */
+.hpbar { position: relative; height: 18px; border-radius: 9px; background: var(--hp-bg); overflow: hidden; }
+.hpfill { position: absolute; inset: 0 auto 0 0; background: var(--hp); }
+.hptext { position: relative; font-size: .72rem; font-weight: 700; line-height: 18px; text-shadow: 0 1px 2px #000; }
+
+/* --- statuses --- */
+.statuses { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-top: 4px; min-height: 4px; }
+.pstatuses { margin-top: 0; }
+.chip { font-size: .68rem; font-weight: 800; padding: 2px 6px; border-radius: 8px; background: #3a3357; }
+.chip.str { background: #b5743b; }
+.chip.vuln { background: #b0455e; }
+.chip.weak { background: #6a6f3a; }
+
+/* --- hand --- */
+.hand {
+  display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px 10px;
+  scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
+}
+.card {
+  flex: 0 0 auto; width: 120px; min-height: 150px;
+  background: var(--panel); border: 2px solid #3d3656; border-radius: 12px;
+  padding: 8px; position: relative; scroll-snap-align: center; cursor: pointer;
+  display: flex; flex-direction: column;
+}
+.card.type-attack { border-color: var(--attack); }
+.card.type-skill { border-color: var(--skill); }
+.card.type-power { border-color: var(--power); }
+.card.selected { transform: translateY(-12px); box-shadow: 0 8px 24px rgba(176,131,240,.5); border-color: var(--accent); }
+.card.unplayable { opacity: .45; }
+.card:active { transform: scale(.98); }
+.cost {
+  position: absolute; top: -8px; left: -8px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--energy); color: #1a1326; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; font-size: .85rem;
+}
+.cname { font-weight: 800; font-size: .92rem; margin: 4px 0 6px; }
+.ctext { font-size: .76rem; color: var(--muted); line-height: 1.25; }
+
+/* --- reward / deck --- */
+.rewardcards { display: flex; gap: 10px; justify-content: center; padding: 20px 2px; flex-wrap: wrap; }
+.deckgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; padding: 12px 2px; overflow-y: auto; }
+.card.mini { width: auto; min-height: 70px; }
+.card.mini .ctext { display: none; }
+</style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+(function () {
+// ===== src/core/rng.js =====
+// core/rng.js
+//
+// Seeded, serializable pseudo-random number generator. The entire game is
+// deterministic given a seed: same seed → same shuffles, same enemy moves,
+// same card rewards. That makes runs reproducible and — crucially — lets the
+// combat/run logic be unit-tested without flakiness.
+//
+// The generator is mulberry32: tiny, fast, and its whole state is a single
+// 32-bit integer, so we can stash it inside a (JSON-serializable) game state
+// and thread it through pure transitions instead of relying on a hidden global.
+
+/**
+ * Create a PRNG from a numeric seed.
+ * The returned function yields floats in [0, 1). `next.state()` reads back the
+ * current internal state so it can be persisted and resumed later.
+ * @param {number} seed
+ * @returns {(() => number) & { state: () => number }}
+ */
+function makeRng(seed) {
+  let s = seed >>> 0;
+  const next = () => {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  next.state = () => s >>> 0;
+  return next;
+}
+
+/**
+ * Integer in [0, n). Uses one draw from `rng`.
+ * @param {() => number} rng
+ * @param {number} n
+ * @returns {number}
+ */
+function randInt(rng, n) {
+  return Math.floor(rng() * n);
+}
+
+/**
+ * Pick a random element from a non-empty array. Returns undefined if empty.
+ * @template T
+ * @param {() => number} rng
+ * @param {T[]} arr
+ * @returns {T｜undefined}
+ */
+function pick(rng, arr) {
+  if (!arr || arr.length === 0) return undefined;
+  return arr[randInt(rng, arr.length)];
+}
+
+/**
+ * Return a NEW array that is a Fisher–Yates shuffle of `arr`. Does not mutate
+ * the input. Deterministic for a given rng state.
+ * @template T
+ * @param {T[]} arr
+ * @param {() => number} rng
+ * @returns {T[]}
+ */
+function shuffle(arr, rng) {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = randInt(rng, i + 1);
+    const tmp = out[i];
+    out[i] = out[j];
+    out[j] = tmp;
+  }
+  return out;
+}
+
+/**
+ * Weighted pick. `weighted` is an array of [item, weight] pairs.
+ * @template T
+ * @param {() => number} rng
+ * @param {Array<[T, number]>} weighted
+ * @returns {T｜undefined}
+ */
+function pickWeighted(rng, weighted) {
+  const total = weighted.reduce((sum, [, w]) => sum + w, 0);
+  if (total <= 0) return undefined;
+  let r = rng() * total;
+  for (const [item, w] of weighted) {
+    r -= w;
+    if (r < 0) return item;
+  }
+  return weighted[weighted.length - 1][0];
+}
+
+
+// ===== src/core/cards.js =====
+// core/cards.js
+//
+// Card data + small pure helpers. A card is plain data: its `effects` are a
+// list of declarative steps that combat.js knows how to execute. Keeping the
+// card "language" data-only (no functions) means cards serialize cleanly and
+// the rules of each card are inspectable and testable.
+//
+// Effect kinds understood by combat.js:
+//   { kind:'damage', amount, target, times?, strengthMult? }  deal damage
+//   { kind:'damageFromBlock', target }                        damage = your block
+//   { kind:'reaper', amount }                                 hit all, heal unblocked
+//   { kind:'block', amount }                                  gain block
+//   { kind:'draw', amount }                                   draw cards
+//   { kind:'energy', amount }                                 gain energy
+//   { kind:'hpLoss', amount }                                 lose HP (self)
+//   { kind:'status', status, amount, target }                 apply vulnerable/weak/strength
+//   { kind:'power', power, amount }                           install a per-turn power
+//   { kind:'doubleStrength' }                                 double current strength
+//
+// target is 'enemy' (the chosen one), 'allEnemies', or 'self' (default for
+// non-damage effects).
+
+
+
+/** @typedef {'attack'|'skill'|'power'} CardType */
+/** @typedef {'starter'|'common'|'uncommon'|'rare'} Rarity */
+
+/**
+ * The full card catalog, keyed by id. UI text is derived but kept here so the
+ * card "reads" the same in tests and on screen.
+ */
+const CARDS = {
+  // --- Starter ------------------------------------------------------------
+  strike: {
+    id: 'strike', name: 'Strike', type: 'attack', cost: 1, rarity: 'starter',
+    text: 'Deal 6 damage.',
+    effects: [{ kind: 'damage', amount: 6, target: 'enemy' }],
+  },
+  defend: {
+    id: 'defend', name: 'Defend', type: 'skill', cost: 1, rarity: 'starter',
+    text: 'Gain 5 Block.',
+    effects: [{ kind: 'block', amount: 5 }],
+  },
+  bash: {
+    id: 'bash', name: 'Bash', type: 'attack', cost: 2, rarity: 'starter',
+    text: 'Deal 8 damage. Apply 2 Vulnerable.',
+    effects: [
+      { kind: 'damage', amount: 8, target: 'enemy' },
+      { kind: 'status', status: 'vulnerable', amount: 2, target: 'enemy' },
+    ],
+  },
+
+  // --- Common -------------------------------------------------------------
+  cleave: {
+    id: 'cleave', name: 'Cleave', type: 'attack', cost: 1, rarity: 'common',
+    text: 'Deal 8 damage to ALL enemies.',
+    effects: [{ kind: 'damage', amount: 8, target: 'allEnemies' }],
+  },
+  ironWave: {
+    id: 'ironWave', name: 'Iron Wave', type: 'attack', cost: 1, rarity: 'common',
+    text: 'Deal 5 damage. Gain 5 Block.',
+    effects: [
+      { kind: 'damage', amount: 5, target: 'enemy' },
+      { kind: 'block', amount: 5 },
+    ],
+  },
+  pommelStrike: {
+    id: 'pommelStrike', name: 'Pommel Strike', type: 'attack', cost: 1, rarity: 'common',
+    text: 'Deal 9 damage. Draw 1 card.',
+    effects: [
+      { kind: 'damage', amount: 9, target: 'enemy' },
+      { kind: 'draw', amount: 1 },
+    ],
+  },
+  twinStrike: {
+    id: 'twinStrike', name: 'Twin Strike', type: 'attack', cost: 1, rarity: 'common',
+    text: 'Deal 5 damage twice.',
+    effects: [{ kind: 'damage', amount: 5, target: 'enemy', times: 2 }],
+  },
+  shrugItOff: {
+    id: 'shrugItOff', name: 'Shrug It Off', type: 'skill', cost: 1, rarity: 'common',
+    text: 'Gain 8 Block. Draw 1 card.',
+    effects: [
+      { kind: 'block', amount: 8 },
+      { kind: 'draw', amount: 1 },
+    ],
+  },
+  flex: {
+    id: 'flex', name: 'Flex', type: 'skill', cost: 0, rarity: 'common',
+    text: 'Gain 2 Strength.',
+    effects: [{ kind: 'status', status: 'strength', amount: 2, target: 'self' }],
+  },
+  clothesline: {
+    id: 'clothesline', name: 'Clothesline', type: 'attack', cost: 2, rarity: 'common',
+    text: 'Deal 12 damage. Apply 2 Weak.',
+    effects: [
+      { kind: 'damage', amount: 12, target: 'enemy' },
+      { kind: 'status', status: 'weak', amount: 2, target: 'enemy' },
+    ],
+  },
+
+  // --- Uncommon -----------------------------------------------------------
+  heavyBlade: {
+    id: 'heavyBlade', name: 'Heavy Blade', type: 'attack', cost: 2, rarity: 'uncommon',
+    text: 'Deal 14 damage. Strength affects this card 3 times.',
+    effects: [{ kind: 'damage', amount: 14, target: 'enemy', strengthMult: 3 }],
+  },
+  bodySlam: {
+    id: 'bodySlam', name: 'Body Slam', type: 'attack', cost: 1, rarity: 'uncommon',
+    text: 'Deal damage equal to your Block.',
+    effects: [{ kind: 'damageFromBlock', target: 'enemy' }],
+  },
+  battleTrance: {
+    id: 'battleTrance', name: 'Battle Trance', type: 'skill', cost: 0, rarity: 'uncommon',
+    text: 'Draw 3 cards.',
+    effects: [{ kind: 'draw', amount: 3 }],
+  },
+  bloodletting: {
+    id: 'bloodletting', name: 'Bloodletting', type: 'skill', cost: 0, rarity: 'uncommon',
+    text: 'Lose 3 HP. Gain 2 Energy.',
+    effects: [
+      { kind: 'hpLoss', amount: 3 },
+      { kind: 'energy', amount: 2 },
+    ],
+  },
+  whirlwind: {
+    id: 'whirlwind', name: 'Whirlwind', type: 'attack', cost: 2, rarity: 'uncommon',
+    text: 'Deal 6 damage to ALL enemies twice.',
+    effects: [{ kind: 'damage', amount: 6, target: 'allEnemies', times: 2 }],
+  },
+  metallicize: {
+    id: 'metallicize', name: 'Metallicize', type: 'power', cost: 1, rarity: 'uncommon',
+    text: 'At the end of your turn, gain 3 Block.',
+    effects: [{ kind: 'power', power: 'metallicize', amount: 3 }],
+  },
+  inflame: {
+    id: 'inflame', name: 'Inflame', type: 'power', cost: 1, rarity: 'uncommon',
+    text: 'Gain 3 Strength.',
+    effects: [{ kind: 'status', status: 'strength', amount: 3, target: 'self' }],
+  },
+
+  // --- Rare ---------------------------------------------------------------
+  demonForm: {
+    id: 'demonForm', name: 'Demon Form', type: 'power', cost: 3, rarity: 'rare',
+    text: 'At the start of each turn, gain 2 Strength.',
+    effects: [{ kind: 'power', power: 'demonForm', amount: 2 }],
+  },
+  limitBreak: {
+    id: 'limitBreak', name: 'Limit Break', type: 'skill', cost: 1, rarity: 'rare',
+    text: 'Double your Strength.',
+    effects: [{ kind: 'doubleStrength' }],
+  },
+  reaper: {
+    id: 'reaper', name: 'Reaper', type: 'attack', cost: 2, rarity: 'rare',
+    text: 'Deal 6 damage to ALL enemies. Heal HP equal to unblocked damage.',
+    effects: [{ kind: 'reaper', amount: 6 }],
+  },
+};
+
+/** Ids that make up the fresh starting deck (in display order). */
+const STARTER_DECK = [
+  'strike', 'strike', 'strike', 'strike', 'strike',
+  'defend', 'defend', 'defend', 'defend',
+  'bash',
+];
+
+/** Cards that can appear as combat rewards, grouped by rarity. */
+const REWARD_POOL = {
+  common: ['cleave', 'ironWave', 'pommelStrike', 'twinStrike', 'shrugItOff', 'flex', 'clothesline'],
+  uncommon: ['heavyBlade', 'bodySlam', 'battleTrance', 'bloodletting', 'whirlwind', 'metallicize', 'inflame'],
+  rare: ['demonForm', 'limitBreak', 'reaper'],
+};
+
+/**
+ * Look up a card definition by id.
+ * @param {string} id
+ * @returns {object}
+ */
+function getCard(id) {
+  const card = CARDS[id];
+  if (!card) throw new Error(`Unknown card id: ${id}`);
+  return card;
+}
+
+/**
+ * Build a deck of card instances from a list of ids. Each instance gets a
+ * stable `uid` so duplicates are distinct (needed for hand/pile bookkeeping).
+ * @param {string[]} ids
+ * @param {number} [startUid]
+ * @returns {Array<{uid:number, id:string}>}
+ */
+function makeDeck(ids, startUid = 1) {
+  return ids.map((id, i) => ({ uid: startUid + i, id }));
+}
+
+/**
+ * Roll three distinct card rewards. Rarity is rolled per-card (rares are
+ * rare); duplicates within the same offer are avoided.
+ * @param {() => number} rng
+ * @returns {string[]} up to 3 card ids
+ */
+function rollRewards(rng) {
+  const out = [];
+  let guard = 0;
+  while (out.length < 3 && guard++ < 50) {
+    const roll = rng();
+    const rarity = roll < 0.6 ? 'common' : roll < 0.9 ? 'uncommon' : 'rare';
+    const id = pick(rng, REWARD_POOL[rarity]);
+    if (id && !out.includes(id)) out.push(id);
+  }
+  return out;
+}
+
+
+// ===== src/core/enemies.js =====
+// core/enemies.js
+//
+// Enemy data + their move-selection AI. Like cards, a "move" is declarative
+// data with an `effects` list that combat.js executes — but here the effects
+// describe what the ENEMY does on its turn (attack the player, gain block,
+// buff itself). The intent shown to the player is just the chosen move.
+//
+// Each enemy has a `chooseMove(self, rng)` that returns a move id. It is
+// deterministic given the rng state, and may read `self.history` (ids of the
+// enemy's previous moves) to avoid repetitive or illegal sequences.
+
+
+
+/**
+ * Enemy catalog keyed by id. `hp` is a [min, max] range rolled at spawn.
+ * Moves' effects target 'player' for damage; 'self' for block/buff.
+ */
+const ENEMIES = {
+  // --- Normal -------------------------------------------------------------
+  cultist: {
+    id: 'cultist', name: 'Cultist', hp: [48, 54], tier: 'normal',
+    moves: {
+      incantation: { id: 'incantation', name: 'Incantation', intent: 'buff',
+        effects: [{ kind: 'status', status: 'strength', amount: 3, target: 'self' }] },
+      darkStrike: { id: 'darkStrike', name: 'Dark Strike', intent: 'attack',
+        effects: [{ kind: 'damage', amount: 6, target: 'player' }] },
+    },
+    // Ritual first, then attack forever.
+    chooseMove(self) {
+      return self.history.length === 0 ? 'incantation' : 'darkStrike';
+    },
+  },
+
+  jawWorm: {
+    id: 'jawWorm', name: 'Jaw Worm', hp: [40, 44], tier: 'normal',
+    moves: {
+      chomp: { id: 'chomp', name: 'Chomp', intent: 'attack',
+        effects: [{ kind: 'damage', amount: 11, target: 'player' }] },
+      thrash: { id: 'thrash', name: 'Thrash', intent: 'attackdefend',
+        effects: [
+          { kind: 'damage', amount: 7, target: 'player' },
+          { kind: 'block', amount: 5 },
+        ] },
+      bellow: { id: 'bellow', name: 'Bellow', intent: 'buff',
+        effects: [
+          { kind: 'status', status: 'strength', amount: 3, target: 'self' },
+          { kind: 'block', amount: 6 },
+        ] },
+    },
+    chooseMove(self, rng) {
+      const last = self.history[self.history.length - 1];
+      const roll = rng();
+      if (roll < 0.45 && last !== 'bellow') return 'bellow';
+      if (roll < 0.75 && last !== 'chomp') return 'chomp';
+      return 'thrash';
+    },
+  },
+
+  spikeSlime: {
+    id: 'spikeSlime', name: 'Spike Slime', hp: [28, 32], tier: 'normal',
+    moves: {
+      flameTongue: { id: 'flameTongue', name: 'Flame Tongue', intent: 'attack',
+        effects: [{ kind: 'damage', amount: 8, target: 'player' }] },
+      lick: { id: 'lick', name: 'Lick', intent: 'debuff',
+        effects: [{ kind: 'status', status: 'weak', amount: 1, target: 'player' }] },
+    },
+    chooseMove(self, rng) {
+      const last = self.history[self.history.length - 1];
+      if (last === 'flameTongue') return rng() < 0.5 ? 'lick' : 'flameTongue';
+      return 'flameTongue';
+    },
+  },
+
+  fungiBeast: {
+    id: 'fungiBeast', name: 'Fungi Beast', hp: [22, 28], tier: 'normal',
+    moves: {
+      bite: { id: 'bite', name: 'Bite', intent: 'attack',
+        effects: [{ kind: 'damage', amount: 6, target: 'player' }] },
+      grow: { id: 'grow', name: 'Grow', intent: 'buff',
+        effects: [{ kind: 'status', status: 'strength', amount: 3, target: 'self' }] },
+    },
+    chooseMove(self, rng) {
+      const last = self.history[self.history.length - 1];
+      if (last !== 'grow' && rng() < 0.4) return 'grow';
+      return 'bite';
+    },
+  },
+
+  // --- Elite --------------------------------------------------------------
+  gremlinNob: {
+    id: 'gremlinNob', name: 'Gremlin Nob', hp: [82, 86], tier: 'elite',
+    moves: {
+      bellow: { id: 'bellow', name: 'Bellow', intent: 'buff',
+        effects: [{ kind: 'status', status: 'strength', amount: 2, target: 'self' }] },
+      skullBash: { id: 'skullBash', name: 'Skull Bash', intent: 'attackdebuff',
+        effects: [
+          { kind: 'damage', amount: 8, target: 'player' },
+          { kind: 'status', status: 'vulnerable', amount: 2, target: 'player' },
+        ] },
+      rush: { id: 'rush', name: 'Rush', intent: 'attack',
+        effects: [{ kind: 'damage', amount: 14, target: 'player' }] },
+    },
+    chooseMove(self, rng) {
+      if (self.history.length === 0) return 'bellow';
+      return rng() < 0.33 ? 'skullBash' : 'rush';
+    },
+  },
+
+  // --- Boss ---------------------------------------------------------------
+  theColossus: {
+    id: 'theColossus', name: 'The Colossus', hp: [140, 140], tier: 'boss',
+    moves: {
+      slam: { id: 'slam', name: 'Slam', intent: 'attack',
+        effects: [{ kind: 'damage', amount: 16, target: 'player' }] },
+      bulwark: { id: 'bulwark', name: 'Bulwark', intent: 'defend',
+        effects: [{ kind: 'block', amount: 18 }] },
+      quake: { id: 'quake', name: 'Quake', intent: 'attackdebuff',
+        effects: [
+          { kind: 'damage', amount: 10, target: 'player' },
+          { kind: 'status', status: 'weak', amount: 2, target: 'player' },
+        ] },
+      enrage: { id: 'enrage', name: 'Enrage', intent: 'buff',
+        effects: [{ kind: 'status', status: 'strength', amount: 4, target: 'self' }] },
+    },
+    // A telegraphed loop with a buff turn that rewards racing it down.
+    chooseMove(self) {
+      const cycle = ['quake', 'slam', 'bulwark', 'enrage', 'slam'];
+      return cycle[self.history.length % cycle.length];
+    },
+  },
+};
+
+/**
+ * Look up an enemy definition by id.
+ * @param {string} id
+ * @returns {object}
+ */
+function getEnemy(id) {
+  const e = ENEMIES[id];
+  if (!e) throw new Error(`Unknown enemy id: ${id}`);
+  return e;
+}
+
+/**
+ * Spawn a combat-ready enemy instance from its id, rolling HP from its range.
+ * `history` tracks chosen move ids for the AI; `intent` is filled in by combat.
+ * @param {string} id
+ * @param {() => number} rng
+ * @param {number} index unique slot index within the encounter
+ * @returns {object} enemy combat instance
+ */
+function spawnEnemy(id, rng, index) {
+  const def = getEnemy(id);
+  const [lo, hi] = def.hp;
+  const maxHp = lo + Math.floor(rng() * (hi - lo + 1));
+  return {
+    slot: index,
+    id,
+    name: def.name,
+    tier: def.tier,
+    hp: maxHp,
+    maxHp,
+    block: 0,
+    statuses: { strength: 0, vulnerable: 0, weak: 0 },
+    history: [],
+    intent: null, // { move id } resolved at the start of each enemy turn
+  };
+}
+
+/**
+ * Resolve and record the enemy's next move id (its telegraphed intent).
+ * @param {object} enemy enemy instance (mutated: history/intent updated)
+ * @param {() => number} rng
+ * @returns {object} the chosen move definition
+ */
+function resolveIntent(enemy, rng) {
+  const def = getEnemy(enemy.id);
+  const moveId = def.chooseMove(enemy, rng) ?? pick(rng, Object.keys(def.moves));
+  enemy.intent = moveId;
+  return def.moves[moveId];
+}
+
+/**
+ * Encounter groups for each node tier. One is chosen per node.
+ */
+const ENCOUNTERS = {
+  normal: [
+    ['jawWorm'],
+    ['cultist'],
+    ['spikeSlime', 'spikeSlime'],
+    ['fungiBeast', 'fungiBeast'],
+    ['cultist', 'spikeSlime'],
+  ],
+  elite: [
+    ['gremlinNob'],
+  ],
+  boss: [
+    ['theColossus'],
+  ],
+};
+
+
+// ===== src/core/combat.js =====
+// core/combat.js
+//
+// The combat engine. Pure, deterministic, browser-free. Every public function
+// takes a combat state and returns a NEW combat state (the input is never
+// mutated — we structuredClone up front and mutate the copy). Randomness is
+// threaded through `state.rngSeed` so a clone of the state replays identically.
+//
+// Combat state shape:
+//   {
+//     rngSeed, turn, phase: 'player'|'enemy'|'won'|'lost',
+//     player: { hp, maxHp, block, energy, maxEnergy,
+//               statuses:{strength,vulnerable,weak}, powers:{metallicize?,demonForm?} },
+//     enemies: [ enemy instance (see enemies.js) ],
+//     drawPile|hand|discardPile|exhaustPile: [ {uid, id} ],
+//     log: [string],
+//   }
+
+
+
+
+
+const HAND_SIZE = 5;
+const BASE_ENERGY = 3;
+const MAX_HAND = 10;
+
+// --- combat setup -----------------------------------------------------------
+
+/**
+ * Begin a combat.
+ * @param {object} args
+ * @param {{hp:number, maxHp:number}} args.player
+ * @param {Array<{uid:number,id:string}>} args.deck the player's full deck
+ * @param {string[]} args.enemyIds enemies to spawn, in slot order
+ * @param {number} args.seed
+ * @returns {object} combat state with phase 'player', a drawn hand, and intents
+ */
+function startCombat({ player, deck, enemyIds, seed }) {
+  const rng = makeRng((seed >>> 0) || 1);
+  const state = {
+    rngSeed: 0,
+    turn: 1,
+    phase: 'player',
+    player: {
+      hp: player.hp,
+      maxHp: player.maxHp,
+      block: 0,
+      energy: BASE_ENERGY,
+      maxEnergy: BASE_ENERGY,
+      statuses: { strength: 0, vulnerable: 0, weak: 0 },
+      powers: {},
+    },
+    enemies: enemyIds.map((id, i) => spawnEnemy(id, rng, i)),
+    drawPile: shuffle(deck, rng),
+    hand: [],
+    discardPile: [],
+    exhaustPile: [],
+    log: [],
+  };
+  drawCards(state, HAND_SIZE, rng);
+  for (const e of state.enemies) resolveIntent(e, rng);
+  state.rngSeed = rng.state();
+  return state;
+}
+
+// --- queries (pure, no clone needed) ----------------------------------------
+
+/** Enemies that are still alive. */
+function aliveEnemies(state) {
+  return state.enemies.filter((e) => e.hp > 0);
+}
+
+/** Is the combat finished? */
+function isOver(state) {
+  return state.phase === 'won' || state.phase === 'lost';
+}
+
+/** Can the card at `handIndex` legally be played right now? */
+function canPlay(state, handIndex) {
+  if (state.phase !== 'player') return false;
+  const card = state.hand[handIndex];
+  if (!card) return false;
+  return getCard(card.id).cost <= state.player.energy;
+}
+
+/**
+ * What the enemy's telegraphed move will do, with current modifiers folded in
+ * (strength added, weak applied). For the UI's intent display and for tests.
+ * @param {object} enemy
+ * @returns {{name:string,intent:string,damage:number,times:number,block:number}|null}
+ */
+function intentPreview(enemy) {
+  const def = getEnemy(enemy.id);
+  const move = def.moves[enemy.intent];
+  if (!move) return null;
+  let damage = 0;
+  let times = 1;
+  let block = 0;
+  for (const eff of move.effects) {
+    if (eff.kind === 'damage') {
+      times = eff.times || 1;
+      let d = eff.amount + (enemy.statuses.strength || 0);
+      if ((enemy.statuses.weak || 0) > 0) d = Math.floor(d * 0.75);
+      damage = Math.max(0, d);
+    } else if (eff.kind === 'block') {
+      block += eff.amount;
+    }
+  }
+  return { name: move.name, intent: move.intent, damage, times, block };
+}
+
+// --- the player's turn ------------------------------------------------------
+
+/**
+ * Play the card at `handIndex`, optionally targeting the enemy in `targetSlot`.
+ * No-ops (returns the same state) if the move is illegal so the UI can call it
+ * freely.
+ * @param {object} state
+ * @param {number} handIndex
+ * @param {number} [targetSlot]
+ * @returns {object} new state
+ */
+function playCard(state, handIndex, targetSlot) {
+  if (state.phase !== 'player') return state;
+  const card = state.hand[handIndex];
+  if (!card) return state;
+  const def = getCard(card.id);
+  if (def.cost > state.player.energy) return state;
+
+  const s = structuredClone(state);
+  const rng = makeRng(s.rngSeed);
+  s.player.energy -= def.cost;
+
+  for (const eff of def.effects) {
+    applyCardEffect(s, eff, targetSlot, rng);
+    if (s.player.hp <= 0) break; // self-damage (e.g. Bloodletting) can be lethal
+  }
+
+  // Card leaves the hand: powers are removed for the rest of combat (exhaust),
+  // everything else goes to the discard pile.
+  s.hand.splice(handIndex, 1);
+  if (def.type === 'power') s.exhaustPile.push(card);
+  else s.discardPile.push(card);
+
+  settleOutcome(s);
+  s.rngSeed = rng.state();
+  return s;
+}
+
+/**
+ * End the player's turn: trigger end-of-turn powers, let every living enemy
+ * act on its intent, then start a fresh player turn (unless the combat ended).
+ * @param {object} state
+ * @returns {object} new state
+ */
+function endTurn(state) {
+  if (state.phase !== 'player') return state;
+  const s = structuredClone(state);
+  const rng = makeRng(s.rngSeed);
+
+  // End-of-player-turn powers, then player debuffs tick down.
+  if (s.player.powers.metallicize) s.player.block += s.player.powers.metallicize;
+  tickDebuffs(s.player.statuses);
+
+  // Whole hand is discarded at end of turn.
+  s.discardPile.push(...s.hand);
+  s.hand = [];
+
+  s.phase = 'enemy';
+  for (const enemy of s.enemies) {
+    if (enemy.hp <= 0) continue;
+    enemy.block = 0; // block from the enemy's last turn clears as it acts again
+    executeEnemyMove(s, enemy);
+    enemy.history.push(enemy.intent);
+    tickDebuffs(enemy.statuses);
+    if (s.player.hp <= 0) {
+      s.player.hp = 0;
+      s.phase = 'lost';
+      s.rngSeed = rng.state();
+      return s;
+    }
+  }
+
+  // Start the player's next turn.
+  s.turn += 1;
+  s.player.block = 0;
+  if (s.player.powers.demonForm) s.player.statuses.strength += s.player.powers.demonForm;
+  s.player.energy = s.player.maxEnergy;
+  drawCards(s, HAND_SIZE, rng);
+  for (const e of aliveEnemies(s)) resolveIntent(e, rng);
+  s.phase = 'player';
+
+  s.rngSeed = rng.state();
+  return s;
+}
+
+// --- effect execution -------------------------------------------------------
+
+function applyCardEffect(s, eff, targetSlot, rng) {
+  switch (eff.kind) {
+    case 'damage': {
+      const times = eff.times || 1;
+      const base = attackPower(eff.amount, s.player.statuses, eff.strengthMult || 1);
+      for (let t = 0; t < times; t++) {
+        if (eff.target === 'allEnemies') {
+          for (const e of aliveEnemies(s)) dealToEnemy(e, base);
+        } else {
+          const e = chosenEnemy(s, targetSlot);
+          if (e) dealToEnemy(e, base);
+        }
+      }
+      break;
+    }
+    case 'damageFromBlock': {
+      // Body Slam: damage equals current block (strength does not apply, but
+      // Weak still reduces it like any other attack).
+      let base = s.player.block;
+      if ((s.player.statuses.weak || 0) > 0) base = Math.floor(base * 0.75);
+      const e = chosenEnemy(s, targetSlot);
+      if (e) dealToEnemy(e, Math.max(0, base));
+      break;
+    }
+    case 'reaper': {
+      // Hit all enemies; heal for total UNBLOCKED damage dealt.
+      const base = attackPower(eff.amount, s.player.statuses, 1);
+      let healed = 0;
+      for (const e of aliveEnemies(s)) healed += dealToEnemy(e, base);
+      s.player.hp = Math.min(s.player.maxHp, s.player.hp + healed);
+      break;
+    }
+    case 'block':
+      s.player.block += eff.amount;
+      break;
+    case 'draw':
+      drawCards(s, eff.amount, rng);
+      break;
+    case 'energy':
+      s.player.energy += eff.amount;
+      break;
+    case 'hpLoss':
+      s.player.hp -= eff.amount; // ignores block, by design
+      break;
+    case 'status': {
+      if (eff.target === 'self') {
+        s.player.statuses[eff.status] = (s.player.statuses[eff.status] || 0) + eff.amount;
+      } else {
+        const e = chosenEnemy(s, targetSlot);
+        if (e) e.statuses[eff.status] = (e.statuses[eff.status] || 0) + eff.amount;
+      }
+      break;
+    }
+    case 'power':
+      s.player.powers[eff.power] = (s.player.powers[eff.power] || 0) + eff.amount;
+      break;
+    case 'doubleStrength':
+      s.player.statuses.strength *= 2;
+      break;
+    default:
+      throw new Error(`Unknown card effect kind: ${eff.kind}`);
+  }
+}
+
+function executeEnemyMove(s, enemy) {
+  const def = getEnemy(enemy.id);
+  const move = def.moves[enemy.intent];
+  if (!move) return;
+  for (const eff of move.effects) {
+    switch (eff.kind) {
+      case 'damage': {
+        const times = eff.times || 1;
+        let d = eff.amount + (enemy.statuses.strength || 0);
+        if ((enemy.statuses.weak || 0) > 0) d = Math.floor(d * 0.75);
+        d = Math.max(0, d);
+        if ((s.player.statuses.vulnerable || 0) > 0) d = Math.floor(d * 1.5);
+        for (let t = 0; t < times; t++) {
+          dealToUnit(s.player, d);
+          if (s.player.hp <= 0) return;
+        }
+        break;
+      }
+      case 'block':
+        enemy.block += eff.amount;
+        break;
+      case 'status':
+        if (eff.target === 'self') {
+          enemy.statuses[eff.status] = (enemy.statuses[eff.status] || 0) + eff.amount;
+        } else {
+          s.player.statuses[eff.status] = (s.player.statuses[eff.status] || 0) + eff.amount;
+        }
+        break;
+      default:
+        throw new Error(`Unknown enemy effect kind: ${eff.kind}`);
+    }
+  }
+}
+
+// --- damage math ------------------------------------------------------------
+
+/** Outgoing attack value before the target's Vulnerable is applied. */
+function attackPower(base, attackerStatuses, strengthMult) {
+  let dmg = base + (attackerStatuses.strength || 0) * strengthMult;
+  if ((attackerStatuses.weak || 0) > 0) dmg = Math.floor(dmg * 0.75);
+  return Math.max(0, dmg);
+}
+
+/** Apply an attack to an enemy (folds in its Vulnerable). Returns unblocked dmg. */
+function dealToEnemy(enemy, base) {
+  let dmg = base;
+  if ((enemy.statuses.vulnerable || 0) > 0) dmg = Math.floor(dmg * 1.5);
+  return dealToUnit(enemy, dmg);
+}
+
+/** Subtract `dmg` from a unit's block then HP. Returns HP actually lost. */
+function dealToUnit(unit, dmg) {
+  const blocked = Math.min(unit.block, dmg);
+  unit.block -= blocked;
+  const hpLoss = dmg - blocked;
+  unit.hp -= hpLoss;
+  return hpLoss;
+}
+
+// --- piles & bookkeeping ----------------------------------------------------
+
+function drawCards(s, n, rng) {
+  for (let i = 0; i < n; i++) {
+    if (s.hand.length >= MAX_HAND) break;
+    if (s.drawPile.length === 0) {
+      if (s.discardPile.length === 0) break;
+      s.drawPile = shuffle(s.discardPile, rng);
+      s.discardPile = [];
+    }
+    s.hand.push(s.drawPile.shift());
+  }
+}
+
+function tickDebuffs(statuses) {
+  if (statuses.vulnerable > 0) statuses.vulnerable -= 1;
+  if (statuses.weak > 0) statuses.weak -= 1;
+}
+
+/** Resolve the intended target enemy, falling back to the first living one. */
+function chosenEnemy(s, targetSlot) {
+  const target = s.enemies.find((e) => e.slot === targetSlot && e.hp > 0);
+  if (target) return target;
+  return aliveEnemies(s)[0] || null;
+}
+
+/** Flip phase to 'won'/'lost' if the board says so. */
+function settleOutcome(s) {
+  if (s.player.hp <= 0) {
+    s.player.hp = 0;
+    s.phase = 'lost';
+  } else if (aliveEnemies(s).length === 0) {
+    s.phase = 'won';
+  }
+}
+
+
+// ===== src/core/run.js =====
+// core/run.js
+//
+// The meta-game above combat: a linear climb of nodes (fights, an elite, rest
+// stops, and a boss), the player's persistent deck/HP, and the reward flow
+// between fights. Pure and deterministic given the run seed — combat states
+// are produced by combat.js and stored on `run.combat`; this module only owns
+// the progression and the deck.
+//
+// Run phases: 'map' | 'combat' | 'reward' | 'rest' | 'dead' | 'won'.
+
+
+
+
+
+
+const START_HP = 72;
+const REST_HEAL_FRACTION = 0.3;
+
+/** The fixed shape of an act. Enemy groups for each node are rolled per-seed. */
+const LAYOUT = ['combat', 'combat', 'rest', 'combat', 'elite', 'rest', 'combat', 'boss'];
+
+/**
+ * Create a fresh run from a seed.
+ * @param {number} seed
+ * @returns {object} run state in the 'map' phase at floor 0
+ */
+function newRun(seed) {
+  const rng = makeRng((seed >>> 0) || 1);
+  const nodes = LAYOUT.map((type) => {
+    if (type === 'combat') return { type, group: pick(rng, ENCOUNTERS.normal) };
+    if (type === 'elite') return { type, group: pick(rng, ENCOUNTERS.elite) };
+    if (type === 'boss') return { type, group: pick(rng, ENCOUNTERS.boss) };
+    return { type }; // rest
+  });
+  const deck = makeDeck(STARTER_DECK, 1);
+  return {
+    seed: (seed >>> 0) || 1,
+    rngSeed: rng.state(),
+    floor: 0,
+    nodes,
+    player: { hp: START_HP, maxHp: START_HP, gold: 0, deck, nextUid: deck.length + 1 },
+    phase: 'map',
+    combat: null,
+    reward: null,
+  };
+}
+
+/** The node the player is currently standing on. */
+function currentNode(run) {
+  return run.nodes[run.floor] ?? null;
+}
+
+/**
+ * Enter the current node: start a combat (for fight/elite/boss nodes) or move
+ * into the rest screen. No-op unless we're on the map.
+ * @param {object} run
+ * @returns {object} new run
+ */
+function enterNode(run) {
+  if (run.phase !== 'map') return run;
+  const node = currentNode(run);
+  if (!node) return run;
+
+  const s = structuredClone(run);
+  if (node.type === 'rest') {
+    s.phase = 'rest';
+    return s;
+  }
+
+  // Combat-type node. Derive a fresh, stable seed for this fight.
+  const rng = makeRng(s.rngSeed);
+  const combatSeed = (randInt(rng, 0x7fffffff) ^ (s.floor + 1)) >>> 0;
+  s.rngSeed = rng.state();
+  s.combat = startCombat({
+    player: { hp: s.player.hp, maxHp: s.player.maxHp },
+    deck: structuredClone(s.player.deck),
+    enemyIds: node.group,
+    seed: combatSeed,
+  });
+  s.phase = 'combat';
+  return s;
+}
+
+/**
+ * Fold a finished combat back into the run: carry over the player's HP, then
+ * route to a reward (normal win), victory (boss win), or death.
+ * Call this once `run.combat.phase` is 'won' or 'lost'.
+ * @param {object} run
+ * @returns {object} new run
+ */
+function resolveCombat(run) {
+  if (run.phase !== 'combat' || !run.combat) return run;
+  const combat = run.combat;
+  if (combat.phase !== 'won' && combat.phase !== 'lost') return run;
+
+  const s = structuredClone(run);
+  s.player.hp = Math.max(0, combat.player.hp);
+
+  if (combat.phase === 'lost') {
+    s.phase = 'dead';
+    return s;
+  }
+
+  if (currentNode(s).type === 'boss') {
+    s.phase = 'won';
+    return s;
+  }
+
+  const rng = makeRng(s.rngSeed);
+  s.reward = { cards: rollRewards(rng), gold: 10 + randInt(rng, 16) };
+  s.player.gold += s.reward.gold;
+  s.rngSeed = rng.state();
+  s.phase = 'reward';
+  return s;
+}
+
+/**
+ * Take a card from the current reward (or skip with `cardId === null`), then
+ * advance to the next node.
+ * @param {object} run
+ * @param {string|null} cardId must be one of `run.reward.cards`, or null to skip
+ * @returns {object} new run
+ */
+function chooseReward(run, cardId) {
+  if (run.phase !== 'reward' || !run.reward) return run;
+  const s = structuredClone(run);
+  if (cardId && s.reward.cards.includes(cardId)) {
+    s.player.deck.push({ uid: s.player.nextUid, id: cardId });
+    s.player.nextUid += 1;
+  }
+  s.reward = null;
+  return advance(s);
+}
+
+/**
+ * Rest at a campfire: heal a fraction of max HP, then advance.
+ * @param {object} run
+ * @returns {object} new run
+ */
+function rest(run) {
+  if (run.phase !== 'rest') return run;
+  const s = structuredClone(run);
+  const heal = Math.floor(s.player.maxHp * REST_HEAL_FRACTION);
+  s.player.hp = Math.min(s.player.maxHp, s.player.hp + heal);
+  return advance(s);
+}
+
+/** Step to the next node (or declare victory after the final node). */
+function advance(s) {
+  s.combat = null;
+  s.floor += 1;
+  if (s.floor >= s.nodes.length) {
+    s.phase = 'won';
+  } else {
+    s.phase = 'map';
+  }
+  return s;
+}
+
+
+// ===== src/ui/app.js =====
+// src/ui/app.js
+//
+// Thin presentation layer. It owns no game rules — it holds a `run` state,
+// renders it to the DOM, and routes taps back into the pure core
+// (run.js / combat.js). Re-render is dumb-simple: rebuild the screen from
+// state on every change. Plenty fast for a card game, and it keeps the UI a
+// pure function of state, mirroring the project's core/shell split.
+
+
+
+
+
+const SAVE_KEY = 'spireling:run';
+const app = document.getElementById('app');
+
+let run = loadRun();
+let selected = null; // selected hand index awaiting a target
+
+// --- persistence ------------------------------------------------------------
+
+function saveRun() {
+  try {
+    if (run) localStorage.setItem(SAVE_KEY, JSON.stringify(run));
+    else localStorage.removeItem(SAVE_KEY);
+  } catch { /* storage may be unavailable; the game still works in-memory */ }
+}
+
+function loadRun() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function setRun(next) {
+  run = next;
+  selected = null;
+  saveRun();
+  render();
+}
+
+// --- tiny DOM helper --------------------------------------------------------
+
+function el(tag, props = {}, children = []) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') node.className = v;
+    else if (k === 'text') node.textContent = v;
+    else if (k.startsWith('on')) { if (typeof v === 'function') node.addEventListener(k.slice(2), v); }
+    else if (v !== null && v !== undefined) node.setAttribute(k, v);
+  }
+  for (const c of [].concat(children)) {
+    if (c == null) continue;
+    node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  }
+  return node;
+}
+
+function clear() { app.replaceChildren(); }
+
+// --- top-level render -------------------------------------------------------
+
+function render() {
+  clear();
+  if (!run) return renderTitle();
+  if (run._showDeck) return renderDeckOverlay();
+  switch (run.phase) {
+    case 'map': return renderMap();
+    case 'combat': return renderCombat();
+    case 'reward': return renderReward();
+    case 'rest': return renderRest();
+    case 'dead': return renderEnd(false);
+    case 'won': return renderEnd(true);
+    default: return renderTitle();
+  }
+}
+
+// --- screens ----------------------------------------------------------------
+
+function renderTitle() {
+  app.appendChild(el('div', { class: 'screen center' }, [
+    el('h1', { class: 'logo', text: 'SPIRELING' }),
+    el('p', { class: 'tag', text: 'A pocket deck-building roguelike.' }),
+    el('button', { class: 'btn big', onclick: () => setRun(newRun(randomSeed())) }, 'New Run'),
+    el('p', { class: 'hint', text: 'Climb 8 floors. Build a deck. Beat the Colossus.' }),
+  ]));
+}
+
+function renderMap() {
+  const screen = el('div', { class: 'screen' });
+  screen.appendChild(header());
+  const list = el('div', { class: 'map' });
+  run.nodes.forEach((node, i) => {
+    const done = i < run.floor;
+    const here = i === run.floor;
+    const row = el('div', {
+      class: `mapnode ${done ? 'done' : ''} ${here ? 'here' : ''}`,
+    }, [
+      el('span', { class: 'mapicon', text: nodeIcon(node.type) }),
+      el('span', { class: 'maplabel', text: nodeLabel(node) }),
+      here ? el('span', { class: 'maphere', text: '◀ you are here' }) : null,
+    ]);
+    list.appendChild(row);
+  });
+  screen.appendChild(list);
+
+  const node = currentNode(run);
+  const cta = node.type === 'rest' ? 'Rest' : node.type === 'boss' ? 'Face the Boss' : 'Enter';
+  screen.appendChild(footer([
+    el('button', { class: 'btn', onclick: () => setRun(viewDeck(run)) }, `Deck (${run.player.deck.length})`),
+    el('button', { class: 'btn primary', onclick: () => setRun(enterNode(run)) }, cta),
+  ]));
+  app.appendChild(screen);
+}
+
+function renderCombat() {
+  const c = run.combat;
+  const screen = el('div', { class: 'screen combat' });
+
+  // Enemies
+  const enemyRow = el('div', { class: 'enemies' });
+  c.enemies.forEach((e) => {
+    const dead = e.hp <= 0;
+    const targetable = selected !== null && needsTarget(c.hand[selected]) && !dead;
+    const card = el('div', {
+      class: `enemy ${dead ? 'dead' : ''} ${targetable ? 'targetable' : ''}`,
+      onclick: targetable ? () => play(selected, e.slot) : undefined,
+    }, [
+      el('div', { class: 'intent', text: intentText(e) }),
+      el('div', { class: 'sprite', text: dead ? '💀' : enemySprite(e.id) }),
+      el('div', { class: 'ename', text: e.name }),
+      hpBar(e.hp, e.maxHp, e.block),
+      statusRow(e.statuses),
+    ]);
+    enemyRow.appendChild(card);
+  });
+  screen.appendChild(enemyRow);
+
+  // Player status bar
+  screen.appendChild(el('div', { class: 'playerbar' }, [
+    el('div', { class: 'pstat hp', text: `❤ ${c.player.hp}/${c.player.maxHp}` }),
+    c.player.block > 0 ? el('div', { class: 'pstat block', text: `🛡 ${c.player.block}` }) : null,
+    el('div', { class: 'pstat energy', text: `⚡ ${c.player.energy}/${c.player.maxEnergy}` }),
+    statusRow(c.player.statuses, true),
+  ]));
+
+  // Hand
+  const hand = el('div', { class: 'hand' });
+  c.hand.forEach((card, i) => {
+    const def = getCard(card.id);
+    const playable = canPlay(c, i);
+    const isSel = selected === i;
+    hand.appendChild(el('div', {
+      class: `card type-${def.type} ${playable ? '' : 'unplayable'} ${isSel ? 'selected' : ''}`,
+      onclick: playable ? () => onCardTap(i) : undefined,
+    }, [
+      el('div', { class: 'cost', text: String(def.cost) }),
+      el('div', { class: 'cname', text: def.name }),
+      el('div', { class: 'ctext', text: def.text }),
+    ]));
+  });
+  screen.appendChild(hand);
+
+  screen.appendChild(footer([
+    el('div', { class: 'piles', text: `Draw ${c.drawPile.length} · Disc ${c.discardPile.length}` }),
+    el('button', { class: 'btn primary', onclick: onEndTurn }, 'End Turn'),
+  ]));
+  app.appendChild(screen);
+
+  // If combat already resolved (e.g. fatal self-damage), surface it.
+  if (isOver(c)) setTimeout(() => setRun(resolveCombat(run)), 350);
+}
+
+function renderReward() {
+  const screen = el('div', { class: 'screen' });
+  screen.appendChild(el('h2', { class: 'title', text: 'Victory!' }));
+  screen.appendChild(el('p', { class: 'hint', text: `+${run.reward.gold} gold · pick a card` }));
+  const cards = el('div', { class: 'rewardcards' });
+  run.reward.cards.forEach((id) => {
+    const def = getCard(id);
+    cards.appendChild(el('div', {
+      class: `card type-${def.type}`,
+      onclick: () => setRun(chooseReward(run, id)),
+    }, [
+      el('div', { class: 'cost', text: String(def.cost) }),
+      el('div', { class: 'cname', text: def.name }),
+      el('div', { class: 'ctext', text: def.text }),
+    ]));
+  });
+  screen.appendChild(cards);
+  screen.appendChild(footer([
+    el('button', { class: 'btn', onclick: () => setRun(chooseReward(run, null)) }, 'Skip'),
+  ]));
+  app.appendChild(screen);
+}
+
+function renderRest() {
+  const heal = Math.floor(run.player.maxHp * 0.3);
+  app.appendChild(el('div', { class: 'screen center' }, [
+    el('div', { class: 'sprite big', text: '🔥' }),
+    el('h2', { class: 'title', text: 'A campfire' }),
+    el('p', { class: 'hint', text: `Rest to heal ${heal} HP (${run.player.hp}/${run.player.maxHp}).` }),
+    el('button', { class: 'btn big primary', onclick: () => setRun(rest(run)) }, 'Rest'),
+  ]));
+}
+
+function renderEnd(won) {
+  app.appendChild(el('div', { class: 'screen center' }, [
+    el('div', { class: 'sprite big', text: won ? '👑' : '☠️' }),
+    el('h1', { class: 'logo', text: won ? 'YOU WIN' : 'YOU DIED' }),
+    el('p', { class: 'hint', text: won ? 'The Colossus falls. The spire is yours.' : `Fell on floor ${run.floor + 1}.` }),
+    el('button', { class: 'btn big primary', onclick: () => setRun(newRun(randomSeed())) }, 'New Run'),
+  ]));
+}
+
+// A read-only deck view stored as a transient flag on the run.
+function viewDeck(r) { return { ...r, _showDeck: true }; }
+
+// --- shared bits ------------------------------------------------------------
+
+function header() {
+  return el('div', { class: 'topbar' }, [
+    el('div', { class: 'pstat hp', text: `❤ ${run.player.hp}/${run.player.maxHp}` }),
+    el('div', { class: 'pstat', text: `Floor ${run.floor + 1}/${run.nodes.length}` }),
+    el('div', { class: 'pstat', text: `🪙 ${run.player.gold}` }),
+    el('button', { class: 'btn tiny', onclick: () => { if (confirm('Abandon this run?')) setRun(null); } }, '✕'),
+  ]);
+}
+
+function footer(children) {
+  return el('div', { class: 'footer' }, children);
+}
+
+function hpBar(hp, maxHp, block = 0) {
+  const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
+  return el('div', { class: 'hpbar' }, [
+    el('div', { class: 'hpfill', style: `width:${pct}%` }),
+    el('div', { class: 'hptext', text: block > 0 ? `🛡${block}  ${hp}/${maxHp}` : `${hp}/${maxHp}` }),
+  ]);
+}
+
+function statusRow(statuses, isPlayer = false) {
+  const chips = [];
+  if (statuses.strength) chips.push(chip('STR', statuses.strength, 'str'));
+  if (statuses.vulnerable) chips.push(chip('VULN', statuses.vulnerable, 'vuln'));
+  if (statuses.weak) chips.push(chip('WEAK', statuses.weak, 'weak'));
+  return el('div', { class: `statuses ${isPlayer ? 'pstatuses' : ''}` }, chips);
+}
+
+function chip(label, n, kind) {
+  return el('span', { class: `chip ${kind}`, text: `${label} ${n}` });
+}
+
+function intentText(e) {
+  if (e.hp <= 0) return '';
+  const p = intentPreview(e);
+  if (!p) return '';
+  if (p.damage > 0) return p.times > 1 ? `⚔ ${p.damage}×${p.times}` : `⚔ ${p.damage}`;
+  if (p.intent === 'defend') return `🛡 ${p.block}`;
+  if (p.intent === 'buff') return '💪 buff';
+  if (p.intent === 'debuff') return '☣ debuff';
+  return '…';
+}
+
+function nodeIcon(t) {
+  return { combat: '⚔', elite: '☠', rest: '🔥', boss: '👑' }[t] || '•';
+}
+function nodeLabel(node) {
+  if (node.type === 'rest') return 'Campfire';
+  if (node.type === 'boss') return 'Boss · The Colossus';
+  if (node.type === 'elite') return 'Elite';
+  return 'Fight';
+}
+function enemySprite(id) {
+  return {
+    cultist: '🧙', jawWorm: '🪱', spikeSlime: '🟢', fungiBeast: '🍄',
+    gremlinNob: '👹', theColossus: '🗿',
+  }[id] || '👾';
+}
+
+function randomSeed() { return (Math.random() * 0x7fffffff) >>> 0; }
+
+// --- interactions -----------------------------------------------------------
+
+function onCardTap(i) {
+  const c = run.combat;
+  const card = c.hand[i];
+  if (!needsTarget(card) || aliveEnemies(c).length === 1) {
+    const target = aliveEnemies(c)[0];
+    play(i, target ? target.slot : undefined);
+    return;
+  }
+  selected = selected === i ? null : i; // toggle; enemies become tappable
+  render();
+}
+
+function play(handIndex, targetSlot) {
+  const next = playCard(run.combat, handIndex, targetSlot);
+  run = { ...run, combat: next };
+  selected = null;
+  saveRun();
+  if (isOver(next)) setRun(resolveCombat(run));
+  else render();
+}
+
+function onEndTurn() {
+  const next = endTurn(run.combat);
+  run = { ...run, combat: next };
+  selected = null;
+  saveRun();
+  if (isOver(next)) setRun(resolveCombat(run));
+  else render();
+}
+
+/** Does playing this card require the player to choose a single enemy? */
+function needsTarget(card) {
+  if (!card) return false;
+  return getCard(card.id).effects.some(
+    (eff) => (eff.kind === 'damage' && eff.target === 'enemy')
+      || eff.kind === 'damageFromBlock'
+      || (eff.kind === 'status' && eff.target === 'enemy'),
+  );
+}
+
+// --- deck overlay -----------------------------------------------------------
+
+function renderDeckOverlay() {
+  clear();
+  const screen = el('div', { class: 'screen' });
+  screen.appendChild(el('h2', { class: 'title', text: `Your Deck (${run.player.deck.length})` }));
+  const grid = el('div', { class: 'deckgrid' });
+  run.player.deck.forEach((card) => {
+    const def = getCard(card.id);
+    grid.appendChild(el('div', { class: `card mini type-${def.type}` }, [
+      el('div', { class: 'cost', text: String(def.cost) }),
+      el('div', { class: 'cname', text: def.name }),
+    ]));
+  });
+  screen.appendChild(grid);
+  screen.appendChild(footer([
+    el('button', { class: 'btn primary', onclick: () => setRun({ ...run, _showDeck: false }) }, 'Back'),
+  ]));
+  app.appendChild(screen);
+}
+
+render();
+
+})();
+  </script>
+</body>
+</html>

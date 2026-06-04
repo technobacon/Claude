@@ -40,26 +40,25 @@
       .tab { background: transparent; border: 1px solid #2a303b; color: var(--muted);
         padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 13px; }
       .tab.active { color: var(--text); border-color: var(--accent); }
-      .filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-      .fglabel { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin: 0 0 4px 2px; }
-      .frow { display: flex; flex-wrap: wrap; gap: 6px; }
+      .filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+      .frow { display: flex; gap: 8px; }
+      .frow select { flex: 1; min-width: 0; background: #161a21; color: var(--text);
+        border: 1px solid #2a303b; border-radius: 10px; padding: 10px 8px; font-size: 13px; }
       .pill.easy { color: var(--right); }
       .pill.hard { color: var(--left); }
       .pill.medium { color: var(--accent); }
-      .chip { background: #161a21; border: 1px solid #2a303b; color: var(--muted);
-        border-radius: 999px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
-      .chip.on { color: #11151c; background: var(--accent); border-color: var(--accent); font-weight: 600; }
-      .deck { position: relative; flex: 1; min-height: 440px; }
-      .card { position: absolute; inset: 0; background: var(--card); border-radius: 18px;
+      .deck { position: relative; flex: 1; min-height: 420px; max-width: 340px; width: 100%; margin: 0 auto; }
+      .card { position: absolute; inset: 0; background: var(--card); border-radius: 20px;
         overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.4); display: flex;
         flex-direction: column; user-select: none; -webkit-user-select: none; touch-action: pan-y; }
-      .card .photo { width: 100%; height: 58%; object-fit: cover; background: #11151c; pointer-events: none; }
-      .card .body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
-      .card h2 { margin: 0; font-size: 20px; line-height: 1.2; }
+      .card .photo { width: 100%; height: 50%; object-fit: cover; background: #11151c; pointer-events: none; }
+      .card .body { padding: 16px 18px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+      .card h2 { margin: 0; font-size: 22px; line-height: 1.2; }
       .meta { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
       .meta .pill { background: #232936; border-radius: 6px; padding: 2px 7px; }
-      .ingredients { font-size: 13px; color: var(--muted); margin: 0; overflow: hidden;
-        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+      .factline { font-size: 12px; color: var(--muted); }
+      .ingredients { font-size: 14px; color: var(--muted); margin: 0; overflow: hidden; line-height: 1.45;
+        display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; }
       .source { margin-top: auto; font-size: 11px; color: var(--muted); }
       .stamp { position: absolute; top: 22px; font-size: 28px; font-weight: 900; padding: 4px 12px;
         border-radius: 10px; border: 4px solid; opacity: 0; pointer-events: none; }
@@ -116,43 +115,19 @@
       // Talks to TheMealDB directly; saves likes in localStorage. No server.
       const BASE = "https://www.themealdb.com/api/json/v1/1";
       const SWIPE_THRESHOLD = 110;
-      const LETTERS = "abcdefghijklmnoprstvw".split("");
 
-      const FILTER_GROUPS = [
-        { label: "Meal", items: [
-          { label: "Breakfast", kind: "cat", value: "Breakfast" },
-          { label: "Dessert", kind: "cat", value: "Dessert" },
-        ] },
-        { label: "Diet", items: [
-          { label: "Vegetarian", kind: "cat", value: "Vegetarian" },
-          { label: "Vegan", kind: "cat", value: "Vegan" },
-        ] },
-        { label: "Main", items: [
-          { label: "Chicken", kind: "cat", value: "Chicken" },
-          { label: "Beef", kind: "cat", value: "Beef" },
-          { label: "Seafood", kind: "cat", value: "Seafood" },
-        ] },
-        { label: "Cuisine", items: [
-          { label: "Italian", kind: "area", value: "Italian" },
-          { label: "Mexican", kind: "area", value: "Mexican" },
-          { label: "Indian", kind: "area", value: "Indian" },
-          { label: "Chinese", kind: "area", value: "Chinese" },
-          { label: "Thai", kind: "area", value: "Thai" },
-          { label: "Japanese", kind: "area", value: "Japanese" },
-        ] },
-        { label: "Difficulty", items: [
-          { label: "Easy", kind: "diff", value: "easy" },
-          { label: "Medium", kind: "diff", value: "medium" },
-          { label: "Hard", kind: "diff", value: "hard" },
-        ] },
-      ];
-      function activeItems(kind) {
-        const out = [];
-        FILTER_GROUPS.forEach(g => g.items.forEach(it => {
-          if (it.kind === kind && state.active.has(it.label)) out.push(it.value);
-        }));
-        return out;
-      }
+      // Dropdown options. Category = a single TheMealDB category dimension
+      // (diet + protein live together because a meal has exactly one category).
+      const CATEGORIES = [
+        "Vegetarian", "Vegan", "Chicken", "Beef", "Seafood", "Pork", "Lamb", "Pasta",
+      ].map(c => [c, c]);
+      const CUISINES = [
+        "American", "British", "Canadian", "Chinese", "Croatian", "Dutch", "Egyptian",
+        "Filipino", "French", "Greek", "Indian", "Irish", "Italian", "Jamaican",
+        "Japanese", "Malaysian", "Mexican", "Moroccan", "Polish", "Portuguese",
+        "Russian", "Spanish", "Thai", "Tunisian", "Turkish", "Ukrainian", "Vietnamese",
+      ].map(c => [c, c]);
+      const DIFFICULTIES = [["Easy", "easy"], ["Medium", "medium"], ["Hard", "hard"]];
 
       // ----- persistent state ----------------------------------------------
       const SW_KEY = "forkful_swipes";
@@ -162,7 +137,7 @@
 
       const state = {
         tab: "discover",
-        active: new Set(),
+        filters: { category: "", cuisine: "", difficulty: "" },
         deck: [],
         loading: true,
         history: [],
@@ -267,35 +242,29 @@
         return out;
       }
 
+      // Hydrate a list of stubs (id/name/thumb) into full meal objects.
+      async function hydrate(stubs, max) {
+        const ids = shuffle(stubs).slice(0, max).map(m => m.idMeal);
+        const full = await Promise.all(ids.map(id => getJSON("lookup.php?i=" + id)));
+        return full.flat();
+      }
+
       async function fetchDeck() {
-        const cats = activeItems("cat");
-        const areas = activeItems("area");
-        const diffs = activeItems("diff");
+        const { category, cuisine, difficulty } = state.filters;
         let meals = [];
-        if (cats.length || areas.length) {
-          // category/area filters return stubs -> hydrate each to full detail
-          const endpoints = [
-            ...cats.map(c => "filter.php?c=" + encodeURIComponent(c)),
-            ...areas.map(a => "filter.php?a=" + encodeURIComponent(a)),
-          ];
-          const stubLists = await Promise.all(endpoints.map(getJSON));
-          const ids = [];
-          stubLists.forEach(list => shuffle(list).slice(0, 12).forEach(m => ids.push(m.idMeal)));
-          const uniqueIds = [...new Set(ids)].slice(0, 20);
-          const full = await Promise.all(uniqueIds.map(id => getJSON("lookup.php?i=" + id)));
-          meals = full.flat();
+        if (category) {
+          meals = await hydrate(await getJSON("filter.php?c=" + encodeURIComponent(category)), 28);
+          if (cuisine) meals = meals.filter(m => (m.strArea || "").toLowerCase() === cuisine.toLowerCase());
+        } else if (cuisine) {
+          meals = await hydrate(await getJSON("filter.php?a=" + encodeURIComponent(cuisine)), 24);
         } else {
-          // default: two distinct random first-letters for a varied cuisine pool
-          const a = LETTERS[Math.floor(Math.random() * LETTERS.length)];
-          let b = LETTERS[Math.floor(Math.random() * LETTERS.length)];
-          if (b === a) b = LETTERS[(LETTERS.indexOf(a) + 5) % LETTERS.length];
-          const lists = await Promise.all([getJSON("search.php?f=" + a), getJSON("search.php?f=" + b)]);
-          meals = lists.flat();
-          if (!meals.length) meals = await getJSON("search.php?f=c");
+          // No filters: pull genuinely random recipes from the whole database.
+          const calls = await Promise.all(Array.from({ length: 22 }, () => getJSON("random.php")));
+          meals = calls.flat();
         }
         let recipes = dedupe(meals.map(normalize));
         recipes = recipes.filter(r => !state.swipes[r.id]); // exclude already swiped
-        if (diffs.length) recipes = recipes.filter(r => diffs.includes(r.difficulty));
+        if (difficulty) recipes = recipes.filter(r => r.difficulty === difficulty);
         recipes = shuffle(recipes);
         recipes = spaceByCuisine(recipes, 3); // no country repeats within 3 cards
         return recipes;
@@ -351,19 +320,22 @@
         if (state.detail) renderSheet(state.detail);
       }
 
+      function makeSelect(key, placeholder, options) {
+        const sel = el("select");
+        const any = el("option", null, placeholder); any.value = ""; sel.append(any);
+        options.forEach(([label, value]) => { const op = el("option", null, label); op.value = value; sel.append(op); });
+        sel.value = state.filters[key];
+        sel.onchange = () => { state.filters[key] = sel.value; reload(); };
+        return sel;
+      }
+
       function renderDiscover() {
         const filters = el("div", "filters");
-        FILTER_GROUPS.forEach(g => {
-          const grp = el("div", "fgroup");
-          grp.append(el("div", "fglabel", g.label));
-          const row = el("div", "frow");
-          g.items.forEach(it => {
-            const c = el("button", "chip" + (state.active.has(it.label) ? " on" : ""), it.label);
-            c.onclick = () => { state.active.has(it.label) ? state.active.delete(it.label) : state.active.add(it.label); reload(); };
-            row.append(c);
-          });
-          grp.append(row); filters.append(grp);
-        });
+        const row = el("div", "frow");
+        row.append(makeSelect("category", "Any type", CATEGORIES));
+        row.append(makeSelect("cuisine", "Any cuisine", CUISINES));
+        row.append(makeSelect("difficulty", "Any difficulty", DIFFICULTIES));
+        filters.append(row);
         app.append(filters);
 
         if (state.loading) { app.append(skeleton()); return; }
@@ -412,7 +384,8 @@
           .filter(Boolean).slice(0,3).forEach(t => meta.append(el("span", "pill", t)));
         meta.append(el("span", "pill " + recipe.difficulty, recipe.difficulty));
         body.append(meta);
-        body.append(el("p", "ingredients", recipe.ingredients.map(x => x.name || x.raw).slice(0,8).join(", ")));
+        body.append(el("div", "factline", recipe.ingredients.length + " ingredients · " + recipe.stepCount + " steps"));
+        body.append(el("p", "ingredients", recipe.ingredients.map(x => x.name || x.raw).slice(0,12).join(", ")));
         body.append(el("div", "source", "via " + recipe.publisher + " · tap for details"));
         c.append(body);
 

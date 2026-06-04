@@ -4,6 +4,9 @@
   "private": true,
   "description": "Tinder-style recipe discovery — Phase 1 MVP",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,7 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "next": "15.5.4",
+    "next": "15.5.19",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },

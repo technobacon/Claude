@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#0f1115" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Forkful" />
+    <title>Forkful — swipe to find what to cook</title>
+    <style>
+      :root {
+        --bg: #0f1115;
+        --card: #1b1f27;
+        --text: #f3f5f7;
+        --muted: #9aa4b2;
+        --right: #2ecc71;
+        --left: #ff5a5f;
+        --accent: #ffb703;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0; padding: 0; background: var(--bg); color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        overscroll-behavior: none; -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+      }
+      .app {
+        max-width: 460px; margin: 0 auto;
+        padding: calc(14px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom));
+        min-height: 100dvh; display: flex; flex-direction: column;
+      }
+      .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+      .brand { font-weight: 800; font-size: 22px; letter-spacing: -0.02em; }
+      .brand span { color: var(--accent); }
+      .tabs { display: flex; gap: 8px; }
+      .tab { background: transparent; border: 1px solid #2a303b; color: var(--muted);
+        padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 13px; }
+      .tab.active { color: var(--text); border-color: var(--accent); }
+      .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+      .chip { background: #161a21; border: 1px solid #2a303b; color: var(--muted);
+        border-radius: 999px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+      .chip.on { color: #11151c; background: var(--accent); border-color: var(--accent); font-weight: 600; }
+      .deck { position: relative; flex: 1; min-height: 440px; }
+      .card { position: absolute; inset: 0; background: var(--card); border-radius: 18px;
+        overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.4); display: flex;
+        flex-direction: column; user-select: none; -webkit-user-select: none; touch-action: pan-y; }
+      .card .photo { width: 100%; height: 58%; object-fit: cover; background: #11151c; pointer-events: none; }
+      .card .body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+      .card h2 { margin: 0; font-size: 20px; line-height: 1.2; }
+      .meta { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+      .meta .pill { background: #232936; border-radius: 6px; padding: 2px 7px; }
+      .ingredients { font-size: 13px; color: var(--muted); margin: 0; overflow: hidden;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+      .source { margin-top: auto; font-size: 11px; color: var(--muted); }
+      .stamp { position: absolute; top: 22px; font-size: 28px; font-weight: 900; padding: 4px 12px;
+        border-radius: 10px; border: 4px solid; opacity: 0; pointer-events: none; }
+      .stamp.like { right: 18px; color: var(--right); border-color: var(--right); transform: rotate(12deg); }
+      .stamp.nope { left: 18px; color: var(--left); border-color: var(--left); transform: rotate(-12deg); }
+      .controls { display: flex; justify-content: center; align-items: center; gap: 22px; margin-top: 16px; }
+      .controls button { width: 62px; height: 62px; border-radius: 50%; border: none; font-size: 26px;
+        cursor: pointer; color: #fff; transition: transform 0.1s ease; }
+      .controls button:active { transform: scale(0.9); }
+      .btn-nope { background: var(--left); }
+      .btn-like { background: var(--right); }
+      .btn-undo { width: 48px; height: 48px; font-size: 20px; background: #2a303b; color: var(--muted); }
+      .btn-undo:disabled { opacity: 0.35; }
+      .empty, .loading { text-align: center; color: var(--muted); margin-top: 80px; }
+      .list-item { display: flex; gap: 12px; align-items: center; background: var(--card);
+        border-radius: 12px; padding: 10px; margin-bottom: 10px; }
+      .list-item img { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; }
+      .list-item .info { flex: 1; min-width: 0; cursor: pointer; }
+      .list-item .info .title-link { color: var(--text); font-weight: 600; }
+      .list-item .info small { color: var(--muted); }
+      .cook { color: var(--accent); }
+      .remove { background: transparent; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+      .source-note { text-align: center; margin-top: 10px; font-size: 11px; color: var(--muted); }
+      /* detail sheet */
+      .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
+        display: flex; align-items: flex-end; justify-content: center; }
+      .sheet { width: 100%; max-width: 460px; max-height: 92dvh; overflow-y: auto; background: var(--card);
+        border-radius: 20px 20px 0 0; padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        -webkit-overflow-scrolling: touch; animation: slideup 0.24s cubic-bezier(0.18,0.89,0.32,1.1); }
+      .sheet-handle { width: 40px; height: 4px; border-radius: 999px; background: #3a414e; margin: 10px auto 4px; }
+      .sheet-photo { width: 100%; height: 220px; object-fit: cover; }
+      .sheet-body { padding: 14px 18px; }
+      .sheet-body h2 { margin: 6px 0; }
+      .sheet-body h3 { margin: 16px 0 6px; font-size: 14px; color: var(--accent); }
+      .ing-list { margin: 0; padding-left: 18px; font-size: 14px; }
+      .ing-list li { margin: 3px 0; }
+      .cook-cta { display: block; text-align: center; margin-top: 16px; padding: 14px; border-radius: 12px;
+        background: var(--accent); color: #11151c; font-weight: 700; text-decoration: none; }
+      .sheet-actions { display: flex; gap: 12px; margin-top: 14px; }
+      .sheet-actions button { flex: 1; border: none; border-radius: 12px; padding: 14px; font-size: 15px;
+        font-weight: 700; color: #fff; cursor: pointer; }
+      @keyframes slideup { from { transform: translateY(100%); } }
+      .sk { background: linear-gradient(90deg,#1b1f27 25%,#232936 50%,#1b1f27 75%);
+        background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+      @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+  </head>
+  <body>
+    <main class="app" id="app"></main>
+
+    <script>
+      "use strict";
+      // ----- Forkful standalone (client-only) -------------------------------
+      // Talks to TheMealDB directly; saves likes in localStorage. No server.
+      const BASE = "https://www.themealdb.com/api/json/v1/1";
+      const SWIPE_THRESHOLD = 110;
+      const LETTERS = "abcdefghijklmnoprstvw".split("");
+
+      const FILTERS = [
+        { label: "Vegetarian", kind: "cat", value: "Vegetarian" },
+        { label: "Vegan", kind: "cat", value: "Vegan" },
+        { label: "Breakfast", kind: "cat", value: "Breakfast" },
+        { label: "Dessert", kind: "cat", value: "Dessert" },
+        { label: "Chicken", kind: "cat", value: "Chicken" },
+        { label: "Beef", kind: "cat", value: "Beef" },
+        { label: "Seafood", kind: "cat", value: "Seafood" },
+      ];
+
+      // ----- persistent state ----------------------------------------------
+      const SW_KEY = "forkful_swipes";
+      const SAVED_KEY = "forkful_saved";
+      const readJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+      const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+      const state = {
+        tab: "discover",
+        active: new Set(),
+        deck: [],
+        loading: true,
+        history: [],
+        swipes: readJSON(SW_KEY, {}),       // id -> "right" | "left"
+        saved: readJSON(SAVED_KEY, []),     // array of recipe objects
+        detail: null,
+      };
+
+      function haptic(ms) { try { navigator.vibrate && navigator.vibrate(ms || 8); } catch {} }
+
+      // ----- data layer -----------------------------------------------------
+      async function getJSON(path) {
+        try {
+          const res = await fetch(BASE + "/" + path);
+          if (!res.ok) return [];
+          const data = await res.json();
+          return data.meals || [];
+        } catch { return []; }
+      }
+
+      function parseMeasure(m) {
+        const t = (m || "").trim();
+        const match = t.match(/^([\d.]+(?:\s*\/\s*\d+)?)\s*(.*)$/);
+        if (!match) return { unit: t || undefined };
+        let q;
+        if (match[1].includes("/")) { const p = match[1].split("/").map(parseFloat); q = p[1] ? p[0]/p[1] : undefined; }
+        else q = parseFloat(match[1]);
+        return { quantity: isFinite(q) ? q : undefined, unit: (match[2] || "").trim() || undefined };
+      }
+
+      function normalize(meal) {
+        const ingredients = [];
+        for (let i = 1; i <= 20; i++) {
+          const name = meal["strIngredient" + i];
+          if (!name || !name.trim()) continue;
+          const measure = (meal["strMeasure" + i] || "").trim();
+          const pm = measure ? parseMeasure(measure) : {};
+          ingredients.push({
+            raw: (measure + " " + name.trim()).trim(),
+            name: name.trim().toLowerCase(),
+            quantity: pm.quantity, unit: pm.unit,
+          });
+        }
+        const src = (meal.strSource || "").trim();
+        const sourceUrl = src || ("https://www.themealdb.com/meal/" + meal.idMeal);
+        let publisher = "TheMealDB";
+        if (src) { try { publisher = new URL(src).hostname.replace(/^www\./, ""); } catch {} }
+        const tags = { cuisine: [], mealType: [], diet: [], main: [] };
+        if (meal.strArea) tags.cuisine.push(meal.strArea.toLowerCase());
+        if (meal.strCategory) {
+          const c = meal.strCategory.toLowerCase();
+          if (["breakfast","dessert","side","starter"].includes(c)) tags.mealType.push(c);
+          if (["vegetarian","vegan"].includes(c)) tags.diet.push(c);
+          if (["beef","chicken","pork","lamb","seafood"].includes(c)) tags.main.push(c);
+        }
+        const instr = (meal.strInstructions || "").trim();
+        return {
+          id: "themealdb:" + meal.idMeal,
+          title: meal.strMeal,
+          image: meal.strMealThumb || null,
+          ingredients, tags, sourceUrl, publisher,
+          stepCount: instr ? Math.max(1, instr.split(/[.!?]\s+/).filter(s => s.trim()).length) : 0,
+        };
+      }
+
+      function fingerprint(r) {
+        const title = r.title.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+        let domain = ""; try { domain = new URL(r.sourceUrl).hostname.replace(/^www\./, ""); } catch {}
+        return title + "|" + domain;
+      }
+      function dedupe(list) {
+        const seen = new Set(); const out = [];
+        for (const r of list) { const f = fingerprint(r); if (!seen.has(f)) { seen.add(f); out.push(r); } }
+        return out;
+      }
+      function shuffle(a) {
+        a = a.slice();
+        for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+        return a;
+      }
+
+      async function fetchDeck() {
+        const cats = FILTERS.filter(f => state.active.has(f.label)).map(f => f.value);
+        let meals = [];
+        if (cats.length) {
+          // category filters return stubs -> hydrate each to full detail
+          const stubLists = await Promise.all(cats.map(c => getJSON("filter.php?c=" + encodeURIComponent(c))));
+          const ids = [];
+          stubLists.forEach(list => list.slice(0, 12).forEach(m => ids.push(m.idMeal)));
+          const uniqueIds = [...new Set(ids)].slice(0, 18);
+          const full = await Promise.all(uniqueIds.map(id => getJSON("lookup.php?i=" + id)));
+          meals = full.flat();
+        } else {
+          // default: a random first-letter batch returns many full meals at once
+          const letter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+          meals = await getJSON("search.php?f=" + letter);
+          if (!meals.length) meals = await getJSON("search.php?f=b");
+        }
+        let recipes = dedupe(meals.map(normalize));
+        recipes = recipes.filter(r => !state.swipes[r.id]); // exclude already swiped
+        return shuffle(recipes);
+      }
+
+      // ----- actions --------------------------------------------------------
+      function recordSwipe(recipe, dir) {
+        state.swipes[recipe.id] = dir; writeJSON(SW_KEY, state.swipes);
+        if (dir === "right" && !state.saved.some(r => r.id === recipe.id)) {
+          state.saved.unshift(recipe); writeJSON(SAVED_KEY, state.saved);
+        }
+        state.history.push({ recipe, dir });
+        state.deck = state.deck.filter(r => r.id !== recipe.id);
+        haptic(dir === "right" ? 14 : 8);
+        render();
+      }
+      function undo() {
+        const last = state.history.pop();
+        if (!last) return;
+        delete state.swipes[last.recipe.id]; writeJSON(SW_KEY, state.swipes);
+        if (last.dir === "right") { state.saved = state.saved.filter(r => r.id !== last.recipe.id); writeJSON(SAVED_KEY, state.saved); }
+        state.deck = [last.recipe, ...state.deck.filter(r => r.id !== last.recipe.id)];
+        haptic(10); render();
+      }
+      function removeSaved(id) {
+        state.saved = state.saved.filter(r => r.id !== id); writeJSON(SAVED_KEY, state.saved); render();
+      }
+      async function reload() {
+        state.loading = true; render();
+        state.deck = await fetchDeck();
+        state.loading = false; state.history = []; render();
+      }
+
+      // ----- rendering ------------------------------------------------------
+      const app = document.getElementById("app");
+      const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+
+      function render() {
+        app.innerHTML = "";
+        // top bar
+        const top = el("header", "topbar");
+        const brand = el("div", "brand"); brand.innerHTML = 'Fork<span>ful</span>';
+        const tabs = el("nav", "tabs");
+        const tD = el("button", "tab" + (state.tab === "discover" ? " active" : ""), "Discover");
+        tD.onclick = () => { state.tab = "discover"; render(); };
+        const tS = el("button", "tab" + (state.tab === "saved" ? " active" : ""), "Saved" + (state.saved.length ? " (" + state.saved.length + ")" : ""));
+        tS.onclick = () => { state.tab = "saved"; render(); };
+        tabs.append(tD, tS); top.append(brand, tabs); app.append(top);
+
+        if (state.tab === "discover") renderDiscover();
+        else renderSaved();
+
+        if (state.detail) renderSheet(state.detail);
+      }
+
+      function renderDiscover() {
+        const filters = el("div", "filters");
+        FILTERS.forEach(f => {
+          const c = el("button", "chip" + (state.active.has(f.label) ? " on" : ""), f.label);
+          c.onclick = () => { state.active.has(f.label) ? state.active.delete(f.label) : state.active.add(f.label); reload(); };
+          filters.append(c);
+        });
+        app.append(filters);
+
+        if (state.loading) { app.append(skeleton()); return; }
+        if (!state.deck.length) {
+          const e = el("div", "empty");
+          e.append(el("p", null, "🍽️ No more cards. Try different filters."));
+          const b = el("button", "tab active", "Reload deck"); b.onclick = reload; e.append(b);
+          app.append(e); return;
+        }
+        app.append(buildDeck());
+
+        const controls = el("div", "controls");
+        const nope = el("button", "btn-nope", "✕"); nope.onclick = () => state.deck[0] && commitTop("left");
+        const undoBtn = el("button", "btn-undo", "↩"); undoBtn.disabled = state.history.length === 0; undoBtn.onclick = undo;
+        const like = el("button", "btn-like", "♥"); like.onclick = () => state.deck[0] && commitTop("right");
+        controls.append(nope, undoBtn, like); app.append(controls);
+
+        app.append(el("p", "source-note", "Recipes courtesy of TheMealDB · saved on this device"));
+      }
+
+      let topCardEl = null;
+      function buildDeck() {
+        const deck = el("div", "deck");
+        const visible = state.deck.slice(0, 3);
+        // render back-to-front so the first is on top
+        visible.slice().reverse().forEach((recipe) => {
+          const i = visible.indexOf(recipe);
+          deck.append(card(recipe, i));
+        });
+        return deck;
+      }
+
+      function card(recipe, depth) {
+        const c = el("article", "card");
+        c.style.transform = `translateY(${depth*10}px) scale(${1 - depth*0.04})`;
+        c.style.zIndex = String(10 - depth);
+        const like = el("div", "stamp like", "SAVE");
+        const nope = el("div", "stamp nope", "SKIP");
+        c.append(like, nope);
+        if (recipe.image) { const img = el("img", "photo"); img.src = recipe.image; img.alt = recipe.title; img.draggable = false; c.append(img); }
+        else c.append(el("div", "photo"));
+        const body = el("div", "body");
+        body.append(el("h2", null, recipe.title));
+        const meta = el("div", "meta");
+        [recipe.tags.cuisine[0], recipe.tags.mealType[0], recipe.tags.diet[0], recipe.tags.main[0]]
+          .filter(Boolean).slice(0,3).forEach(t => meta.append(el("span", "pill", t)));
+        body.append(meta);
+        body.append(el("p", "ingredients", recipe.ingredients.map(x => x.name || x.raw).slice(0,8).join(", ")));
+        body.append(el("div", "source", "via " + recipe.publisher + " · tap for details"));
+        c.append(body);
+
+        if (depth === 0) { topCardEl = c; attachDrag(c, recipe, like, nope); }
+        return c;
+      }
+
+      function attachDrag(c, recipe, likeStamp, nopeStamp) {
+        let startX = 0, startY = 0, startT = 0, active = false, moved = false, dx = 0;
+        const setT = (off, anim) => {
+          c.style.transition = anim ? "transform 0.28s cubic-bezier(0.18,0.89,0.32,1.1)" : "none";
+          c.style.transform = `translateX(${off}px) rotate(${off/18}deg)`;
+          likeStamp.style.opacity = Math.max(0, Math.min(1, off / SWIPE_THRESHOLD));
+          nopeStamp.style.opacity = Math.max(0, Math.min(1, -off / SWIPE_THRESHOLD));
+        };
+        c.addEventListener("pointerdown", (e) => { active = true; moved = false; startX = e.clientX; startY = e.clientY; startT = Date.now(); c.setPointerCapture && c.setPointerCapture(e.pointerId); });
+        c.addEventListener("pointermove", (e) => { if (!active) return; dx = e.clientX - startX; if (Math.abs(dx) > 6) moved = true; setT(dx, false); });
+        const end = (e) => {
+          if (!active) return; active = false;
+          const dt = Date.now() - startT, dist = Math.abs(dx);
+          const flick = dt < 250 && dist > 50;
+          if (dx > 0 && (dist > SWIPE_THRESHOLD || flick)) flyOff(c, "right", recipe);
+          else if (dx < 0 && (dist > SWIPE_THRESHOLD || flick)) flyOff(c, "left", recipe);
+          else {
+            const dy = e ? Math.abs(e.clientY - startY) : 0;
+            if (!moved && dist < 6 && dy < 6) { state.detail = recipe; render(); }
+            else setT(0, true);
+          }
+          dx = 0;
+        };
+        c.addEventListener("pointerup", end);
+        c.addEventListener("pointercancel", end);
+      }
+
+      function flyOff(c, dir, recipe) {
+        c.style.transition = "transform 0.2s ease-out";
+        c.style.transform = `translateX(${dir === "right" ? 1000 : -1000}px) rotate(${dir === "right" ? 40 : -40}deg)`;
+        setTimeout(() => recordSwipe(recipe, dir), 190);
+      }
+      function commitTop(dir) {
+        if (topCardEl) flyOff(topCardEl, dir, state.deck[0]);
+        else if (state.deck[0]) recordSwipe(state.deck[0], dir);
+      }
+
+      function skeleton() {
+        const deck = el("div", "deck");
+        const c = el("article", "card");
+        c.append(el("div", "photo sk"));
+        const body = el("div", "body");
+        ["70%","40%","90%","80%"].forEach(w => { const l = el("div", "sk"); l.style.height = "14px"; l.style.borderRadius = "6px"; l.style.marginTop = "6px"; l.style.width = w; body.append(l); });
+        c.append(body); deck.append(c); return deck;
+      }
+
+      function renderSaved() {
+        if (!state.saved.length) { app.append(el("p", "empty", "No saved recipes yet. Swipe right to save.")); return; }
+        const wrap = el("div");
+        state.saved.forEach(r => {
+          const item = el("div", "list-item");
+          if (r.image) { const img = el("img"); img.src = r.image; img.alt = r.title; img.onclick = () => { state.detail = r; render(); }; item.append(img); }
+          const info = el("div", "info"); info.onclick = () => { state.detail = r; render(); };
+          info.append(el("span", "title-link", r.title));
+          info.append(document.createElement("br"));
+          info.append(el("small", "cook", "Tap for details · cook on " + r.publisher));
+          item.append(info);
+          const rm = el("button", "remove", "✕"); rm.onclick = () => removeSaved(r.id); item.append(rm);
+          wrap.append(item);
+        });
+        app.append(wrap);
+      }
+
+      function renderSheet(recipe) {
+        const back = el("div", "sheet-backdrop");
+        back.onclick = () => { state.detail = null; render(); };
+        const sheet = el("div", "sheet");
+        sheet.onclick = (e) => e.stopPropagation();
+        sheet.append(el("div", "sheet-handle"));
+        if (recipe.image) { const img = el("img", "sheet-photo"); img.src = recipe.image; img.alt = recipe.title; sheet.append(img); }
+        const body = el("div", "sheet-body");
+        body.append(el("h2", null, recipe.title));
+        const meta = el("div", "meta");
+        [].concat(recipe.tags.cuisine, recipe.tags.mealType, recipe.tags.diet, recipe.tags.main).slice(0,6).forEach(t => meta.append(el("span","pill",t)));
+        body.append(meta);
+        body.append(el("h3", null, "Ingredients"));
+        const ul = el("ul", "ing-list");
+        recipe.ingredients.forEach(i => ul.append(el("li", null, i.raw)));
+        body.append(ul);
+        if (recipe.stepCount) body.append(el("p", "source", recipe.stepCount + " steps — full method on source"));
+        const cta = el("a", "cook-cta", "Cook on " + recipe.publisher + " →");
+        cta.href = recipe.sourceUrl; cta.target = "_blank"; cta.rel = "noopener noreferrer";
+        body.append(cta);
+        if (state.tab === "discover") {
+          const actions = el("div", "sheet-actions");
+          const skip = el("button", "btn-nope", "✕ Skip"); skip.onclick = () => { state.detail = null; recordSwipe(recipe, "left"); };
+          const save = el("button", "btn-like", "♥ Save"); save.onclick = () => { state.detail = null; recordSwipe(recipe, "right"); };
+          actions.append(skip, save); body.append(actions);
+        }
+        sheet.append(body); back.append(sheet); app.append(back);
+      }
+
+      // ----- go -------------------------------------------------------------
+      render();
+      reload();
+    </script>
+  </body>
+</html>

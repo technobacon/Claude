@@ -40,7 +40,12 @@
       .tab { background: transparent; border: 1px solid #2a303b; color: var(--muted);
         padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 13px; }
       .tab.active { color: var(--text); border-color: var(--accent); }
-      .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+      .filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+      .fglabel { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin: 0 0 4px 2px; }
+      .frow { display: flex; flex-wrap: wrap; gap: 6px; }
+      .pill.easy { color: var(--right); }
+      .pill.hard { color: var(--left); }
+      .pill.medium { color: var(--accent); }
       .chip { background: #161a21; border: 1px solid #2a303b; color: var(--muted);
         border-radius: 999px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
       .chip.on { color: #11151c; background: var(--accent); border-color: var(--accent); font-weight: 600; }
@@ -113,15 +118,41 @@
       const SWIPE_THRESHOLD = 110;
       const LETTERS = "abcdefghijklmnoprstvw".split("");
 
-      const FILTERS = [
-        { label: "Vegetarian", kind: "cat", value: "Vegetarian" },
-        { label: "Vegan", kind: "cat", value: "Vegan" },
-        { label: "Breakfast", kind: "cat", value: "Breakfast" },
-        { label: "Dessert", kind: "cat", value: "Dessert" },
-        { label: "Chicken", kind: "cat", value: "Chicken" },
-        { label: "Beef", kind: "cat", value: "Beef" },
-        { label: "Seafood", kind: "cat", value: "Seafood" },
+      const FILTER_GROUPS = [
+        { label: "Meal", items: [
+          { label: "Breakfast", kind: "cat", value: "Breakfast" },
+          { label: "Dessert", kind: "cat", value: "Dessert" },
+        ] },
+        { label: "Diet", items: [
+          { label: "Vegetarian", kind: "cat", value: "Vegetarian" },
+          { label: "Vegan", kind: "cat", value: "Vegan" },
+        ] },
+        { label: "Main", items: [
+          { label: "Chicken", kind: "cat", value: "Chicken" },
+          { label: "Beef", kind: "cat", value: "Beef" },
+          { label: "Seafood", kind: "cat", value: "Seafood" },
+        ] },
+        { label: "Cuisine", items: [
+          { label: "Italian", kind: "area", value: "Italian" },
+          { label: "Mexican", kind: "area", value: "Mexican" },
+          { label: "Indian", kind: "area", value: "Indian" },
+          { label: "Chinese", kind: "area", value: "Chinese" },
+          { label: "Thai", kind: "area", value: "Thai" },
+          { label: "Japanese", kind: "area", value: "Japanese" },
+        ] },
+        { label: "Difficulty", items: [
+          { label: "Easy", kind: "diff", value: "easy" },
+          { label: "Medium", kind: "diff", value: "medium" },
+          { label: "Hard", kind: "diff", value: "hard" },
+        ] },
       ];
+      function activeItems(kind) {
+        const out = [];
+        FILTER_GROUPS.forEach(g => g.items.forEach(it => {
+          if (it.kind === kind && state.active.has(it.label)) out.push(it.value);
+        }));
+        return out;
+      }
 
       // ----- persistent state ----------------------------------------------
       const SW_KEY = "forkful_swipes";
@@ -188,12 +219,18 @@
           if (["beef","chicken","pork","lamb","seafood"].includes(c)) tags.main.push(c);
         }
         const instr = (meal.strInstructions || "").trim();
+        const steps = instr ? Math.max(1, instr.split(/[.!?]\s+/).filter(s => s.trim()).length) : 0;
+        // Derived difficulty heuristic (TheMealDB has no difficulty field):
+        // few ingredients + few steps = easy; many of either = hard.
+        let difficulty = "medium";
+        if (ingredients.length <= 7 && steps <= 6) difficulty = "easy";
+        else if (ingredients.length >= 13 || steps >= 12) difficulty = "hard";
         return {
           id: "themealdb:" + meal.idMeal,
           title: meal.strMeal,
           image: meal.strMealThumb || null,
           ingredients, tags, sourceUrl, publisher,
-          stepCount: instr ? Math.max(1, instr.split(/[.!?]\s+/).filter(s => s.trim()).length) : 0,
+          stepCount: steps, difficulty,
         };
       }
 
@@ -213,26 +250,55 @@
         return a;
       }
 
+      // Reorder so no cuisine repeats within `gap` cards (when possible).
+      function spaceByCuisine(list, gap) {
+        const remaining = list.slice();
+        const out = [];
+        const recent = [];
+        const key = r => r.tags.cuisine[0] || "unknown";
+        while (remaining.length) {
+          let idx = remaining.findIndex(r => !recent.includes(key(r)));
+          if (idx === -1) idx = 0; // pool exhausted of fresh cuisines -> relax
+          const picked = remaining.splice(idx, 1)[0];
+          out.push(picked);
+          recent.push(key(picked));
+          if (recent.length > gap) recent.shift();
+        }
+        return out;
+      }
+
       async function fetchDeck() {
-        const cats = FILTERS.filter(f => state.active.has(f.label)).map(f => f.value);
+        const cats = activeItems("cat");
+        const areas = activeItems("area");
+        const diffs = activeItems("diff");
         let meals = [];
-        if (cats.length) {
-          // category filters return stubs -> hydrate each to full detail
-          const stubLists = await Promise.all(cats.map(c => getJSON("filter.php?c=" + encodeURIComponent(c))));
+        if (cats.length || areas.length) {
+          // category/area filters return stubs -> hydrate each to full detail
+          const endpoints = [
+            ...cats.map(c => "filter.php?c=" + encodeURIComponent(c)),
+            ...areas.map(a => "filter.php?a=" + encodeURIComponent(a)),
+          ];
+          const stubLists = await Promise.all(endpoints.map(getJSON));
           const ids = [];
-          stubLists.forEach(list => list.slice(0, 12).forEach(m => ids.push(m.idMeal)));
-          const uniqueIds = [...new Set(ids)].slice(0, 18);
+          stubLists.forEach(list => shuffle(list).slice(0, 12).forEach(m => ids.push(m.idMeal)));
+          const uniqueIds = [...new Set(ids)].slice(0, 20);
           const full = await Promise.all(uniqueIds.map(id => getJSON("lookup.php?i=" + id)));
           meals = full.flat();
         } else {
-          // default: a random first-letter batch returns many full meals at once
-          const letter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
-          meals = await getJSON("search.php?f=" + letter);
-          if (!meals.length) meals = await getJSON("search.php?f=b");
+          // default: two distinct random first-letters for a varied cuisine pool
+          const a = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+          let b = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+          if (b === a) b = LETTERS[(LETTERS.indexOf(a) + 5) % LETTERS.length];
+          const lists = await Promise.all([getJSON("search.php?f=" + a), getJSON("search.php?f=" + b)]);
+          meals = lists.flat();
+          if (!meals.length) meals = await getJSON("search.php?f=c");
         }
         let recipes = dedupe(meals.map(normalize));
         recipes = recipes.filter(r => !state.swipes[r.id]); // exclude already swiped
-        return shuffle(recipes);
+        if (diffs.length) recipes = recipes.filter(r => diffs.includes(r.difficulty));
+        recipes = shuffle(recipes);
+        recipes = spaceByCuisine(recipes, 3); // no country repeats within 3 cards
+        return recipes;
       }
 
       // ----- actions --------------------------------------------------------
@@ -287,10 +353,16 @@
 
       function renderDiscover() {
         const filters = el("div", "filters");
-        FILTERS.forEach(f => {
-          const c = el("button", "chip" + (state.active.has(f.label) ? " on" : ""), f.label);
-          c.onclick = () => { state.active.has(f.label) ? state.active.delete(f.label) : state.active.add(f.label); reload(); };
-          filters.append(c);
+        FILTER_GROUPS.forEach(g => {
+          const grp = el("div", "fgroup");
+          grp.append(el("div", "fglabel", g.label));
+          const row = el("div", "frow");
+          g.items.forEach(it => {
+            const c = el("button", "chip" + (state.active.has(it.label) ? " on" : ""), it.label);
+            c.onclick = () => { state.active.has(it.label) ? state.active.delete(it.label) : state.active.add(it.label); reload(); };
+            row.append(c);
+          });
+          grp.append(row); filters.append(grp);
         });
         app.append(filters);
 
@@ -338,6 +410,7 @@
         const meta = el("div", "meta");
         [recipe.tags.cuisine[0], recipe.tags.mealType[0], recipe.tags.diet[0], recipe.tags.main[0]]
           .filter(Boolean).slice(0,3).forEach(t => meta.append(el("span", "pill", t)));
+        meta.append(el("span", "pill " + recipe.difficulty, recipe.difficulty));
         body.append(meta);
         body.append(el("p", "ingredients", recipe.ingredients.map(x => x.name || x.raw).slice(0,8).join(", ")));
         body.append(el("div", "source", "via " + recipe.publisher + " · tap for details"));
@@ -421,6 +494,7 @@
         body.append(el("h2", null, recipe.title));
         const meta = el("div", "meta");
         [].concat(recipe.tags.cuisine, recipe.tags.mealType, recipe.tags.diet, recipe.tags.main).slice(0,6).forEach(t => meta.append(el("span","pill",t)));
+        meta.append(el("span", "pill " + recipe.difficulty, recipe.difficulty));
         body.append(meta);
         body.append(el("h3", null, "Ingredients"));
         const ul = el("ul", "ing-list");

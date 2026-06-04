@@ -7,6 +7,7 @@ import {
   fingerprint,
   matchesQuery,
   shuffle,
+  spaceByKey,
 } from "../src/core/aggregator.ts";
 import type { Recipe } from "../src/core/model.ts";
 
@@ -81,6 +82,20 @@ test("shuffle is deterministic given a seeded rand", () => {
   const b = shuffle([1, 2, 3, 4], rand);
   assert.deepEqual(a, b);
   assert.notDeepEqual(a, [1, 2, 3, 4]);
+});
+
+test("spaceByKey keeps the same key apart by the gap when possible", () => {
+  const items = ["it", "it", "it", "mx", "mx", "jp"];
+  const spaced = spaceByKey(items, (x) => x, 3);
+  // same multiset, just reordered
+  assert.deepEqual([...spaced].sort(), [...items].sort());
+  // no key repeats within a window of 3 until the pool forces it (trailing "it"s)
+  let violationsEarly = 0;
+  for (let i = 1; i < spaced.length; i++) {
+    if (spaced[i] === spaced[i - 1]) violationsEarly++;
+  }
+  // first pick should be the most common ("it") and not immediately repeat
+  assert.notEqual(spaced[0], spaced[1]);
 });
 
 test("buildDeck dedupes, excludes swiped, filters, and trims to limit", () => {

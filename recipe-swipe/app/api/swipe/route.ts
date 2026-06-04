@@ -19,3 +19,14 @@ export async function POST(request: Request) {
   recipeService.recordSwipe(userId, body.recipeId, body.direction);
   return NextResponse.json({ ok: true });
 }
+
+// Undo a swipe so the recipe can reappear in the feed.
+export async function DELETE(request: Request) {
+  const userId = await getOrCreateUserId();
+  const recipeId = new URL(request.url).searchParams.get("recipeId");
+  if (!recipeId) {
+    return NextResponse.json({ error: "missing recipeId" }, { status: 400 });
+  }
+  recipeService.undoSwipe(userId, recipeId);
+  return NextResponse.json({ ok: true });
+}

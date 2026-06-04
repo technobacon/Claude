@@ -71,9 +71,12 @@ URL without deploying, a tunnel like `npx localtunnel --port 3000` or
 
 ## What "fully test on iPhone" covers right now
 
-- ✅ Swipe gestures (drag left/right) + tap the ✕ / ♥ buttons
+- ✅ Swipe gestures (drag / flick left-right) + ✕ / ♥ buttons + light haptics
+- ✅ **Undo** the last swipe (↩)
+- ✅ **Tap a card** for a detail sheet (full ingredients, summary, cook link)
 - ✅ Filter chips (vegetarian, breakfast, chicken, …)
-- ✅ Saved tab; tapping a saved recipe **opens the original publisher's site**
+- ✅ Saved tab; opening a saved recipe links to the **original publisher's site**
+- ✅ Loading skeleton + friendly empty state
 - ✅ Full-screen home-screen launch (PWA)
 - ⏳ Saved list currently lives in server memory and resets on redeploy —
   durable cross-device accounts arrive in **Phase 3** (see

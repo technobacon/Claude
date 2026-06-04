@@ -50,6 +50,11 @@ export class RecipeService {
     this.#store.recordSwipe(userId, recipeId, direction);
   }
 
+  /** Undo a swipe (for the "undo last swipe" control). */
+  undoSwipe(userId: string, recipeId: string): void {
+    this.#store.removeSwipe(userId, recipeId);
+  }
+
   getList(userId: string): Recipe[] {
     return this.#store.savedRecipes(userId);
   }

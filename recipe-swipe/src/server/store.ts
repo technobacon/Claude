@@ -54,6 +54,13 @@ export class MemoryStore {
     }
   }
 
+  /** Undo a swipe so the recipe can reappear in the feed (and leaves saved). */
+  removeSwipe(userId: string, recipeId: string): void {
+    const u = this.#user(userId);
+    u.swipes.delete(recipeId);
+    u.saved = u.saved.filter((id) => id !== recipeId);
+  }
+
   /** Saved (right-swiped) recipes, resolved from cache, newest first. */
   savedRecipes(userId: string): Recipe[] {
     const u = this.#user(userId);

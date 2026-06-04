@@ -1,0 +1,35 @@
+{
+  "meals": [
+    {
+      "idMeal": "52772",
+      "strMeal": "Teriyaki Chicken Casserole",
+      "strCategory": "Chicken",
+      "strArea": "Japanese",
+      "strInstructions": "Preheat oven to 350 F. Spray a 9x13-inch baking pan with non-stick spray. Combine soy sauce, water, brown sugar, ginger and garlic in a small saucepan and cover. Bring to a boil over medium heat. Meanwhile, stir together the cornstarch and 2 tablespoons of water. Add the cornstarch mixture to the sauce and stir. Place the chicken breasts in the prepared pan. Pour one cup of the sauce over the chicken. Place the chicken in the oven and bake 35 minutes. Serve over rice.",
+      "strMealThumb": "https://www.themealdb.com/images/media/meals/wvpsxx1468256321.jpg",
+      "strTags": "Meat,Casserole",
+      "strYoutube": "https://www.youtube.com/watch?v=4aZr5hZXP_s",
+      "strIngredient1": "soy sauce",
+      "strIngredient2": "water",
+      "strIngredient3": "brown sugar",
+      "strIngredient4": "ground ginger",
+      "strIngredient5": "minced garlic",
+      "strIngredient6": "cornstarch",
+      "strIngredient7": "chicken breasts",
+      "strIngredient8": "stir-fry vegetables",
+      "strIngredient9": "brown rice",
+      "strIngredient10": "",
+      "strMeasure1": "3/4 cup",
+      "strMeasure2": "1/2 cup",
+      "strMeasure3": "1/4 cup",
+      "strMeasure4": "1/2 teaspoon",
+      "strMeasure5": "1/2 teaspoon",
+      "strMeasure6": "4 Tablespoons",
+      "strMeasure7": "2",
+      "strMeasure8": "3 cups",
+      "strMeasure9": "3 cups",
+      "strMeasure10": "",
+      "strSource": "https://www.bunsinmyoven.com/teriyaki-chicken-casserole/"
+    }
+  ]
+}

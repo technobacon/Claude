@@ -45,6 +45,7 @@ Read in order, or jump to what you need:
 | [`docs/03-data-model.md`](docs/03-data-model.md) | Normalized `Recipe` model + database schema |
 | [`docs/04-roadmap.md`](docs/04-roadmap.md) | Phased build plan, milestones, definitions of done |
 | [`docs/05-legal-compliance.md`](docs/05-legal-compliance.md) | Link-out policy, licensing checklist, attribution rules |
+| [`docs/06-run-on-iphone.md`](docs/06-run-on-iphone.md) | Deploy to Vercel + add to iPhone home screen as a PWA |
 
 ## Run it
 

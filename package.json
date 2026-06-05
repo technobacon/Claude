@@ -1,0 +1,9 @@
+{
+  "name": "forkful-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zero-dependency serverless backend for Forkful — holds the Spoonacular key and proxies recipe requests (Vercel /api functions at repo root).",
+  "engines": {
+    "node": "22.x"
+  }
+}

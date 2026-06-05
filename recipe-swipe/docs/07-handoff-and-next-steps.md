@@ -7,6 +7,13 @@ resuming.
 
 ---
 
+> **Update 2026-06-05 (LIVE):** ✅ **Deployed and working keyless.** The
+> zero-config serverless proxy (`/api/feed`, `/api/meta` at repo root) is live on
+> Vercel with `SPOONACULAR_API_KEY` set; the standalone opened with
+> `?api=<deploy-url>` loads Spoonacular recipes with **no per-user key**. The
+> repo-root `/` 404s by design (API-only). Full narrative of every decision and
+> *why*: [`09-architecture-decisions.md`](09-architecture-decisions.md).
+
 > **Update 2026-06-05 (later):** **Server-side Spoonacular adapter shipped** —
 > the Next app now uses Spoonacular when `SPOONACULAR_API_KEY` is set (key stays
 > server-side), with shared `core/difficulty.ts`, `/api/meta`, CORS, and tests

@@ -5,11 +5,13 @@ multiple licensed recipe APIs. Swipe right to save, left to skip. Tap a saved
 recipe to **cook it on the original publisher's website** — we send them the
 traffic, we never steal their content.
 
-> **Status:** Phase 1 MVP — **runs today**, and actively being tested on a real
-> iPhone via the zero-setup [`standalone/`](standalone/) build. Next.js + TS app
-> with the source-agnostic core, TheMealDB adapter, swipe UI, saved list, and
-> deep-link-out (unit-tested, `npm test`). Next big unlock: Spoonacular.
-> **Resuming? Read [`docs/07-handoff-and-next-steps.md`](docs/07-handoff-and-next-steps.md) first.**
+> **Status:** Phase 1 MVP **deployed & live** — the [`standalone/`](standalone/)
+> client runs on a real iPhone, **keyless**, against a deployed serverless proxy
+> that holds the Spoonacular key server-side. Source-agnostic core (TheMealDB +
+> Spoonacular adapters), swipe UI, multi-select filters, cook time, derived
+> difficulty, saved list, deep-link-out — unit-tested (`npm test`, 23 passing).
+> **Resuming? Read [`docs/07-handoff-and-next-steps.md`](docs/07-handoff-and-next-steps.md) first**;
+> for *why* it's built this way, [`docs/09-architecture-decisions.md`](docs/09-architecture-decisions.md).
 
 ---
 
@@ -48,6 +50,8 @@ Read in order, or jump to what you need:
 | [`docs/05-legal-compliance.md`](docs/05-legal-compliance.md) | Link-out policy, licensing checklist, attribution rules |
 | [`docs/06-run-on-iphone.md`](docs/06-run-on-iphone.md) | Deploy to Vercel + add to iPhone home screen as a PWA |
 | [`docs/07-handoff-and-next-steps.md`](docs/07-handoff-and-next-steps.md) | **Start here when resuming** — current state, how to test now, next steps |
+| [`docs/08-deploy-shared-key.md`](docs/08-deploy-shared-key.md) | Deploy the keyless backend (no per-user API keys) |
+| [`docs/09-architecture-decisions.md`](docs/09-architecture-decisions.md) | **The "why"** — full decision log / how it was built and the reasoning |
 | [`standalone/`](standalone/) | Single-file client-only build used for zero-setup phone testing |
 
 ## Run it

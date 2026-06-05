@@ -35,6 +35,7 @@ function csv(v: string | null): string[] | undefined {
 
 export function parseQuery(params: URLSearchParams): RecipeQuery {
   const limit = Math.min(Math.max(Number(params.get("limit")) || 15, 1), 30);
+  const maxTime = Number(params.get("maxTime"));
   return {
     text: params.get("text")?.trim() || undefined,
     diet: csv(params.get("diet")),
@@ -43,6 +44,8 @@ export function parseQuery(params: URLSearchParams): RecipeQuery {
     intolerances: csv(params.get("intolerances")),
     includeIngredients: csv(params.get("include")),
     excludeIngredients: csv(params.get("exclude")),
+    maxReadyMinutes: maxTime > 0 ? maxTime : undefined,
+    difficulty: csv(params.get("difficulty")),
     limit,
   };
 }

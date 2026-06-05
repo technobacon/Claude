@@ -71,11 +71,39 @@ export function matchesQuery(r: Recipe, q: RecipeQuery): boolean {
   if (!has(r.tags.mealType, q.mealType)) return false;
   if (!has(r.tags.cuisine, q.cuisine)) return false;
   if (!has(r.tags.mainIngredients, q.includeIngredients)) return false;
+  if (q.difficulty?.length && !(r.difficulty && q.difficulty.includes(r.difficulty)))
+    return false;
   if (q.excludeIngredients?.length) {
     const names = new Set(r.ingredients.map((i) => (i.name ?? "").toLowerCase()));
     if (q.excludeIngredients.some((x) => names.has(x.toLowerCase()))) return false;
   }
   return true;
+}
+
+/**
+ * Reorder so the same key (e.g. cuisine) doesn't repeat within `gap` positions,
+ * when the pool allows it. Greedy: at each step pick the first item whose key
+ * isn't among the last `gap` chosen; if none qualifies, relax and take the next.
+ * Spreads variety across the deck (used to keep one country off the next few
+ * cards). Order-stable given its input, so pre-shuffle for randomness.
+ */
+export function spaceByKey<T>(
+  items: T[],
+  keyOf: (x: T) => string,
+  gap: number,
+): T[] {
+  const remaining = items.slice();
+  const out: T[] = [];
+  const recent: string[] = [];
+  while (remaining.length > 0) {
+    let idx = remaining.findIndex((x) => !recent.includes(keyOf(x)));
+    if (idx === -1) idx = 0;
+    const [picked] = remaining.splice(idx, 1);
+    out.push(picked);
+    recent.push(keyOf(picked));
+    if (recent.length > gap) recent.shift();
+  }
+  return out;
 }
 
 /** Deterministic Fisher–Yates shuffle using injected rand. */
@@ -108,5 +136,7 @@ export function buildDeck(
   deck = excludeSwiped(deck, swipedIds);
   if (postFilter) deck = deck.filter((r) => matchesQuery(r, query));
   deck = shuffle(deck, rand);
+  // Spread cuisines so the same country doesn't appear in the next ~3 cards.
+  deck = spaceByKey(deck, (r) => r.tags.cuisine[0] ?? "unknown", 3);
   return deck.slice(0, query.limit);
 }

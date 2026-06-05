@@ -31,6 +31,12 @@ export class RecipeService {
     return this.#registry.sources.map((s) => s.name);
   }
 
+  /** The primary (first) source — drives which filter set the client shows. */
+  get primarySource(): { id: string; name: string } {
+    const s = this.#registry.sources[0];
+    return s ? { id: s.id, name: s.name } : { id: "none", name: "None" };
+  }
+
   /** Build a deck for the user, excluding what they've already swiped. */
   async getFeed(userId: string, query: RecipeQuery): Promise<Recipe[]> {
     const found = await this.#registry.search(query);

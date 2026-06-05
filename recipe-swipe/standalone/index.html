@@ -42,8 +42,15 @@
       .tab.active { color: var(--text); border-color: var(--accent); }
       .filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
       .frow { display: flex; gap: 8px; flex-wrap: wrap; }
-      .frow select { flex: 1 1 30%; min-width: 0; background: #161a21; color: var(--text);
-        border: 1px solid #2a303b; border-radius: 10px; padding: 10px 8px; font-size: 13px; }
+      .fbtn { flex: 1 1 30%; min-width: 0; background: #161a21; color: var(--muted);
+        border: 1px solid #2a303b; border-radius: 10px; padding: 10px 8px; font-size: 13px;
+        cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .fbtn.on { color: #11151c; background: var(--accent); border-color: var(--accent); font-weight: 600; }
+      .opt-list { display: flex; flex-direction: column; }
+      .opt-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 4px;
+        border-bottom: 1px solid #232936; cursor: pointer; font-size: 15px; }
+      .opt-row.checked { color: var(--accent); }
+      .opt-check { color: var(--accent); font-weight: 700; font-size: 16px; }
       .tab.gear { padding: 6px 10px; }
       .tab.gear.on { color: #11151c; background: var(--accent); border-color: var(--accent); }
       .pill.time { color: var(--accent); }
@@ -162,7 +169,9 @@
         spoonKey: (localStorage.getItem(KEY_KEY) || "").trim(), // stored on-device only
         spoonError: "",
         settingsOpen: false,
-        filters: { category: "", cuisine: "", diet: "", mealType: "", maxTime: "", difficulty: "" },
+        openFilter: null,                   // which filter's checklist is open
+        // each filter holds an array of selected values (multi-select)
+        filters: { category: [], cuisine: [], diet: [], mealType: [], maxTime: [], difficulty: [] },
         deck: [],
         loading: true,
         history: [],
@@ -357,13 +366,19 @@
       }
 
       async function fetchMealDB() {
-        const { category, cuisine } = state.filters;
+        const cats = state.filters.category;     // arrays (multi-select)
+        const cuisines = state.filters.cuisine;
         let meals = [];
-        if (category) {
-          meals = await hydrate(await getJSON("filter.php?c=" + encodeURIComponent(category)), 28);
-          if (cuisine) meals = meals.filter(m => (m.strArea || "").toLowerCase() === cuisine.toLowerCase());
-        } else if (cuisine) {
-          meals = await hydrate(await getJSON("filter.php?a=" + encodeURIComponent(cuisine)), 24);
+        if (cats.length) {
+          const stubs = (await Promise.all(cats.map(c => getJSON("filter.php?c=" + encodeURIComponent(c))))).flat();
+          meals = await hydrate(stubs, 30);
+          if (cuisines.length) {
+            const set = new Set(cuisines.map(c => c.toLowerCase()));
+            meals = meals.filter(m => set.has((m.strArea || "").toLowerCase()));
+          }
+        } else if (cuisines.length) {
+          const stubs = (await Promise.all(cuisines.map(a => getJSON("filter.php?a=" + encodeURIComponent(a))))).flat();
+          meals = await hydrate(stubs, 30);
         } else {
           // No filters: pull genuinely random recipes from the whole database.
           const calls = await Promise.all(Array.from({ length: 22 }, () => getJSON("random.php")));
@@ -374,23 +389,29 @@
 
       async function fetchSpoon() {
         const f = state.filters;
-        const p = new URLSearchParams();
-        p.set("number", "16");
-        p.set("addRecipeInformation", "true");
-        p.set("fillIngredients", "true");
-        p.set("instructionsRequired", "true");
-        if (f.mealType) p.set("type", f.mealType);
-        if (f.cuisine) p.set("cuisine", f.cuisine);
-        if (f.diet) p.set("diet", f.diet);
-        if (f.maxTime) p.set("maxReadyTime", f.maxTime);
-        const narrow = f.mealType || f.cuisine || f.diet || f.maxTime;
-        p.set("offset", String(Math.floor(Math.random() * (narrow ? 20 : 100)))); // variety
-        let data = await spoonGet("recipes/complexSearch?" + p.toString());
-        let results = (data && data.results) || [];
-        if (!results.length && p.get("offset") !== "0") {
-          p.set("offset", "0");
-          data = await spoonGet("recipes/complexSearch?" + p.toString());
-          results = (data && data.results) || [];
+        const base = new URLSearchParams();
+        base.set("number", "12");
+        base.set("addRecipeInformation", "true");
+        base.set("fillIngredients", "true");
+        base.set("instructionsRequired", "true");
+        if (f.cuisine.length) base.set("cuisine", f.cuisine.join(",")); // OR
+        if (f.diet.length) base.set("diet", f.diet.join(","));          // AND (Spoonacular)
+        if (f.maxTime.length) base.set("maxReadyTime", f.maxTime[0]);
+        const narrow = f.cuisine.length || f.diet.length || f.maxTime.length || f.mealType.length;
+        // Spoonacular 'type' is single-valued — one call per selected meal type.
+        const types = f.mealType.length ? f.mealType : [null];
+        const calls = types.map(t => {
+          const q = new URLSearchParams(base);
+          if (t) q.set("type", t);
+          q.set("offset", String(Math.floor(Math.random() * (narrow ? 20 : 100))));
+          return spoonGet("recipes/complexSearch?" + q.toString());
+        });
+        let results = (await Promise.all(calls)).flatMap(d => (d && d.results) || []);
+        if (!results.length && !state.spoonError) {
+          base.set("offset", "0");
+          if (types[0]) base.set("type", types[0]);
+          const d = await spoonGet("recipes/complexSearch?" + base.toString());
+          results = (d && d.results) || [];
         }
         return results.map(normalizeSpoon).filter(Boolean);
       }
@@ -399,7 +420,7 @@
         let recipes = state.spoonKey ? await fetchSpoon() : await fetchMealDB();
         recipes = dedupe(recipes);
         recipes = recipes.filter(r => !state.swipes[r.id]); // exclude already swiped
-        if (state.filters.difficulty) recipes = recipes.filter(r => r.difficulty === state.filters.difficulty);
+        if (state.filters.difficulty.length) recipes = recipes.filter(r => state.filters.difficulty.includes(r.difficulty));
         recipes = shuffle(recipes);
         recipes = spaceByCuisine(recipes, 3); // no country repeats within 3 cards
         return recipes;
@@ -456,6 +477,7 @@
         else renderSaved();
 
         if (state.settingsOpen) renderSettings();
+        else if (state.openFilter) renderFilterPopover();
         else if (state.detail) renderSheet(state.detail);
       }
 
@@ -479,14 +501,16 @@
         body.append(input);
         const row = el("div", "sheet-actions");
         const save = el("button", "btn-like", "Save key");
+        const emptyFilters = () => ({ category: [], cuisine: [], diet: [], mealType: [], maxTime: [], difficulty: [] });
         save.onclick = () => {
           state.spoonKey = input.value.trim();
           if (state.spoonKey) localStorage.setItem(KEY_KEY, state.spoonKey); else localStorage.removeItem(KEY_KEY);
+          state.filters = emptyFilters(); // option sets differ between sources
           state.spoonError = ""; state.settingsOpen = false; reload();
         };
         const clear = el("button", "btn-nope", state.spoonKey ? "Remove" : "Cancel");
         clear.onclick = () => {
-          if (state.spoonKey) { state.spoonKey = ""; localStorage.removeItem(KEY_KEY); state.settingsOpen = false; reload(); }
+          if (state.spoonKey) { state.spoonKey = ""; localStorage.removeItem(KEY_KEY); state.filters = emptyFilters(); state.settingsOpen = false; reload(); }
           else { state.settingsOpen = false; render(); }
         };
         row.append(clear, save); body.append(row);
@@ -499,34 +523,75 @@
         sheet.append(body); back.append(sheet); app.append(back);
       }
 
-      function makeSelect(key, placeholder, options) {
-        const sel = el("select");
-        const any = el("option", null, placeholder); any.value = ""; sel.append(any);
-        options.forEach(([label, value]) => { const op = el("option", null, label); op.value = value; sel.append(op); });
-        sel.value = state.filters[key];
-        sel.onchange = () => { state.filters[key] = sel.value; reload(); };
-        return sel;
-      }
-
+      // Filter definitions per source. `single: true` = pick at most one.
       function filterConfig() {
         if (state.spoonKey) return [
-          ["mealType", "Any meal", SPOON_TYPES],
-          ["cuisine", "Any cuisine", SPOON_CUISINES],
-          ["diet", "Any diet", SPOON_DIETS],
-          ["maxTime", "Any time", TIMES],
-          ["difficulty", "Any difficulty", DIFFICULTIES],
+          { key: "mealType", label: "Meal", options: SPOON_TYPES },
+          { key: "cuisine", label: "Cuisine", options: SPOON_CUISINES },
+          { key: "diet", label: "Diet", options: SPOON_DIETS },
+          { key: "maxTime", label: "Max time", options: TIMES, single: true },
+          { key: "difficulty", label: "Difficulty", options: DIFFICULTIES },
         ];
         return [
-          ["category", "Any type", CATEGORIES],
-          ["cuisine", "Any cuisine", CUISINES],
-          ["difficulty", "Any difficulty", DIFFICULTIES],
+          { key: "category", label: "Type", options: CATEGORIES },
+          { key: "cuisine", label: "Cuisine", options: CUISINES },
+          { key: "difficulty", label: "Difficulty", options: DIFFICULTIES },
         ];
+      }
+
+      function filterButton(cfg) {
+        const sel = state.filters[cfg.key];
+        let text = cfg.label;
+        if (cfg.single && sel.length) {
+          const opt = cfg.options.find(o => o[1] === sel[0]);
+          text = opt ? opt[0] : cfg.label;
+        } else if (sel.length) {
+          text = cfg.label + " (" + sel.length + ")";
+        }
+        const b = el("button", "fbtn" + (sel.length ? " on" : ""), text + " ▾");
+        b.onclick = () => { state.openFilter = cfg.key; render(); };
+        return b;
+      }
+
+      function renderFilterPopover() {
+        const cfg = filterConfig().find(c => c.key === state.openFilter);
+        if (!cfg) { state.openFilter = null; return; }
+        const back = el("div", "sheet-backdrop");
+        back.onclick = () => { state.openFilter = null; reload(); };
+        const sheet = el("div", "sheet");
+        sheet.onclick = e => e.stopPropagation();
+        const head = el("div", "sheet-head");
+        const close = el("button", "sheet-close", "←");
+        close.onclick = () => { state.openFilter = null; reload(); };
+        head.append(close, el("span", "htitle", cfg.label + (cfg.single ? "" : " — tick any")));
+        sheet.append(head);
+        const body = el("div", "sheet-body");
+        const list = el("div", "opt-list");
+        const sel = state.filters[cfg.key];
+        cfg.options.forEach(([label, value]) => {
+          const checked = sel.includes(value);
+          const r = el("div", "opt-row" + (checked ? " checked" : ""));
+          r.append(el("span", "opt-label", label));
+          r.append(el("span", "opt-check", checked ? "✓" : ""));
+          r.onclick = () => {
+            if (cfg.single) state.filters[cfg.key] = checked ? [] : [value];
+            else state.filters[cfg.key] = checked ? sel.filter(v => v !== value) : [...sel, value];
+            render(); // refresh ticks (reload happens on close)
+          };
+          list.append(r);
+        });
+        body.append(list);
+        const actions = el("div", "sheet-actions");
+        const clear = el("button", "btn-nope", "Clear"); clear.onclick = () => { state.filters[cfg.key] = []; render(); };
+        const done = el("button", "btn-like", "Done"); done.onclick = () => { state.openFilter = null; reload(); };
+        actions.append(clear, done); body.append(actions);
+        sheet.append(body); back.append(sheet); app.append(back);
       }
 
       function renderDiscover() {
         const filters = el("div", "filters");
         const row = el("div", "frow");
-        filterConfig().forEach(([key, ph, opts]) => row.append(makeSelect(key, ph, opts)));
+        filterConfig().forEach(cfg => row.append(filterButton(cfg)));
         filters.append(row);
         app.append(filters);
 

@@ -7,6 +7,13 @@ resuming.
 
 ---
 
+> **Update 2026-06-05:** **Spoonacular is now integrated in the standalone.** The
+> user pastes their key into ⚙ Settings (stored in `localStorage` only — never in
+> the repo). With a key, the deck/filters come from Spoonacular (cook-time, diet,
+> meal type, cuisine, real time-based difficulty); with no key it falls back to
+> TheMealDB. Open question to verify on-device: Spoonacular browser **CORS** — if
+> it's blocked, route calls through a server proxy (the Next.js app) instead.
+
 ## TL;DR — where we are
 
 - The product concept (Tinder-for-recipes, licensed sources, deep-link-out) is

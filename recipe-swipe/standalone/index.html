@@ -41,9 +41,16 @@
         padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 13px; }
       .tab.active { color: var(--text); border-color: var(--accent); }
       .filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-      .frow { display: flex; gap: 8px; }
-      .frow select { flex: 1; min-width: 0; background: #161a21; color: var(--text);
+      .frow { display: flex; gap: 8px; flex-wrap: wrap; }
+      .frow select { flex: 1 1 30%; min-width: 0; background: #161a21; color: var(--text);
         border: 1px solid #2a303b; border-radius: 10px; padding: 10px 8px; font-size: 13px; }
+      .tab.gear { padding: 6px 10px; }
+      .tab.gear.on { color: #11151c; background: var(--accent); border-color: var(--accent); }
+      .pill.time { color: var(--accent); }
+      .key-input { width: 100%; box-sizing: border-box; background: #11151c; color: var(--text);
+        border: 1px solid #2a303b; border-radius: 10px; padding: 12px; font-size: 15px; margin: 6px 0 12px; }
+      .settings-note { font-size: 12px; color: var(--muted); margin: 4px 0; line-height: 1.4; }
+      .settings-link { display: inline-block; margin-top: 12px; color: var(--accent); text-decoration: none; font-size: 14px; }
       .pill.easy { color: var(--right); }
       .pill.hard { color: var(--left); }
       .pill.medium { color: var(--accent); }
@@ -135,15 +142,27 @@
       ].map(c => [c, c]);
       const DIFFICULTIES = [["Easy", "easy"], ["Medium", "medium"], ["Hard", "hard"]];
 
+      // Spoonacular filter options (used only when a key is set). Values must
+      // match Spoonacular's accepted parameter values.
+      const cap = s => s.replace(/\b\w/g, m => m.toUpperCase());
+      const TIMES = [["≤ 20 min", "20"], ["≤ 30 min", "30"], ["≤ 45 min", "45"], ["≤ 60 min", "60"]];
+      const SPOON_TYPES = ["main course", "side dish", "breakfast", "salad", "soup", "appetizer", "snack", "dessert", "drink", "bread"].map(c => [cap(c), c]);
+      const SPOON_CUISINES = ["African", "American", "British", "Caribbean", "Chinese", "Eastern European", "French", "German", "Greek", "Indian", "Italian", "Japanese", "Korean", "Latin American", "Mediterranean", "Mexican", "Middle Eastern", "Nordic", "Spanish", "Thai", "Vietnamese"].map(c => [c, c]);
+      const SPOON_DIETS = ["Vegetarian", "Vegan", "Gluten Free", "Ketogenic", "Paleo", "Pescetarian", "Dairy Free", "Whole30"].map(c => [c, c.toLowerCase()]);
+
       // ----- persistent state ----------------------------------------------
       const SW_KEY = "forkful_swipes";
       const SAVED_KEY = "forkful_saved";
       const readJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
       const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
+      const KEY_KEY = "forkful_spoon_key";
       const state = {
         tab: "discover",
-        filters: { category: "", cuisine: "", difficulty: "" },
+        spoonKey: (localStorage.getItem(KEY_KEY) || "").trim(), // stored on-device only
+        spoonError: "",
+        settingsOpen: false,
+        filters: { category: "", cuisine: "", diet: "", mealType: "", maxTime: "", difficulty: "" },
         deck: [],
         loading: true,
         history: [],
@@ -163,6 +182,22 @@
           return data.meals || [];
         } catch { return []; }
       }
+
+      // Spoonacular calls go straight from the browser; the key (query param)
+      // lives only in this device's localStorage, never in the repo.
+      async function spoonGet(path) {
+        try {
+          const sep = path.includes("?") ? "&" : "?";
+          const res = await fetch("https://api.spoonacular.com/" + path + sep + "apiKey=" + encodeURIComponent(state.spoonKey));
+          if (res.status === 401) { state.spoonError = "Spoonacular key looks invalid — check it in ⚙ Settings."; return null; }
+          if (res.status === 402) { state.spoonError = "Spoonacular daily free limit reached. Try again tomorrow, or clear the key to use free recipes."; return null; }
+          if (!res.ok) { state.spoonError = "Spoonacular error (" + res.status + ")."; return null; }
+          state.spoonError = "";
+          return await res.json();
+        } catch { state.spoonError = "Couldn't reach Spoonacular (network)."; return null; }
+      }
+
+      const stripHtml = s => (s || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
       function parseMeasure(m) {
         const t = (m || "").trim();
@@ -184,23 +219,33 @@
         "baste", "sauté", "saute", "sweat", "purée", "puree", "strain", "sieve",
         "whisk until", "beat until", "simmer for", "render", "truss", "glaze", "caramelis",
       ];
-      function computeDifficulty(ingredientCount, instructions) {
+      function computeDifficulty(ingredientCount, instructions, minutes, stepsOverride) {
         const text = (instructions || "").toLowerCase();
-        // Real step count: prefer line breaks (how TheMealDB separates steps),
-        // fall back to sentences only when it's a single block of text.
-        const lines = (instructions || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-        let steps = lines.length;
-        if (steps <= 1) steps = Math.max(1, text.split(/[.!?]\s+/).filter(s => s.trim()).length);
+        // Real step count: prefer an explicit count (Spoonacular) or line breaks
+        // (TheMealDB); fall back to sentences only for a single text block.
+        let steps = stepsOverride || 0;
+        if (!steps) {
+          const lines = (instructions || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+          steps = lines.length;
+          if (steps <= 1) steps = Math.max(1, text.split(/[.!?]\s+/).filter(s => s.trim()).length);
+        }
         let hard = 0;
         for (const t of HARD_TECH) if (text.includes(t)) hard++;
-        const longTime = /overnight|\bhours?\b|\b[2-9]\d\s*min/.test(text) ? 1 : 0;
-        const easyLean = hard === 0 &&
-          /\b(toss|assemble|no.?cook|combine|spread|layer|stir together|drizzle)\b/.test(text) ? 1 : 0;
-        // technique dominates; ingredients barely matter; toss/no-cook pulls down.
-        const score = ingredientCount * 0.3 + steps * 0.6 + hard * 2.2 + longTime * 1.5 - easyLean * 2;
-        let level = "medium";
-        if (score <= 4.5) level = "easy";
-        else if (score >= 10) level = "hard";
+        let level = "medium", score;
+        if (minutes) {
+          // Time-first when we actually know it (Spoonacular's readyInMinutes).
+          score = minutes / 12 + steps * 0.4 + hard * 1.5;
+          if (score <= 4) level = "easy";
+          else if (score >= 8.5) level = "hard";
+        } else {
+          // Technique-first heuristic for sources without a time field.
+          const longTime = /overnight|\bhours?\b|\b[2-9]\d\s*min/.test(text) ? 1 : 0;
+          const easyLean = hard === 0 &&
+            /\b(toss|assemble|no.?cook|combine|spread|layer|stir together|drizzle)\b/.test(text) ? 1 : 0;
+          score = ingredientCount * 0.3 + steps * 0.6 + hard * 2.2 + longTime * 1.5 - easyLean * 2;
+          if (score <= 4.5) level = "easy";
+          else if (score >= 10) level = "hard";
+        }
         return { level, steps, score };
       }
 
@@ -236,6 +281,37 @@
           title: meal.strMeal,
           image: meal.strMealThumb || null,
           ingredients, tags, sourceUrl, publisher,
+          stepCount: dif.steps, difficulty: dif.level,
+        };
+      }
+
+      function normalizeSpoon(r) {
+        if (!r || !r.title) return null;
+        const seen = new Set(); const ings = [];
+        (r.extendedIngredients || []).forEach(i => {
+          const raw = (i.original || i.name || "").trim();
+          if (raw && !seen.has(raw.toLowerCase())) { seen.add(raw.toLowerCase()); ings.push({ raw, name: (i.nameClean || i.name || "").toLowerCase() }); }
+        });
+        const sourceUrl = r.sourceUrl || r.spoonacularSourceUrl ||
+          ("https://spoonacular.com/recipes/" + (r.title || "recipe").replace(/[^a-z0-9]+/gi, "-") + "-" + r.id);
+        let publisher = r.sourceName || "Spoonacular";
+        if (!r.sourceName && r.sourceUrl) { try { publisher = new URL(r.sourceUrl).hostname.replace(/^www\./, ""); } catch {} }
+        const tags = {
+          cuisine: (r.cuisines || []).map(c => c.toLowerCase()),
+          mealType: (r.dishTypes || []).map(c => c.toLowerCase()),
+          diet: (r.diets || []).map(c => c.toLowerCase()),
+          main: [],
+        };
+        const stepObjs = (r.analyzedInstructions && r.analyzedInstructions[0] && r.analyzedInstructions[0].steps) || [];
+        const instrText = stripHtml(r.instructions) || stepObjs.map(s => s.step).join(". ");
+        const dif = computeDifficulty(ings.length, instrText, r.readyInMinutes || null, stepObjs.length);
+        return {
+          id: "spoonacular:" + r.id,
+          title: r.title,
+          image: r.image || null,
+          ingredients: ings,
+          tags, sourceUrl, publisher,
+          minutes: r.readyInMinutes || null,
           stepCount: dif.steps, difficulty: dif.level,
         };
       }
@@ -280,8 +356,8 @@
         return full.flat();
       }
 
-      async function fetchDeck() {
-        const { category, cuisine, difficulty } = state.filters;
+      async function fetchMealDB() {
+        const { category, cuisine } = state.filters;
         let meals = [];
         if (category) {
           meals = await hydrate(await getJSON("filter.php?c=" + encodeURIComponent(category)), 28);
@@ -293,9 +369,37 @@
           const calls = await Promise.all(Array.from({ length: 22 }, () => getJSON("random.php")));
           meals = calls.flat();
         }
-        let recipes = dedupe(meals.map(normalize));
+        return meals.map(normalize);
+      }
+
+      async function fetchSpoon() {
+        const f = state.filters;
+        const p = new URLSearchParams();
+        p.set("number", "16");
+        p.set("addRecipeInformation", "true");
+        p.set("fillIngredients", "true");
+        p.set("instructionsRequired", "true");
+        if (f.mealType) p.set("type", f.mealType);
+        if (f.cuisine) p.set("cuisine", f.cuisine);
+        if (f.diet) p.set("diet", f.diet);
+        if (f.maxTime) p.set("maxReadyTime", f.maxTime);
+        const narrow = f.mealType || f.cuisine || f.diet || f.maxTime;
+        p.set("offset", String(Math.floor(Math.random() * (narrow ? 20 : 100)))); // variety
+        let data = await spoonGet("recipes/complexSearch?" + p.toString());
+        let results = (data && data.results) || [];
+        if (!results.length && p.get("offset") !== "0") {
+          p.set("offset", "0");
+          data = await spoonGet("recipes/complexSearch?" + p.toString());
+          results = (data && data.results) || [];
+        }
+        return results.map(normalizeSpoon).filter(Boolean);
+      }
+
+      async function fetchDeck() {
+        let recipes = state.spoonKey ? await fetchSpoon() : await fetchMealDB();
+        recipes = dedupe(recipes);
         recipes = recipes.filter(r => !state.swipes[r.id]); // exclude already swiped
-        if (difficulty) recipes = recipes.filter(r => r.difficulty === difficulty);
+        if (state.filters.difficulty) recipes = recipes.filter(r => r.difficulty === state.filters.difficulty);
         recipes = shuffle(recipes);
         recipes = spaceByCuisine(recipes, 3); // no country repeats within 3 cards
         return recipes;
@@ -343,12 +447,56 @@
         tD.onclick = () => { state.tab = "discover"; render(); };
         const tS = el("button", "tab" + (state.tab === "saved" ? " active" : ""), "Saved" + (state.saved.length ? " (" + state.saved.length + ")" : ""));
         tS.onclick = () => { state.tab = "saved"; render(); };
-        tabs.append(tD, tS); top.append(brand, tabs); app.append(top);
+        const gear = el("button", "tab gear" + (state.spoonKey ? " on" : ""), "⚙");
+        gear.setAttribute("aria-label", "Settings");
+        gear.onclick = () => { state.settingsOpen = true; render(); };
+        tabs.append(tD, tS, gear); top.append(brand, tabs); app.append(top);
 
         if (state.tab === "discover") renderDiscover();
         else renderSaved();
 
-        if (state.detail) renderSheet(state.detail);
+        if (state.settingsOpen) renderSettings();
+        else if (state.detail) renderSheet(state.detail);
+      }
+
+      function renderSettings() {
+        const back = el("div", "sheet-backdrop");
+        back.onclick = () => { state.settingsOpen = false; render(); };
+        const sheet = el("div", "sheet");
+        sheet.onclick = e => e.stopPropagation();
+        const head = el("div", "sheet-head");
+        const close = el("button", "sheet-close", "←");
+        close.onclick = () => { state.settingsOpen = false; render(); };
+        head.append(close, el("span", "htitle", "Settings"));
+        sheet.append(head);
+        const body = el("div", "sheet-body");
+        body.append(el("h3", null, "Spoonacular API key"));
+        body.append(el("p", "settings-note", "Unlocks ~5,000+ recipes with cook times, diets, allergens and nutrition. Your key is stored only on this device and is never uploaded or committed anywhere."));
+        const input = el("input", "key-input");
+        input.type = "text"; input.value = state.spoonKey;
+        input.placeholder = "Paste your key here";
+        input.autocapitalize = "off"; input.autocorrect = "off"; input.spellcheck = false;
+        body.append(input);
+        const row = el("div", "sheet-actions");
+        const save = el("button", "btn-like", "Save key");
+        save.onclick = () => {
+          state.spoonKey = input.value.trim();
+          if (state.spoonKey) localStorage.setItem(KEY_KEY, state.spoonKey); else localStorage.removeItem(KEY_KEY);
+          state.spoonError = ""; state.settingsOpen = false; reload();
+        };
+        const clear = el("button", "btn-nope", state.spoonKey ? "Remove" : "Cancel");
+        clear.onclick = () => {
+          if (state.spoonKey) { state.spoonKey = ""; localStorage.removeItem(KEY_KEY); state.settingsOpen = false; reload(); }
+          else { state.settingsOpen = false; render(); }
+        };
+        row.append(clear, save); body.append(row);
+        const link = el("a", "settings-link", "Get a free key → spoonacular.com/food-api");
+        link.href = "https://spoonacular.com/food-api/console#Dashboard"; link.target = "_blank"; link.rel = "noopener";
+        body.append(link);
+        body.append(el("p", "settings-note", state.spoonKey
+          ? "Status: using Spoonacular. Free plan ≈ 150 requests/day — each deck reload uses a few."
+          : "Status: using free recipes (TheMealDB). Add a key for cook-time & diet filters."));
+        sheet.append(body); back.append(sheet); app.append(back);
       }
 
       function makeSelect(key, placeholder, options) {
@@ -360,19 +508,32 @@
         return sel;
       }
 
+      function filterConfig() {
+        if (state.spoonKey) return [
+          ["mealType", "Any meal", SPOON_TYPES],
+          ["cuisine", "Any cuisine", SPOON_CUISINES],
+          ["diet", "Any diet", SPOON_DIETS],
+          ["maxTime", "Any time", TIMES],
+          ["difficulty", "Any difficulty", DIFFICULTIES],
+        ];
+        return [
+          ["category", "Any type", CATEGORIES],
+          ["cuisine", "Any cuisine", CUISINES],
+          ["difficulty", "Any difficulty", DIFFICULTIES],
+        ];
+      }
+
       function renderDiscover() {
         const filters = el("div", "filters");
         const row = el("div", "frow");
-        row.append(makeSelect("category", "Any type", CATEGORIES));
-        row.append(makeSelect("cuisine", "Any cuisine", CUISINES));
-        row.append(makeSelect("difficulty", "Any difficulty", DIFFICULTIES));
+        filterConfig().forEach(([key, ph, opts]) => row.append(makeSelect(key, ph, opts)));
         filters.append(row);
         app.append(filters);
 
         if (state.loading) { app.append(skeleton()); return; }
         if (!state.deck.length) {
           const e = el("div", "empty");
-          e.append(el("p", null, "🍽️ No more cards. Try different filters."));
+          e.append(el("p", null, state.spoonError ? "⚠️ " + state.spoonError : "🍽️ No more cards. Try different filters."));
           const b = el("button", "tab active", "Reload deck"); b.onclick = reload; e.append(b);
           app.append(e); return;
         }
@@ -384,7 +545,7 @@
         const like = el("button", "btn-like", "♥"); like.onclick = () => state.deck[0] && commitTop("right");
         controls.append(nope, undoBtn, like); app.append(controls);
 
-        app.append(el("p", "source-note", "Recipes courtesy of TheMealDB · saved on this device"));
+        app.append(el("p", "source-note", (state.spoonKey ? "Recipes via Spoonacular" : "Recipes courtesy of TheMealDB") + " · saved on this device"));
       }
 
       let topCardEl = null;
@@ -414,8 +575,9 @@
         [recipe.tags.cuisine[0], recipe.tags.mealType[0], recipe.tags.diet[0], recipe.tags.main[0]]
           .filter(Boolean).slice(0,3).forEach(t => meta.append(el("span", "pill", t)));
         meta.append(el("span", "pill " + recipe.difficulty, recipe.difficulty));
+        if (recipe.minutes) meta.append(el("span", "pill time", "⏱ " + recipe.minutes + " min"));
         body.append(meta);
-        body.append(el("div", "factline", recipe.ingredients.length + " ingredients · " + recipe.stepCount + " steps"));
+        body.append(el("div", "factline", (recipe.minutes ? recipe.minutes + " min · " : "") + recipe.ingredients.length + " ingredients · " + recipe.stepCount + " steps"));
         body.append(el("p", "ingredients", recipe.ingredients.map(x => x.name || x.raw).slice(0,12).join(", ")));
         body.append(el("div", "source", "via " + recipe.publisher + " · tap for details"));
         c.append(body);
@@ -504,6 +666,7 @@
         const meta = el("div", "meta");
         [].concat(recipe.tags.cuisine, recipe.tags.mealType, recipe.tags.diet, recipe.tags.main).slice(0,6).forEach(t => meta.append(el("span","pill",t)));
         meta.append(el("span", "pill " + recipe.difficulty, recipe.difficulty));
+        if (recipe.minutes) meta.append(el("span", "pill time", "⏱ " + recipe.minutes + " min"));
         body.append(meta);
         body.append(el("h3", null, "Ingredients"));
         const ul = el("ul", "ing-list");

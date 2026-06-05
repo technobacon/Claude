@@ -88,7 +88,13 @@
       .sheet { width: 100%; max-width: 460px; max-height: 92dvh; overflow-y: auto; background: var(--card);
         border-radius: 20px 20px 0 0; padding-bottom: calc(16px + env(safe-area-inset-bottom));
         -webkit-overflow-scrolling: touch; animation: slideup 0.24s cubic-bezier(0.18,0.89,0.32,1.1); }
-      .sheet-handle { width: 40px; height: 4px; border-radius: 999px; background: #3a414e; margin: 10px auto 4px; }
+      .sheet-head { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; background: var(--card); }
+      .sheet-close { width: 40px; height: 40px; border-radius: 50%; border: none; background: #2a303b;
+        color: var(--text); font-size: 22px; line-height: 1; cursor: pointer; flex: 0 0 auto; }
+      .sheet-close:active { background: #353d4b; }
+      .sheet-head .htitle { font-size: 14px; font-weight: 600; color: var(--muted); overflow: hidden;
+        white-space: nowrap; text-overflow: ellipsis; }
       .sheet-photo { width: 100%; height: 220px; object-fit: cover; }
       .sheet-body { padding: 14px 18px; }
       .sheet-body h2 { margin: 6px 0; }
@@ -168,6 +174,36 @@
         return { quantity: isFinite(q) ? q : undefined, unit: (match[2] || "").trim() || undefined };
       }
 
+      // Technique words that signal real cooking complexity. Difficulty is
+      // driven mostly by *technique*, not by how many ingredients are listed
+      // (a 12-ingredient toss salad is easy; a 6-ingredient braise is not).
+      const HARD_TECH = [
+        "braise", "sear", "caramel", "deglaze", "reduce by", "reduce until", "fold in",
+        "knead", "proof", "prove ", "temper", "emulsif", "blanch", "poach", "confit",
+        "sous vide", "ferment", "marinat", "flambe", "julienne", "debone", "fillet",
+        "baste", "sauté", "saute", "sweat", "purée", "puree", "strain", "sieve",
+        "whisk until", "beat until", "simmer for", "render", "truss", "glaze", "caramelis",
+      ];
+      function computeDifficulty(ingredientCount, instructions) {
+        const text = (instructions || "").toLowerCase();
+        // Real step count: prefer line breaks (how TheMealDB separates steps),
+        // fall back to sentences only when it's a single block of text.
+        const lines = (instructions || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        let steps = lines.length;
+        if (steps <= 1) steps = Math.max(1, text.split(/[.!?]\s+/).filter(s => s.trim()).length);
+        let hard = 0;
+        for (const t of HARD_TECH) if (text.includes(t)) hard++;
+        const longTime = /overnight|\bhours?\b|\b[2-9]\d\s*min/.test(text) ? 1 : 0;
+        const easyLean = hard === 0 &&
+          /\b(toss|assemble|no.?cook|combine|spread|layer|stir together|drizzle)\b/.test(text) ? 1 : 0;
+        // technique dominates; ingredients barely matter; toss/no-cook pulls down.
+        const score = ingredientCount * 0.3 + steps * 0.6 + hard * 2.2 + longTime * 1.5 - easyLean * 2;
+        let level = "medium";
+        if (score <= 4.5) level = "easy";
+        else if (score >= 10) level = "hard";
+        return { level, steps, score };
+      }
+
       function normalize(meal) {
         const ingredients = [];
         for (let i = 1; i <= 20; i++) {
@@ -194,18 +230,13 @@
           if (["beef","chicken","pork","lamb","seafood"].includes(c)) tags.main.push(c);
         }
         const instr = (meal.strInstructions || "").trim();
-        const steps = instr ? Math.max(1, instr.split(/[.!?]\s+/).filter(s => s.trim()).length) : 0;
-        // Derived difficulty heuristic (TheMealDB has no difficulty field):
-        // few ingredients + few steps = easy; many of either = hard.
-        let difficulty = "medium";
-        if (ingredients.length <= 7 && steps <= 6) difficulty = "easy";
-        else if (ingredients.length >= 13 || steps >= 12) difficulty = "hard";
+        const dif = computeDifficulty(ingredients.length, instr);
         return {
           id: "themealdb:" + meal.idMeal,
           title: meal.strMeal,
           image: meal.strMealThumb || null,
           ingredients, tags, sourceUrl, publisher,
-          stepCount: steps, difficulty,
+          stepCount: dif.steps, difficulty: dif.level,
         };
       }
 
@@ -461,7 +492,12 @@
         back.onclick = () => { state.detail = null; render(); };
         const sheet = el("div", "sheet");
         sheet.onclick = (e) => e.stopPropagation();
-        sheet.append(el("div", "sheet-handle"));
+        const head = el("div", "sheet-head");
+        const close = el("button", "sheet-close", "←");
+        close.setAttribute("aria-label", "Close");
+        close.onclick = () => { state.detail = null; render(); };
+        head.append(close, el("span", "htitle", recipe.title));
+        sheet.append(head);
         if (recipe.image) { const img = el("img", "sheet-photo"); img.src = recipe.image; img.alt = recipe.title; sheet.append(img); }
         const body = el("div", "sheet-body");
         body.append(el("h2", null, recipe.title));

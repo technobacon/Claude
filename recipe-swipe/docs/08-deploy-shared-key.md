@@ -2,11 +2,44 @@
 
 *Last updated: 2026-06-05*
 
-Goal: **users don't bring their own Spoonacular key.** You deploy the app's
-server **once** with *your* key in a server env var; everyone uses the app and
-the key never reaches a browser.
+Goal: **users don't bring their own Spoonacular key.** You deploy a server
+**once** with *your* key in a server env var; everyone uses the app and the key
+never reaches a browser.
 
-## How it works
+## ✅ Easiest path — the zero-config root proxy (recommended)
+
+There's now a tiny dependency-free serverless backend at the **repo root**
+(`api/feed.js`, `api/meta.js`, root `package.json`). Because it's at the root,
+Vercel deploys it with **no root-directory setting and no build step**.
+
+1. **Merge** the PR that adds it (so it's on the default branch).
+2. **vercel.com → Add New → Project → import `technobacon/Claude`.** Leave Root
+   Directory as the default (`./`). Don't change anything.
+3. **Environment Variables →** add `SPOONACULAR_API_KEY` = *your key*.
+4. **Deploy.** You'll get a URL like `https://claude-xxxx.vercel.app`.
+5. **Verify:** open `https://claude-xxxx.vercel.app/api/meta` → it should say
+   `{"ok":true,"source":"spoonacular"}`. (Visiting the *root* `/` will 404 —
+   that's expected; it's only an API.)
+6. **Use it keyless:** open the standalone with the backend attached:
+   `…/recipe-swipe/standalone/index.html?api=https://claude-xxxx.vercel.app`
+
+That's it — no root directory, no build config, no branch settings. Endpoints:
+`GET /api/feed?diet=&cuisine=&mealType=&maxTime=&difficulty=&limit=` and
+`GET /api/meta`. CORS is open so the CDN-hosted client can call it.
+
+> The standalone auto-detects the backend from `?api=` (or a same-origin
+> `/api/meta`) and runs keyless; users' swipes/saves stay in their own browser,
+> so it's serverless-safe.
+
+---
+
+## Alternative — deploy the full Next.js app
+
+The Next app (`recipe-swipe/`) is also a valid backend (and full UI). It needs
+Root Directory = `recipe-swipe` + the same env var. Use this if you want the
+server to also serve a UI / use the typed adapter stack.
+
+### How it works
 
 ```
   Phone (standalone client)                Your deployed server (Next.js)

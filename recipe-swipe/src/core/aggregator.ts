@@ -71,6 +71,8 @@ export function matchesQuery(r: Recipe, q: RecipeQuery): boolean {
   if (!has(r.tags.mealType, q.mealType)) return false;
   if (!has(r.tags.cuisine, q.cuisine)) return false;
   if (!has(r.tags.mainIngredients, q.includeIngredients)) return false;
+  if (q.difficulty?.length && !(r.difficulty && q.difficulty.includes(r.difficulty)))
+    return false;
   if (q.excludeIngredients?.length) {
     const names = new Set(r.ingredients.map((i) => (i.name ?? "").toLowerCase()));
     if (q.excludeIngredients.some((x) => names.has(x.toLowerCase()))) return false;

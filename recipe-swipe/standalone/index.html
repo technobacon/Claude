@@ -170,6 +170,8 @@
         spoonError: "",
         settingsOpen: false,
         openFilter: null,                   // which filter's checklist is open
+        backend: null,                      // base URL of a deployed server, or null
+        backendSource: "",                  // source id the server reports
         // each filter holds an array of selected values (multi-select)
         filters: { category: [], cuisine: [], diet: [], mealType: [], maxTime: [], difficulty: [] },
         deck: [],
@@ -416,8 +418,43 @@
         return results.map(normalizeSpoon).filter(Boolean);
       }
 
+      // Map a server (canonical) recipe into this client's shape.
+      function fromCanonical(r) {
+        const m = (r.instructionsSummary || "").match(/^(\d+)\s+steps/);
+        const t = r.tags || {};
+        return {
+          id: r.id, title: r.title,
+          image: (r.image && r.image.url) || null,
+          ingredients: (r.ingredients || []).map(i => ({ raw: i.raw, name: i.name })),
+          tags: { cuisine: t.cuisine || [], mealType: t.mealType || [], diet: t.diet || [], main: t.mainIngredients || [] },
+          sourceUrl: r.sourceUrl, publisher: r.publisher || r.source || "source",
+          minutes: r.totalTimeMinutes || null,
+          stepCount: m ? +m[1] : 0,
+          difficulty: r.difficulty || "medium",
+        };
+      }
+
+      async function fetchBackend() {
+        const f = state.filters;
+        const p = new URLSearchParams();
+        p.set("limit", "16");
+        if (f.diet.length) p.set("diet", f.diet.join(","));
+        if (f.cuisine.length) p.set("cuisine", f.cuisine.join(","));
+        if (f.mealType.length) p.set("mealType", f.mealType.join(","));
+        if (f.maxTime.length) p.set("maxTime", f.maxTime[0]);
+        if (f.difficulty.length) p.set("difficulty", f.difficulty.join(","));
+        try {
+          const res = await fetch((state.backend || "") + "/api/feed?" + p.toString());
+          if (!res.ok) { state.spoonError = "Recipe server error (" + res.status + ")."; return []; }
+          state.spoonError = "";
+          const data = await res.json();
+          return (data.deck || []).map(fromCanonical);
+        } catch { state.spoonError = "Couldn't reach the recipe server."; return []; }
+      }
+
       async function fetchDeck() {
-        let recipes = state.spoonKey ? await fetchSpoon() : await fetchMealDB();
+        let recipes = state.backend !== null ? await fetchBackend()
+          : state.spoonKey ? await fetchSpoon() : await fetchMealDB();
         recipes = dedupe(recipes);
         recipes = recipes.filter(r => !state.swipes[r.id]); // exclude already swiped
         if (state.filters.difficulty.length) recipes = recipes.filter(r => state.filters.difficulty.includes(r.difficulty));
@@ -468,10 +505,16 @@
         tD.onclick = () => { state.tab = "discover"; render(); };
         const tS = el("button", "tab" + (state.tab === "saved" ? " active" : ""), "Saved" + (state.saved.length ? " (" + state.saved.length + ")" : ""));
         tS.onclick = () => { state.tab = "saved"; render(); };
-        const gear = el("button", "tab gear" + (state.spoonKey ? " on" : ""), "⚙");
-        gear.setAttribute("aria-label", "Settings");
-        gear.onclick = () => { state.settingsOpen = true; render(); };
-        tabs.append(tD, tS, gear); top.append(brand, tabs); app.append(top);
+        // The key gear only matters in direct mode; a backend manages the key.
+        if (state.backend === null) {
+          const gear = el("button", "tab gear" + (state.spoonKey ? " on" : ""), "⚙");
+          gear.setAttribute("aria-label", "Settings");
+          gear.onclick = () => { state.settingsOpen = true; render(); };
+          tabs.append(tD, tS, gear);
+        } else {
+          tabs.append(tD, tS);
+        }
+        top.append(brand, tabs); app.append(top);
 
         if (state.tab === "discover") renderDiscover();
         else renderSaved();
@@ -524,8 +567,11 @@
       }
 
       // Filter definitions per source. `single: true` = pick at most one.
+      // The "rich" set is used whenever a Spoonacular-backed source is active
+      // (a deployed backend, or a local key).
       function filterConfig() {
-        if (state.spoonKey) return [
+        const rich = state.backend !== null || state.spoonKey;
+        if (rich) return [
           { key: "mealType", label: "Meal", options: SPOON_TYPES },
           { key: "cuisine", label: "Cuisine", options: SPOON_CUISINES },
           { key: "diet", label: "Diet", options: SPOON_DIETS },
@@ -610,7 +656,9 @@
         const like = el("button", "btn-like", "♥"); like.onclick = () => state.deck[0] && commitTop("right");
         controls.append(nope, undoBtn, like); app.append(controls);
 
-        app.append(el("p", "source-note", (state.spoonKey ? "Recipes via Spoonacular" : "Recipes courtesy of TheMealDB") + " · saved on this device"));
+        const srcName = state.backend !== null ? (state.backendSource === "spoonacular" ? "Spoonacular" : "TheMealDB")
+          : state.spoonKey ? "Spoonacular" : "TheMealDB";
+        app.append(el("p", "source-note", "Recipes via " + srcName + " · saved on this device"));
       }
 
       let topCardEl = null;
@@ -751,8 +799,25 @@
       }
 
       // ----- go -------------------------------------------------------------
-      render();
-      reload();
+      // Auto-detect a recipe backend so users need no key of their own:
+      //  - ?api=<url> points at a deployed server, OR
+      //  - same-origin /api/meta exists (the app is served by the Next backend).
+      // If neither responds, fall back to direct mode (free TheMealDB, or a
+      // personal key via ⚙).
+      async function init() {
+        const apiParam = new URLSearchParams(location.search).get("api");
+        const base = apiParam ? apiParam.replace(/\/+$/, "") : "";
+        try {
+          const res = await fetch(base + "/api/meta");
+          if (res.ok) {
+            const m = await res.json();
+            if (m && m.ok) { state.backend = base; state.backendSource = m.source || "spoonacular"; }
+          }
+        } catch { /* no backend → direct mode */ }
+        render();
+        reload();
+      }
+      init();
     </script>
   </body>
 </html>

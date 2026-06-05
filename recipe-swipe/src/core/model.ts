@@ -69,6 +69,7 @@ export interface Recipe {
   tags: RecipeTags;
   rating?: Rating;
   nutrition?: Nutrition;
+  difficulty?: "easy" | "medium" | "hard"; // derived; see core/difficulty.ts
 
   attribution: Attribution;
   fetchedAt: string; // ISO timestamp, for cache TTL

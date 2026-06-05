@@ -73,6 +73,10 @@ export interface RecipeQuery {
   excludeIngredients?: string[];
   /** Basis for the pantry feature later (Phase 4). */
   includeIngredients?: string[];
+  /** Cap on total cook time in minutes (Spoonacular: maxReadyTime). */
+  maxReadyMinutes?: number;
+  /** Filter by derived difficulty (client-side post-filter). */
+  difficulty?: string[];
   limit: number;
   cursor?: string;
 }

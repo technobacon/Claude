@@ -7,6 +7,15 @@ resuming.
 
 ---
 
+> **Update 2026-06-05 (later):** **Server-side Spoonacular adapter shipped** —
+> the Next app now uses Spoonacular when `SPOONACULAR_API_KEY` is set (key stays
+> server-side), with shared `core/difficulty.ts`, `/api/meta`, CORS, and tests
+> (23 passing). The standalone **auto-detects a backend** (`?api=<url>` or
+> same-origin) and goes keyless. **To get no-per-user-keys, deploy once:** see
+> [`08-deploy-shared-key.md`](08-deploy-shared-key.md). Remaining: deploy + (nice
+> to have) serve the client from the app for a single clean URL; add caching
+> before real traffic.
+
 > **Update 2026-06-05:** **Spoonacular is now integrated in the standalone.** The
 > user pastes their key into ⚙ Settings (stored in `localStorage` only — never in
 > the repo). With a key, the deck/filters come from Spoonacular (cook-time, diet,

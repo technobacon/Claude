@@ -6,6 +6,7 @@
  * injected FetchLike so tests pass a fake and stay deterministic.
  */
 
+import { computeDifficulty } from "../difficulty.ts";
 import {
   makeRecipeId,
   type Ingredient,
@@ -237,6 +238,10 @@ export class TheMealDbSource implements RecipeSource {
       ? publisherFromUrl(meal.strSource) ?? "TheMealDB"
       : "TheMealDB";
 
+    const ingredients = extractIngredients(meal);
+    // No time field from TheMealDB → technique-first difficulty.
+    const difficulty = computeDifficulty(ingredients.length, instructions ?? "").level;
+
     return {
       id: makeRecipeId(this.id, meal.idMeal),
       source: this.id,
@@ -249,7 +254,8 @@ export class TheMealDbSource implements RecipeSource {
         : undefined,
       // Preview only — the full method lives on sourceUrl (link-out).
       description: instructions ? truncate(instructions, 180) : undefined,
-      ingredients: extractIngredients(meal),
+      ingredients,
+      difficulty,
       instructionsSummary: instructions
         ? `${countSentences(instructions)} steps — full method on source`
         : undefined,

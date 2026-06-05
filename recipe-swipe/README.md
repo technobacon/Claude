@@ -5,10 +5,11 @@ multiple licensed recipe APIs. Swipe right to save, left to skip. Tap a saved
 recipe to **cook it on the original publisher's website** — we send them the
 traffic, we never steal their content.
 
-> **Status:** Phase 1 MVP scaffold — **runs today.** Next.js + TypeScript app
-> with the source-agnostic core, a TheMealDB adapter, the swipe UI, saved list,
-> and deep-link-out. Unit-tested (`npm test`, zero deps). Spoonacular/Edamam
-> adapters slot in next; see [`docs/04-roadmap.md`](docs/04-roadmap.md).
+> **Status:** Phase 1 MVP — **runs today**, and actively being tested on a real
+> iPhone via the zero-setup [`standalone/`](standalone/) build. Next.js + TS app
+> with the source-agnostic core, TheMealDB adapter, swipe UI, saved list, and
+> deep-link-out (unit-tested, `npm test`). Next big unlock: Spoonacular.
+> **Resuming? Read [`docs/07-handoff-and-next-steps.md`](docs/07-handoff-and-next-steps.md) first.**
 
 ---
 
@@ -46,6 +47,8 @@ Read in order, or jump to what you need:
 | [`docs/04-roadmap.md`](docs/04-roadmap.md) | Phased build plan, milestones, definitions of done |
 | [`docs/05-legal-compliance.md`](docs/05-legal-compliance.md) | Link-out policy, licensing checklist, attribution rules |
 | [`docs/06-run-on-iphone.md`](docs/06-run-on-iphone.md) | Deploy to Vercel + add to iPhone home screen as a PWA |
+| [`docs/07-handoff-and-next-steps.md`](docs/07-handoff-and-next-steps.md) | **Start here when resuming** — current state, how to test now, next steps |
+| [`standalone/`](standalone/) | Single-file client-only build used for zero-setup phone testing |
 
 ## Run it
 
@@ -77,6 +80,7 @@ recipe-swipe/
 ├── app/                      # Next.js App Router: UI + /api routes
 │   ├── api/{feed,swipe,list} # the Phase 1 API surface           (docs/01)
 │   └── components/ForkfulApp.tsx  # swipe deck, filters, saved list
+├── standalone/index.html     # client-only single-file build (live phone demo)
 └── tests/                    # node:test + fixtures (no deps)
 ```
 

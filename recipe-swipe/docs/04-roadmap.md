@@ -1,9 +1,17 @@
 # 04 — Roadmap
 
-*Last updated: 2026-06-04*
+*Last updated: 2026-06-05*
 
 Phased so each step ships something usable and de-risks the next. Phase 0 is a
 hard gate before writing app code.
+
+> **Progress (2026-06-05):** Phase 1 MVP is built (Next.js app + tested core +
+> TheMealDB adapter) and a client-only `standalone/` build is being tested on a
+> real iPhone. Phase 2 filters are partly done (dropdowns: Type/Cuisine/
+> Difficulty) and we've added true randomization, cuisine spacing, and a derived
+> difficulty metric — all currently in the standalone, partly in the core.
+> **Next big unlock: Spoonacular (Phase 1 continuation).** Full status &
+> where-to-pick-up: [`07-handoff-and-next-steps.md`](07-handoff-and-next-steps.md).
 
 ---
 

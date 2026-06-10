@@ -1,0 +1,13 @@
+{
+  "name": "soulshift",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SOULSHIFT — a 2D pixel roguelite dungeon crawler where you possess the corpses of your kills. No fixed body: every enemy is a playable class, and every body rots while you wear it.",
+  "scripts": {
+    "test": "node --test 'tests/*.test.js'"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

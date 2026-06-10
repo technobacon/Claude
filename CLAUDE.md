@@ -4,6 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What's here
 
+`soulshift/` — **SOULSHIFT**, a 2D pixel roguelite dungeon crawler (HTML5
+canvas, plain JS, no build step). The twist: the player is a soul that
+possesses the corpses of its kills; every enemy is a playable class and
+bodies decay while worn. All game rules are pure functions in
+`soulshift/src/core/` tested with `node:test` (`npm test` from `soulshift/`,
+65 tests incl. balance contracts and simulation bots); `soulshift/src/ui/`
+is a thin browser shell (canvas renderer, sprites-as-code, WebAudio synth).
+Serve statically to play: `python3 -m http.server` from `soulshift/`.
+
 `tabstash/` — **TabStash**, a Manifest V3 Chrome extension that saves open tabs
 as named "workspaces" and restores them (preserving tab groups + pinned tabs).
 Plain JavaScript, **no build step, no runtime dependencies**. Sold as a one-time

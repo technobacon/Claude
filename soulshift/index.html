@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOULSHIFT — wear what you kill</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ======================= TITLE ======================= -->
+  <section id="screen-title" class="screen">
+    <h1 class="logo">SOUL<span>SHIFT</span></h1>
+    <p class="tagline">You have no body of your own. Wear what you kill — before it rots.</p>
+    <div class="bank">Banked essence: <b id="title-bank">0</b></div>
+    <div class="title-menu">
+      <button id="btn-start" class="big">Descend <span class="kbd">Enter</span></button>
+      <button id="btn-perks">Soul Perks</button>
+      <button id="btn-help">How to Play</button>
+    </div>
+    <div class="start-body-row">
+      <div class="label">Starting body</div>
+      <div id="start-bodies" class="chips"></div>
+    </div>
+    <div id="title-stats" class="title-stats"></div>
+  </section>
+
+  <!-- ======================= PERKS ======================= -->
+  <section id="screen-perks" class="screen hidden">
+    <h2>Soul Perks</h2>
+    <div class="bank">Banked essence: <b id="perks-bank">0</b></div>
+    <div id="perk-list" class="card-list"></div>
+    <h2>Starting Bodies</h2>
+    <div id="start-shop" class="card-list"></div>
+    <button id="btn-perks-back">Back <span class="kbd">Esc</span></button>
+  </section>
+
+  <!-- ======================= HELP ======================= -->
+  <section id="screen-help" class="screen hidden">
+    <h2>How to Play</h2>
+    <div class="help-cols">
+      <div>
+        <h3>The Twist</h3>
+        <p>You are a revenant soul. The body you wear is borrowed — it <b>decays one point
+        per action</b>, and when it sloughs apart (or is destroyed) your bare soul spills out.</p>
+        <p>A bare soul <b>flickers</b> for a few turns (untouchable), then begins to fade.
+        Step onto any corpse to <b>possess</b> it: its stats, speed and ability become yours.
+        Your soul also strikes any body harder than its old owner could (+1 attack).</p>
+        <p>A soul's chilling touch slows the living — and any enemy weak enough
+        (below <b>30% HP</b>) can be <b>seized alive</b>.</p>
+        <p>Bodies you abandon remember their wounds and their rot. Fresh kills make the best skins.</p>
+        <h3>The Goal</h3>
+        <p>Descend 8 floors. The deep door is kept by <b>the Warden</b>. Kill it — or weaken
+        it and possess it — and walk out wearing the dungeon's own face.</p>
+        <h3>Shrines &amp; Loot</h3>
+        <p><b>Mend</b> heals your body. <b>Preserve</b> resets its decay. <b>Empower</b>
+        permanently sharpens your soul (+1 atk, +4 HP in every body, all run). All cost essence,
+        which falls from kills. Unspent essence is banked when the run ends — more if you win.</p>
+      </div>
+      <div>
+        <h3>Keys</h3>
+        <table class="keys">
+          <tr><td><span class="kbd">←↑→↓</span> <span class="kbd">WASD</span> <span class="kbd">hjkl</span></td><td>move / attack</td></tr>
+          <tr><td><span class="kbd">Q E Z C</span> <span class="kbd">yubn</span> <span class="kbd">numpad</span></td><td>diagonals</td></tr>
+          <tr><td><span class="kbd">G</span> / <span class="kbd">Enter</span></td><td>possess corpse · use shrine · descend stairs</td></tr>
+          <tr><td><span class="kbd">Space</span> / <span class="kbd">F</span></td><td>body ability</td></tr>
+          <tr><td><span class="kbd">.</span> / <span class="kbd">numpad 5</span></td><td>wait a turn</td></tr>
+          <tr><td><span class="kbd">M</span></td><td>mute</td></tr>
+          <tr><td><span class="kbd">?</span></td><td>this screen</td></tr>
+        </table>
+        <h3>Bestiary <small>(bodies you have worn)</small></h3>
+        <div id="bestiary" class="bestiary"></div>
+      </div>
+    </div>
+    <button id="btn-help-back">Back <span class="kbd">Esc</span></button>
+  </section>
+
+  <!-- ======================= GAME ======================= -->
+  <section id="screen-game" class="screen hidden">
+    <div class="game-row">
+      <canvas id="canvas"></canvas>
+      <aside id="sidebar">
+        <div id="hud-depth" class="hud-depth"></div>
+        <div id="hud-body" class="hud-body"></div>
+        <div class="bar-label"><span>HP</span><span id="hud-hp-text"></span></div>
+        <div class="bar"><div id="hud-hp" class="bar-fill hp"></div></div>
+        <div class="bar-label"><span id="hud-decay-label">DECAY</span><span id="hud-decay-text"></span></div>
+        <div class="bar"><div id="hud-decay" class="bar-fill decay"></div></div>
+        <div id="hud-essence" class="hud-line"></div>
+        <div id="hud-ability" class="hud-ability"></div>
+        <div id="hud-statuses" class="hud-line"></div>
+        <div id="hud-hint" class="hud-hint"></div>
+        <div class="hud-foot">
+          <div><span class="kbd">G</span> use · <span class="kbd">Space</span> ability · <span class="kbd">.</span> wait</div>
+          <div><span class="kbd">?</span> help · <span class="kbd">M</span> mute</div>
+        </div>
+      </aside>
+    </div>
+    <div id="log"></div>
+  </section>
+
+  <!-- ======================= END ======================= -->
+  <section id="screen-end" class="screen hidden">
+    <h2 id="end-title"></h2>
+    <p id="end-flavor" class="tagline"></p>
+    <div id="end-stats" class="end-stats"></div>
+    <div class="title-menu">
+      <button id="btn-again" class="big">Descend Again <span class="kbd">Enter</span></button>
+      <button id="btn-end-perks">Spend Essence</button>
+      <button id="btn-end-title">Title</button>
+    </div>
+  </section>
+
+</div>
+<script type="module" src="src/ui/main.js"></script>
+</body>
+</html>

@@ -1,11 +1,22 @@
 # 07 — Handoff & Next Steps
 
-*Last updated: 2026-06-05*
+*Last updated: 2026-06-11*
 
 This is the "where we are / where to pick up" doc. Read this first when
 resuming.
 
 ---
+
+> **Update 2026-06-11:** **Standalone UI redesigned** (branch
+> `claude/recipe-swipe-redesign-9rhfqw`, commit `a8b70fb`): full-bleed photo
+> cards with a gradient scrim and overlaid title/pills, Fraunces display
+> typography, segmented tabs, scrollable filter chips, SVG icon controls,
+> drag-handle bottom sheets, polished empty/loading states, reduced-motion
+> support. Pure UI/markup changes — the data layer (TheMealDB / Spoonacular /
+> backend modes, filters, difficulty) is untouched; all 23 tests still pass.
+> The three sheets now share one `buildSheet()` scaffold. **The Next app has
+> not been restyled yet** — porting this design there is part of the existing
+> reconcile task (see [Divergence](#divergence--important)).
 
 > **Update 2026-06-05 (later):** **Server-side Spoonacular adapter shipped** —
 > the Next app now uses Spoonacular when `SPOONACULAR_API_KEY` is set (key stays
@@ -45,12 +56,12 @@ The standalone runs straight from the public repo via a static file CDN — no
 hosting. Open this on the phone (pinned to a known-good commit):
 
 ```
-https://raw.githack.com/technobacon/Claude/5585f830cd00be0561822aedec39a535186ee9dc/recipe-swipe/standalone/index.html
+https://raw.githack.com/technobacon/Claude/a8b70fb421374e1a444f547ae355fa8b92446a17/recipe-swipe/standalone/index.html
 ```
 
 Backup CDN (identical):
 ```
-https://cdn.statically.io/gh/technobacon/Claude/5585f830cd00be0561822aedec39a535186ee9dc/recipe-swipe/standalone/index.html
+https://cdn.statically.io/gh/technobacon/Claude/a8b70fb421374e1a444f547ae355fa8b92446a17/recipe-swipe/standalone/index.html
 ```
 
 **To mint a fresh link after new changes:** push to the branch, grab the new

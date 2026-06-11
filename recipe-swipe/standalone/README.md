@@ -3,11 +3,16 @@
 `index.html` is a **single, self-contained** version of the swipe app used for
 **zero-setup testing on a real phone**. No server, no build, no accounts.
 
-- Talks to **TheMealDB** directly from the browser (CORS-enabled).
+- Talks to **TheMealDB** directly from the browser (CORS-enabled); switches to
+  **Spoonacular** with a personal key (⚙ Settings) or a deployed backend
+  (`?api=<url>` / same-origin `/api/meta`).
 - Saves swipes + the saved list in **`localStorage`** (persists on the device).
 - Mirrors the main app's UX: swipe/flick + buttons, undo, tap-for-detail sheet
-  with a back button + deep-link-out, dropdown filters (Type / Cuisine /
-  Difficulty), true random deck, cuisine spacing, derived difficulty.
+  with a back button + deep-link-out, multi-select filter sheets, true random
+  deck, cuisine spacing, derived difficulty.
+- **Modern UI (June 2026 redesign):** full-bleed photo cards with a gradient
+  scrim, Fraunces display type, glass chips, segmented tabs, SVG icon controls,
+  drag-handle bottom sheets, and `prefers-reduced-motion` support.
 
 ## How to open it on a phone
 
@@ -27,5 +32,6 @@ without fighting deploy/hosting setup. The real architecture lives in the
 Next.js app (`../`). See [`../docs/07-handoff-and-next-steps.md`](../docs/07-handoff-and-next-steps.md)
 for how the two relate and what to do next.
 
-> Note: this build is **TheMealDB-only** (the source needing no API key). The
-> full multi-source app (Spoonacular/Edamam) is the Next.js version.
+> Note: with no key and no backend this build falls back to **TheMealDB** (the
+> source needing no API key). The full multi-source architecture lives in the
+> Next.js version.

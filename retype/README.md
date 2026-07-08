@@ -67,6 +67,12 @@ without a browser (same philosophy as `../tabstash/`):
 `core/recorder.js` (pure decision) → `core/storage.js` (persist). The popup
 and history page only ever talk to the background worker.
 
+## FAQ
+
+User-facing answers to the trust questions this product invites ("how do I
+know it won't be leaked?", "isn't this a keylogger?") live in **`FAQ.md`** —
+use it verbatim on the landing page and adapt it for the store listing.
+
 ## Privacy invariants (do not break these)
 
 1. Nothing ever leaves the machine. No server, no sync, no telemetry.

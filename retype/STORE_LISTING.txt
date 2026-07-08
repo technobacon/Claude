@@ -58,6 +58,33 @@ Retype is the spiritual successor to the beloved, long-dead Lazarus: Form
 Recovery — rebuilt for today's Chrome, maintained, and honest about
 privacy.
 
+FAQ (full version at the website — see FAQ.md)
+
+Q: How do I know my text won't be leaked?
+A: There is nowhere for it to go — Retype has no server, no account, no
+sync, no analytics. Verify it yourself: watch the Network tab in DevTools
+while you type (zero requests), or disconnect from the internet — Retype
+keeps working. The code ships unminified so anyone can read it.
+
+Q: Isn't this a keylogger?
+A: A keylogger hides from you and sends keystrokes to someone else. Retype
+shows you everything it records, lets you pause or delete it all, and has
+no ability to transmit anything. It exists so YOU can recover YOUR work.
+
+Q: What about passwords and cards?
+A: Password fields are never even read — the check happens before the
+value is touched. Fields that look like card numbers, SSNs, PINs or
+one-time codes are refused by a second, independently tested filter.
+
+Q: Why the "read data on all websites" warning?
+A: That's Chrome's standard wording for any extension that works on every
+site — recording your typing anywhere requires it. What the code actually
+does: watch editable fields, save locally, restore on your click.
+
+Q: What happens when I uninstall?
+A: Chrome deletes Retype's storage with it. Everything is gone. Export
+first if you want to keep your archive.
+
 Install it before you need it. You will need it.
 ---------------------------------------------------------------------------
 

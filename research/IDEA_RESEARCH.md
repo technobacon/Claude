@@ -130,6 +130,75 @@ against 2–3 hours of loss and a $185–$435 application at stake.
 
 ---
 
+## The generic pick (same pain, whole-internet audience)
+
+### **Retype** — a time machine for everything you type in the browser
+
+*Requested as a broader alternative to the DS-160-specific recommendation.
+Same validated pain, same architecture, aperture widened from "visa
+applicants" to "anyone who has ever lost a long piece of typing to a timeout,
+crash, accidental tab close, or a 'session expired' login wall."*
+
+A content script records text as you type into any input, textarea, or
+rich-text editor on any site, keeps a **searchable, local-only history**, and
+restores it after disaster — the resurrection of the legendary, dead
+[Lazarus: Form Recovery](https://alternativeto.net/software/lazarus-form-recovery/),
+rebuilt for MV3 and actually maintained and marketed.
+
+**The twist:** it's not a form saver, it's a *typing time machine*. Existing
+free tools (Typio Reboot, Form History Control, Form Saver — 3k users, 3.7★)
+frame themselves as per-form recovery and die on rich-text editors and shadow
+DOM. Retype frames the product around the **searchable archive**: "everything
+you typed this month, on any site, findable in two keystrokes" — with
+disaster recovery as the acquisition hook. Second twist carried over:
+**local-only and one-time purchase** ($19) in a category where the only
+monetized neighbor ([Clipboard History Pro](https://clipboardextension.com/))
+charges a subscription and pushes cloud sync. Passwords and card fields are
+never recorded; per-site pause and a default blocklist ship in v1.
+
+**Demand evidence:**
+- Lazarus demand persists years after abandonment — community-patched forks
+  on GitHub, active "alternatives" threads on
+  [AlternativeTo](https://alternativeto.net/software/lazarus-form-recovery/)
+  and Chromium extension groups.
+- The free successors execute poorly (3.7★, ~3k users) and monetize nothing —
+  the category has never had a polished, marketed, paid player.
+- Platform autosave is Swiss cheese: Blackboard autosaves essay boxes every
+  10s, but Canvas discussions, Workday/Taleo job applications, government
+  portals, CMS admin panels, forum/Reddit comment boxes, and support-ticket
+  forms routinely eat work — each one is an SEO landing page
+  ("Workday application erased", "lost Canvas discussion post", "Reddit
+  comment disappeared", "DS-160 timed out" — the niche pick becomes just one
+  beachhead page of many).
+- Adjacent proof of payment: clipboard-history extensions sustain paid tiers
+  for locally stored text tooling.
+
+**Freemium funnel:** free = recording always on + restore your **most recent
+loss** on the current site (the hook must work at the disaster moment or
+word-of-mouth dies). Pro $19 one-time = unlimited searchable history, restore
+anything ever, rich-text/Markdown export, per-site retention rules, encrypted
+local backup file.
+
+**4-week shape:** week 1 recorder (inputs/textareas/contentEditable via
+MutationObserver + shadow-DOM piercing — reuse patterns from the free OSS
+tools' public repos); week 2 history UI + search (popup + full-page view,
+same plain-JS stack as TabStash); week 3 ExtensionPay gate + privacy
+hardening + store listing; week 4 launch: scenario SEO pages, Product Hunt
+(generic tools do far better there than niche ones), r/chrome, r/productivity,
+"I lost my essay" reply-guy distribution on Reddit/X where these laments are
+posted daily.
+
+**Trade-off vs the niche pick, honestly:** broader appeal and better
+Product-Hunt/word-of-mouth dynamics, but a weaker wedge — "install before
+disaster #2" requires the free tier to shine, and generic DOM recording is
+technically harder than hand-tuning one known form (rich-text editors are the
+boss fight; ship with a "plain-text rescue" fallback that always works).
+Ceiling is higher; month-one revenue is likely lower than the DS-160 wedge.
+The two compose: Retype is the platform, CEAC Lifeline is its first vertical
+landing page.
+
+---
+
 ## Runners-up (researched, viable, but weaker fits)
 
 1. **Vinted seller automation** (relist/CRM for EU resellers). Real demand,

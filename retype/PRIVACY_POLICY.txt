@@ -1,0 +1,45 @@
+Retype — Privacy Policy
+
+Last updated: 2026-07-08
+
+The short version: Retype records what you type so YOU can get it back.
+Everything stays on your computer. We never see it.
+
+WHAT RETYPE STORES
+- Text you type into ordinary text fields, text areas and rich-text editors
+  on web pages, together with the page address, page title and a label for
+  the field, so you can find and restore it later.
+- Your settings (paused sites, retention limits, purchase status).
+
+WHERE IT IS STORED
+- Exclusively in your browser's local extension storage
+  (chrome.storage.local) on your own device. Retype has no server. Nothing
+  is uploaded, synced, transmitted or shared — with us or anyone else.
+
+WHAT RETYPE NEVER RECORDS
+- Password fields. Their value is never even read.
+- Fields that look sensitive from their attributes or labels: credit card
+  numbers, CVV/CVC, social security numbers, PINs, one-time codes and
+  similar.
+- Anything on sites you pause (toolbar popup → "Pause site").
+
+YOUR CONTROLS
+- Pause recording per site at any time.
+- Delete any single entry, or everything at once ("Delete all recorded
+  text" on the history page).
+- Entries are pruned automatically by age and count (configurable).
+- Uninstalling the extension deletes all stored data with it.
+
+PAYMENTS
+- The optional one-time purchase is processed by our payment provider
+  (ExtensionPay / Stripe). We never see your card details. The extension
+  stores only a yes/no purchase status.
+
+ANALYTICS / TRACKING
+- None. Retype contains no analytics, telemetry, ads or tracking of any
+  kind.
+
+CHANGES & CONTACT
+- If this policy changes, the "Last updated" date changes and the new text
+  ships with the extension update.
+- Questions: contact the developer via the Chrome Web Store listing.

@@ -1,0 +1,11 @@
+{
+  "name": "retype",
+  "version": "1.0.0",
+  "description": "Never lose anything you type — a privacy-first typing time machine for Chrome.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "icons": "node icons/generate-icons.mjs"
+  }
+}

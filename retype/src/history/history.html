@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="history.css" />
+    <title>Retype — Typing history</title>
+  </head>
+  <body>
+    <header class="bar">
+      <div class="brand">
+        <svg width="26" height="26" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+          <rect x="0" y="0" width="22" height="22" rx="5" fill="#059669"/>
+          <rect x="4" y="5" width="11" height="2.4" rx="1.2" fill="#fff" opacity="0.95"/>
+          <rect x="4" y="9.8" width="14" height="2.4" rx="1.2" fill="#fff" opacity="0.75"/>
+          <rect x="4" y="14.6" width="7" height="2.4" rx="1.2" fill="#fff" opacity="0.95"/>
+          <rect x="12.4" y="13.8" width="2.6" height="4" rx="0.8" fill="#a7f3d0"/>
+        </svg>
+        <h1>Retype <span class="sub-title">typing history</span></h1>
+      </div>
+      <div class="head-actions">
+        <span id="plan" class="plan" hidden>Pro</span>
+        <button id="buy" class="primary" hidden>Unlock Pro — $19 once</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="toolbar">
+        <input id="search" type="text" placeholder="Search everything you've typed…" autocomplete="off" />
+        <select id="hostFilter"><option value="">All sites</option></select>
+        <button id="export" class="ghost">Export…</button>
+        <button id="import" class="ghost">Import…</button>
+        <input id="importFile" type="file" accept="application/json,.json" hidden />
+      </section>
+
+      <p id="message" class="message" hidden></p>
+
+      <section id="upsell" class="upsell" hidden>
+        <p id="upsellText"></p>
+        <p>Pro unlocks your full archive, full-text search, export/import backup and retention controls — one payment, yours forever, everything stays on this computer.</p>
+      </section>
+
+      <ul id="list" class="list"></ul>
+
+      <section class="settings">
+        <h2>Settings</h2>
+        <div class="setting-row">
+          <label for="retentionDays">Keep entries for</label>
+          <input id="retentionDays" type="number" min="1" max="365" /> days
+          <span class="pro-tag" data-pro>Pro</span>
+        </div>
+        <div class="setting-row">
+          <label for="maxEntries">Keep at most</label>
+          <input id="maxEntries" type="number" min="100" max="20000" /> entries
+          <span class="pro-tag" data-pro>Pro</span>
+        </div>
+        <div class="setting-row">
+          <label>Paused sites</label>
+          <ul id="pausedList" class="paused-list"></ul>
+        </div>
+        <div class="setting-row danger-row">
+          <button id="clearAll" class="danger">Delete all recorded text…</button>
+        </div>
+        <p class="privacy-note">
+          Everything Retype records stays in this browser's local storage.
+          Nothing is uploaded, synced, or sent anywhere — there is no server.
+        </p>
+      </section>
+    </main>
+
+    <script type="module" src="history.js"></script>
+  </body>
+</html>

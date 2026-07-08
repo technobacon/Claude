@@ -1,0 +1,75 @@
+===========================================================================
+ Retype — Chrome Web Store listing copy (paste into the developer console)
+===========================================================================
+
+NAME (45 chars max)
+Retype — Never Lose Anything You Type
+
+SUMMARY (132 chars max)
+Auto-saves everything you type, locally. Get it back after timeouts,
+crashes and lost sessions. One click. No account. No cloud.
+
+CATEGORY
+Productivity → Tools
+
+DESCRIPTION
+---------------------------------------------------------------------------
+You know the moment. Twenty minutes into a form, a comment, an application,
+an essay — and the page times out, the tab crashes, the site logs you out,
+the back button eats it. Everything you typed: gone.
+
+Retype makes that moment impossible.
+
+It quietly records what you type into any text field on any website —
+stored only on your computer — and gives it back with one click.
+
+⌨️ AUTOMATIC — install it and forget it. No setup, no account. Retype
+backs up your typing as you go.
+
+⏱ THE RESCUE — page wiped your work? Open Retype, hit Insert, and your
+text is back in the field. Or copy it and paste anywhere.
+
+🔍 A TIME MACHINE, NOT JUST A FORM SAVER — browse and search everything
+you've typed, on any site, from the last month. That comment you wrote
+last Tuesday? Two keystrokes away.
+
+🔒 GENUINELY PRIVATE — everything stays in your browser's local storage.
+No server. No sync. No telemetry. Password and credit-card fields are
+never recorded — the value of a password field is never even read. Pause
+any site with one click.
+
+WORKS WHERE YOU LOSE WORK
+• Government portals and visa forms (DS-160, we see you)
+• Job applications (Workday, Taleo, Greenhouse…)
+• School essays and discussion posts (Canvas, Blackboard, Moodle…)
+• Support tickets, CMS editors, forum replies, code reviews
+• Reddit comments you spent way too long on
+
+FREE vs PRO
+Free protects your last 24 hours (up to 5 recent entries per view) —
+enough to survive today's disaster. Pro is a ONE-TIME $19 purchase — no
+subscription — and unlocks:
+• Your full typing archive (up to your retention settings)
+• Full-text search across everything
+• Export / import (JSON backup you own)
+• Retention controls (how long, how much)
+
+Retype is the spiritual successor to the beloved, long-dead Lazarus: Form
+Recovery — rebuilt for today's Chrome, maintained, and honest about
+privacy.
+
+Install it before you need it. You will need it.
+---------------------------------------------------------------------------
+
+SCREENSHOT IDEAS (1280x800)
+1. Hero: popup open over a crashed form, entry list showing the rescued
+   text, caption "Your text survived. It always will."
+2. The Insert click putting text back into a form.
+3. History page with search finding an old comment.
+4. Privacy: the settings page with "There is no server" note highlighted.
+5. Free vs Pro comparison card.
+
+KEYWORDS / SEO PHRASES TO WORK INTO THE LANDING PAGE
+form recovery, recover lost form data, session timed out, restore typed
+text, lazarus form recovery replacement, typing history, autosave forms,
+recover lost essay canvas, workday application erased, ds-160 timed out

@@ -1,0 +1,52 @@
+===========================================================================
+ Retype — WHAT TO DO NEXT
+ From "code in a repo" to "earning money", one step at a time.
+===========================================================================
+
+WHAT YOU HAVE RIGHT NOW
+-----------------------
+A complete, working Chrome extension. It records what you type on any
+website into local storage and restores it after timeouts/crashes. The
+core logic is covered by 29 automated tests (all passing).
+
+Not done yet (needs your accounts, identity and money):
+  - Connecting the real payment system (the $19 one-time purchase).
+  - Publishing to the Chrome Web Store.
+
+The detailed, beginner-facing walkthrough for BOTH of those already exists
+in this repo: ../tabstash/NEXT_STEPS.txt (Parts 2-5). Every step applies
+here verbatim with these substitutions:
+  - folder:        tabstash/            ->  retype/
+  - dev pay flag:  'tabstash:paid'      ->  'retype:paid'
+  - price:         $3                   ->  $19 (configure in ExtensionPay)
+  - payments seam: retype/src/lib/payments.js (same REPLACE FOR PRODUCTION
+    markers in the same places)
+  - store copy:    use retype/STORE_LISTING.txt
+  - privacy page:  host retype/PRIVACY_POLICY.txt (required — this
+    extension declares broad host access, Google will check it)
+
+RETYPE-SPECIFIC NOTES FOR REVIEW & LAUNCH
+-----------------------------------------
+1. PERMISSION JUSTIFICATION (Google asks during review):
+   - "<all_urls> content script": the product records typing on any site
+     the user visits, locally, to recover it after data loss. No data
+     leaves the device.
+   - storage/unlimitedStorage: the typing archive itself.
+   - activeTab: to know which site the popup is showing entries for and
+     to insert text back into the page the user is looking at.
+   - clipboardWrite: the "Copy" fallback when a field can't be found.
+
+2. TEST THE DISASTER DEMO before recording screenshots: type into a form,
+   close the tab, reopen, click Insert. That flow is the whole pitch.
+
+3. LAUNCH ORDER (week 4 of the plan in ../research/IDEA_RESEARCH.md):
+   a. Chrome Web Store listing live (keywords in STORE_LISTING.txt).
+   b. Landing page with one SEO page per disaster ("session timed out",
+      "lost my essay", "Workday application erased", "DS-160 timed out").
+   c. Product Hunt launch (generic tools do well there).
+   d. Helpful, non-spammy replies in daily "I lost everything I typed"
+      threads on Reddit/X.
+
+4. PRICING: $19 one-time, free tier = last 24h / 5 entries per view.
+   Both knobs live in src/core/recorder.js (FREE_WINDOW_MS,
+   FREE_ENTRY_LIMIT) and are covered by tests if you change them.

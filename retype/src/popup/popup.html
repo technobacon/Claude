@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="popup.css" />
+    <title>Retype</title>
+  </head>
+  <body>
+    <header class="bar">
+      <div class="brand">
+        <svg class="logo-svg" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+          <rect x="0" y="0" width="22" height="22" rx="5" fill="#059669"/>
+          <rect x="4" y="5" width="11" height="2.4" rx="1.2" fill="#fff" opacity="0.95"/>
+          <rect x="4" y="9.8" width="14" height="2.4" rx="1.2" fill="#fff" opacity="0.75"/>
+          <rect x="4" y="14.6" width="7" height="2.4" rx="1.2" fill="#fff" opacity="0.95"/>
+          <rect x="12.4" y="13.8" width="2.6" height="4" rx="0.8" fill="#a7f3d0"/>
+        </svg>
+        <h1>Retype</h1>
+      </div>
+      <span id="plan" class="plan" hidden>Pro</span>
+    </header>
+
+    <section id="siteRow" class="site" hidden>
+      <div class="site-meta">
+        <span id="siteHost" class="site-host"></span>
+        <span id="siteStatus" class="site-status">recording</span>
+      </div>
+      <button id="pause" class="ghost small"></button>
+    </section>
+
+    <section class="search-row">
+      <input id="search" type="text" placeholder="Search everything you've typed…" autocomplete="off" />
+      <span id="searchLock" class="lock" title="Search is a Pro feature" hidden>🔒</span>
+    </section>
+
+    <p id="message" class="message" hidden></p>
+
+    <ul id="list" class="list" aria-live="polite"></ul>
+
+    <section id="upsell" class="upsell" hidden>
+      <p id="upsellText"><strong>Free covers your last 24 hours.</strong></p>
+      <p>Unlock your full typing archive, search, and backup with a one-time purchase. No subscription.</p>
+      <button id="buy" class="primary">Unlock Pro — $19 once</button>
+    </section>
+
+    <footer class="foot">
+      <button id="openHistory" class="link">Full history</button>
+      <span id="stats" class="stats"></span>
+    </footer>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

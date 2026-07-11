@@ -50,3 +50,13 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure
+          path: |
+            friend-forecast/test-results
+            friend-forecast/playwright-report
+          if-no-files-found: ignore
+          retention-days: 3

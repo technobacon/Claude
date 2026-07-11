@@ -33,13 +33,13 @@ export function DemoMarket() {
   }
 
   return (
-    <article className="market-card">
+    <article className="market-card" data-testid="demo-market">
       <div className="market-meta">
         <span>Budapest getaway</span>
         <span>Closes in 2h 14m</span>
       </div>
 
-      <h3>Will our flight leave the gate by 18:15?</h3>
+      <h3 data-testid="demo-market-title">Will our flight leave the gate by 18:15?</h3>
       <p className="resolution-note">
         Resolves using the airline&apos;s recorded gate-departure time. Cancelled flights resolve NO.
       </p>
@@ -91,16 +91,22 @@ export function DemoMarket() {
               key={preset}
               onClick={() => setStake(preset)}
               aria-pressed={stake === preset}
+              data-testid={`stake-${preset}`}
             >
               {preset}
             </button>
           ))}
         </div>
 
-        <button className={`commit-button commit-${side}`} type="button" onClick={commitDemoPosition}>
+        <button
+          className={`commit-button commit-${side}`}
+          type="button"
+          onClick={commitDemoPosition}
+          data-testid="commit-position"
+        >
           Commit {stake} points to {side.toUpperCase()}
         </button>
-        <p className="demo-message" aria-live="polite">{message}</p>
+        <p className="demo-message" aria-live="polite" data-testid="demo-message">{message}</p>
       </div>
     </article>
   );

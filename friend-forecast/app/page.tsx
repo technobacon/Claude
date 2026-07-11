@@ -24,7 +24,7 @@ export default function HomePage() {
 
       <section className="hero" id="top">
         <div className="eyebrow">Private markets for real friend groups</div>
-        <h1>Put points behind the group chat take.</h1>
+        <h1 data-testid="hero-title">Put points behind the group chat take.</h1>
         <p className="hero-copy">
           Create a YES/NO market, share it with friends, watch the odds move, and settle the debate when reality arrives.
         </p>

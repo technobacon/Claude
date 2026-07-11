@@ -71,6 +71,39 @@ The first release is a responsive mobile web app and installable PWA:
 7. [`docs/07-validation-plan.md`](docs/07-validation-plan.md) — pilot structure, metrics, experiments, and go/no-go thresholds.
 8. [`docs/08-development-plan.md`](docs/08-development-plan.md) — implementation phases, epics, acceptance gates, testing, rollout, and initial ticket backlog.
 
+## Development
+
+Requirements:
+
+- Node.js 22 or later;
+- npm;
+- Supabase CLI when running the local database stack.
+
+Start the web application:
+
+```bash
+cd friend-forecast
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+Run the validated quality suite:
+
+```bash
+npm run check
+```
+
+The current foundation includes:
+
+- a Next.js and TypeScript mobile-web application;
+- an interactive local market demonstration;
+- reusable pari-mutuel pool and settlement calculations;
+- unit and component tests;
+- a Playwright mobile smoke test;
+- a Supabase schema baseline with private-group row-level security;
+- GitHub Actions for build, test, migration, and browser checks.
+
 ## Initial product boundaries
 
 The MVP intentionally excludes:
@@ -103,4 +136,4 @@ The most important early metric is not individual daily activity. It is **weekly
 
 ## Status
 
-This folder is a research and product-planning foundation. No production implementation has been started.
+Foundation development has started. The mobile web shell, interactive market demo, market mathematics, test toolchain, continuous integration, and initial Supabase schema are implemented. Authentication, groups, invitations, and server-authoritative market mutations are the next milestone.

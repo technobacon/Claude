@@ -8,7 +8,8 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL: "http://127.0.0.1:3000",
-    trace: "on-first-retry"
+    trace: "on-first-retry",
+    screenshot: "only-on-failure"
   },
   projects: [
     {
@@ -20,9 +21,9 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: "npm run dev",
+    command: process.env.CI ? "npm run build && npm run start" : "npm run dev",
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000
+    timeout: 180_000
   }
 });

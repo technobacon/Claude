@@ -1,0 +1,2 @@
+-- Seed data will be added after authentication and group creation flows exist.
+-- The initial migration is intentionally deterministic and contains no fake auth users.

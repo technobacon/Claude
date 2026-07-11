@@ -69,6 +69,7 @@ The first release is a responsive mobile web app and installable PWA:
 5. [`docs/05-mobile-ux-and-brand.md`](docs/05-mobile-ux-and-brand.md) — core flows, interaction design, visual direction, copy, and engagement loops.
 6. [`docs/06-mvp-architecture-roadmap.md`](docs/06-mvp-architecture-roadmap.md) — technical architecture, domain model, build order, and launch boundaries.
 7. [`docs/07-validation-plan.md`](docs/07-validation-plan.md) — pilot structure, metrics, experiments, and go/no-go thresholds.
+8. [`docs/08-development-plan.md`](docs/08-development-plan.md) — implementation phases, epics, acceptance gates, testing, rollout, and initial ticket backlog.
 
 ## Initial product boundaries
 

@@ -20,10 +20,12 @@ export default defineConfig({
       }
     }
   ],
-  webServer: {
-    command: process.env.CI ? "npm run build && npm run start" : "npm run dev",
-    url: "http://127.0.0.1:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000
-  }
+  webServer: process.env.PLAYWRIGHT_EXTERNAL_SERVER
+    ? undefined
+    : {
+        command: process.env.CI ? "npm run build && npm run start" : "npm run dev",
+        url: "http://127.0.0.1:3000",
+        reuseExistingServer: !process.env.CI,
+        timeout: 180_000
+      }
 });

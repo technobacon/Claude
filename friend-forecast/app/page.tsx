@@ -1,4 +1,5 @@
 import { DemoMarket } from "@/components/demo-market";
+import Link from "next/link";
 
 const trustPoints = [
   "Private groups only",
@@ -17,9 +18,9 @@ export default function HomePage() {
           </span>
           <span>Friend Forecast</span>
         </a>
-        <button className="ghost-button" type="button">
+        <Link className="ghost-button" href="/auth/sign-in?next=%2Fgroups">
           Sign in
-        </button>
+        </Link>
       </header>
 
       <section className="hero" id="top">
@@ -29,9 +30,7 @@ export default function HomePage() {
           Create a YES/NO market, share it with friends, watch the odds move, and settle the debate when reality arrives.
         </p>
         <div className="hero-actions">
-          <button className="primary-button" type="button">
-            Create a market
-          </button>
+          <Link className="primary-button" href="/auth/sign-in?next=%2Fgroups">Create a market</Link>
           <a className="text-link" href="#demo">
             Try the live demo
           </a>

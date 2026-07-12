@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { requireUser } from "@/lib/auth/require-user";
+import { formatPoints } from "@/lib/wallet/ledger";
+import { loadWallet } from "@/lib/wallet/read-model";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +40,13 @@ export default async function GroupPage({ params }: GroupPageProps) {
     .order("joined_at", { ascending: true });
   const members = (data ?? []) as unknown as MemberRow[];
   const currentMembership = members.find((member) => member.user_id === userId);
+  let wallet = null;
+  let walletError = false;
+  try {
+    wallet = await loadWallet(supabase, groupId, userId, 1);
+  } catch {
+    walletError = true;
+  }
 
   return (
     <main className={`page-shell dashboard-shell theme-${group.accent_theme}`}>
@@ -54,6 +63,12 @@ export default async function GroupPage({ params }: GroupPageProps) {
         <p>{members.length} {members.length === 1 ? "member" : "members"} · Market creation: {group.creation_policy}</p>
       </section>
       <div className="dashboard-grid">
+        <section className="dashboard-card wallet-preview" aria-labelledby="wallet-heading">
+          <span className="card-kicker">Your points</span>
+          <h2 id="wallet-heading">{wallet ? `${formatPoints(wallet.balance)} points` : walletError ? "Wallet unavailable" : "No active season"}</h2>
+          <p>{wallet ? `${wallet.seasonName} · ${wallet.activityCount} ledger entries` : "Wallet balances are derived from append-only activity."}</p>
+          <Link className="text-link" href={`/groups/${groupId}/wallet`}>View wallet activity</Link>
+        </section>
         <section className="dashboard-card" aria-labelledby="markets-heading">
           <span className="card-kicker">Forecasts</span>
           <h2 id="markets-heading">No markets yet</h2>

@@ -530,6 +530,127 @@ h2 {
   margin-top: 20px;
 }
 
+.wallet-hero {
+  padding-bottom: 28px;
+}
+
+.wallet-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+  gap: 28px;
+  margin-bottom: 20px;
+  padding: clamp(24px, 5vw, 38px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(145deg, rgba(124, 92, 255, 0.16), var(--surface));
+  box-shadow: var(--shadow);
+}
+
+.wallet-summary h2 {
+  margin: 10px 0 8px;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+}
+
+.wallet-summary h2 small {
+  color: var(--muted);
+  font-size: 0.22em;
+  letter-spacing: 0;
+}
+
+.wallet-summary p,
+.wallet-metrics dt,
+.wallet-activity-list small,
+.reconciliation-list small {
+  color: var(--muted);
+}
+
+.wallet-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 0;
+}
+
+.wallet-metrics div {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.wallet-metrics dt {
+  font-size: 0.72rem;
+}
+
+.wallet-metrics dd {
+  margin: 6px 0 0;
+  font-weight: 800;
+}
+
+.wallet-grid {
+  align-items: start;
+}
+
+.wallet-activity-list,
+.reconciliation-list {
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wallet-activity-list li,
+.reconciliation-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.wallet-activity-list li > span,
+.reconciliation-list li > span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.amount-positive,
+.reconciliation-ok {
+  color: var(--yes);
+}
+
+.amount-negative,
+.reconciliation-error {
+  color: var(--no);
+}
+
+.reconciliation-card {
+  margin-bottom: 60px;
+}
+
+.reconciliation-ok,
+.reconciliation-error {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.success-banner,
+.info-banner {
+  margin: 0 0 20px;
+  padding: 13px 15px;
+  border: 1px solid rgba(77, 225, 161, 0.28);
+  border-radius: var(--radius-md);
+  color: var(--yes);
+  background: var(--yes-soft);
+}
+
+.info-banner {
+  border-color: var(--border);
+  color: var(--muted);
+  background: var(--surface);
+}
+
 .text-link {
   color: var(--text);
   text-underline-offset: 5px;
@@ -849,6 +970,10 @@ footer {
   }
 
   .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wallet-summary {
     grid-template-columns: 1fr;
   }
 }

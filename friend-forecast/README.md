@@ -104,6 +104,30 @@ The current foundation includes:
 - a Supabase schema baseline with private-group row-level security;
 - GitHub Actions for build, test, migration, and browser checks.
 
+The first identity slice also includes:
+
+- passwordless Supabase email sign-in with cookie-backed SSR sessions;
+- safe return-to-route handling after authentication;
+- automatic profile creation and editable display names;
+- an authenticated groups landing page and sign-out flow.
+
+The group lifecycle slice includes:
+
+- transactional private-group creation with owner membership;
+- automatic first-season creation and opening point grant;
+- member-scoped group and roster reads through Row Level Security;
+- group roles, themes, market-creation policy, and audit history.
+
+The invitation lifecycle includes:
+
+- high-entropy share links with SHA-256 hashes stored at rest;
+- safe unauthenticated group and optional market previews;
+- expiration, maximum-use limits, revocation, and rotation;
+- idempotent acceptance with membership and opening-grant creation;
+- owner and moderator invitation controls.
+
+For local authentication, add `http://localhost:3000/auth/callback` to the Supabase project's allowed redirect URLs. The checked-in database trigger creates a profile from the display name supplied during first sign-in.
+
 ## Initial product boundaries
 
 The MVP intentionally excludes:
@@ -136,4 +160,4 @@ The most important early metric is not individual daily activity. It is **weekly
 
 ## Status
 
-Foundation development has started. The mobile web shell, interactive market demo, market mathematics, test toolchain, continuous integration, and initial Supabase schema are implemented. Authentication, groups, invitations, and server-authoritative market mutations are the next milestone.
+Foundation development, FF-004 authentication, FF-005 groups, and FF-006 invitation-token lifecycle are implemented. Seasons, ledger read models, and server-authoritative market mutations are the next milestones.

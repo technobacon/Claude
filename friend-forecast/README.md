@@ -126,6 +126,14 @@ The invitation lifecycle includes:
 - idempotent acceptance with membership and opening-grant creation;
 - owner and moderator invitation controls.
 
+The wallet and ledger slice includes:
+
+- balance-free season wallet accounts backed by append-only integer entries;
+- centralized, idempotent opening and cap-aware weekly grant issuance;
+- zero-credit grant receipts so retries remain economically inert;
+- member wallet summaries and activity history;
+- owner and moderator reconciliation across group wallets.
+
 For local authentication, add `http://localhost:3000/auth/callback` to the Supabase project's allowed redirect URLs. The checked-in database trigger creates a profile from the display name supplied during first sign-in.
 
 ## Initial product boundaries
@@ -160,4 +168,4 @@ The most important early metric is not individual daily activity. It is **weekly
 
 ## Status
 
-Foundation development, FF-004 authentication, FF-005 groups, and FF-006 invitation-token lifecycle are implemented. Seasons, ledger read models, and server-authoritative market mutations are the next milestones.
+Foundation development and FF-004 through FF-007 are implemented: authentication, groups, invitations, seasons, grants, and the wallet read model. Structured market creation is the next milestone.

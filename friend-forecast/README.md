@@ -168,6 +168,17 @@ The resolution proposal and dispute slice includes:
 Evidence attaches as an explanation plus source link during the pilot;
 private file uploads arrive with the storage-hardening pass.
 
+The settlement and refund slice includes:
+
+- a settlement engine executing uncontested proposals past their challenge
+  window, vote-decided outcomes, and seven-day expiry refunds;
+- largest-remainder integer payouts computed in exact integer arithmetic,
+  always summing to the pool with deterministic tie-breaking;
+- one immutable settlement record per market, enforced by primary key;
+- refunds as ledger credits that reuse the close-refund idempotency keys, so
+  no path can double-credit a stake;
+- a market result card with pool totals and the member's own net outcome.
+
 The hidden voting slice includes:
 
 - one hidden vote per snapshot member, invisible to others until finalization;
@@ -212,4 +223,4 @@ The most important early metric is not individual daily activity. It is **weekly
 
 ## Status
 
-Foundation development and FF-004 through FF-012 are implemented: authentication, groups, invitations, seasons, grants, the wallet read model, structured market creation, server-authoritative position commitment with undo, the live market page with deadline closing and one-sided refunds, the resolution proposal and dispute workflow with frozen voter snapshots, and hidden group voting with deterministic outcome finalization. The settlement and refund engines (FF-013) are the next milestone.
+Foundation development and FF-004 through FF-013 are implemented: authentication, groups, invitations, seasons, grants, the wallet read model, structured market creation, server-authoritative position commitment with undo, the live market page with deadline closing and one-sided refunds, the resolution proposal and dispute workflow with frozen voter snapshots, hidden group voting with deterministic finalization, and the settlement and refund engines. The complete market lifecycle — from shared invitation through exact payout — now runs without manual intervention. The result reveal and group standings (FF-014) are the next milestone.

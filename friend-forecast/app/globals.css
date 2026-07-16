@@ -1190,6 +1190,12 @@ footer {
   background: var(--surface-soft);
 }
 
+.market-status-settled {
+  border-color: rgba(77, 225, 161, 0.34);
+  color: var(--yes);
+  background: var(--yes-soft);
+}
+
 .market-countdown {
   margin: 0;
   font-weight: 700;

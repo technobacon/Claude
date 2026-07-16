@@ -111,6 +111,21 @@ type VoteProgress = {
   votes_cast: number;
 };
 
+type SettlementRow = {
+  created_at: string;
+  losing_pool: number;
+  outcome: "cancel" | "no" | "yes";
+  total_pool: number;
+  trigger_kind: string;
+  winner_count: number;
+  winning_pool: number;
+};
+
+type MarketLedgerEntry = {
+  amount: number;
+  type: string;
+};
+
 function displayName(value: { display_name: string } | { display_name: string }[] | null): string {
   const record = Array.isArray(value) ? value[0] : value;
   return record?.display_name ?? "a group member";
@@ -129,12 +144,13 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
   const query = await searchParams;
   const { supabase, userId } = await requireUser(`/groups/${groupId}/markets/${marketId}`);
 
-  // Opportunistic close and vote finalization: an expired market or an
-  // expired dispute vote settles into its next state before the reads below
-  // render it. Failures fall through — the membership-scoped reads below
-  // decide what the caller sees.
+  // Opportunistic lifecycle advancement: an expired market closes, an expired
+  // dispute vote finalizes, and a decided or expired resolution settles or
+  // refunds — all before the reads below render. Failures fall through — the
+  // membership-scoped reads below decide what the caller sees.
   await supabase.rpc("close_market_if_due", { target_market_id: marketId });
   await supabase.rpc("finalize_dispute_if_due", { target_market_id: marketId });
+  await supabase.rpc("settle_market_if_due", { target_market_id: marketId });
 
   const [
     { data: group, error: groupError },
@@ -146,7 +162,9 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
     { data: latestTransactions, error: transactionError },
     { data: proposalData, error: proposalError },
     { data: disputeData, error: disputeError },
-    { data: membershipData, error: membershipError }
+    { data: membershipData, error: membershipError },
+    { data: settlementData, error: settlementError },
+    { data: myLedgerData, error: myLedgerError }
   ] = await Promise.all([
     supabase.from("groups").select("id, name, accent_theme").eq("id", groupId).maybeSingle(),
     supabase
@@ -185,11 +203,22 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
       .eq("group_id", groupId)
       .eq("user_id", userId)
       .eq("status", "active")
-      .maybeSingle()
+      .maybeSingle(),
+    supabase
+      .from("market_settlements")
+      .select("outcome, trigger_kind, total_pool, winning_pool, losing_pool, winner_count, created_at")
+      .eq("market_id", marketId)
+      .maybeSingle(),
+    supabase
+      .from("wallet_ledger_entries")
+      .select("type, amount")
+      .eq("market_id", marketId)
+      .eq("user_id", userId)
   ]);
 
   if (groupError || marketError || permissionError || poolsError || positionError || walletError
-    || transactionError || proposalError || disputeError || membershipError) {
+    || transactionError || proposalError || disputeError || membershipError
+    || settlementError || myLedgerError) {
     throw new Error("The market could not be loaded.");
   }
   if (!group || !marketData) {
@@ -253,6 +282,15 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
     ? latestProposal
     : null;
   const voterCount = dispute?.voters?.[0]?.count ?? 0;
+  const settlement = settlementData as SettlementRow | null;
+  const myMarketEntries = (myLedgerData as MarketLedgerEntry[] | null) ?? [];
+  const myStaked = myMarketEntries
+    .filter((entry) => entry.type === "position_debit" || entry.type === "position_reversal")
+    .reduce((sum, entry) => sum - Number(entry.amount), 0);
+  const myReturned = myMarketEntries
+    .filter((entry) => entry.type === "settlement_credit" || entry.type === "refund_credit")
+    .reduce((sum, entry) => sum + Number(entry.amount), 0);
+  const myNet = myReturned - myStaked;
 
   let voteProgress: VoteProgress | null = null;
   let myVoteChoice: string | null = null;
@@ -302,6 +340,7 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
             : market.status === "closed" ? "Trading closed. The pool is locked."
             : market.status === "resolution_proposed" ? "An outcome is on the table."
             : market.status === "disputed" ? "The group is deciding."
+            : market.status === "settled" && settlement ? `Settled ${settlement.outcome.toUpperCase()}.`
             : "The group has a forecast."}
         </h1>
         <p>{market.rules_locked_at ? "The funded contract is immutable." : "Rules stay editable only until the first stake."}</p>
@@ -315,7 +354,13 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
       {query.undo === "done" ? <p className="success-banner" role="status">Commitment undone. The points are back in your wallet.</p> : null}
       {query.undo === "unavailable" ? <p className="form-error" role="alert">That commitment could not be undone. The undo window may have closed.</p> : null}
       {market.status === "closed" ? <p className="info-banner" role="status">Trading is closed. Committed points stay in the pool until the group resolves the outcome.</p> : null}
-      {market.status === "cancelled" ? <p className="info-banner" role="status">This market ended without both sides funded, so every committed point was refunded.</p> : null}
+      {market.status === "cancelled" ? (
+        <p className="info-banner" role="status">
+          {settlement?.trigger_kind === "expired_unresolved" ? "Nobody proposed an outcome within the resolution window, so every committed point was refunded."
+            : settlement ? "The group cancelled this market, so every committed point was refunded."
+            : "This market ended without both sides funded, so every committed point was refunded."}
+        </p>
+      ) : null}
       {query.proposed === "not_ready" ? <p className="success-banner" role="status">Recorded: the outcome is not decided yet. The market stays open for a later proposal.</p> : null}
       {query.proposed && query.proposed !== "not_ready" ? <p className="success-banner" role="status">Resolution proposed. The group can challenge it before it settles.</p> : null}
       {query.disputed === "opened" ? <p className="success-banner" role="status">Dispute opened. The proposal is paused for a hidden group vote.</p> : null}
@@ -403,6 +448,27 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
         <p className="info-banner">The betting deadline has passed. New positions are no longer accepted.</p>
       ) : null}
 
+      {settlement ? (
+        <section className="dashboard-card" aria-label="Result" data-testid="result-card">
+          <span className="card-kicker">Result</span>
+          <h2>{settlement.outcome === "cancel" ? "Cancelled — full refund." : `${settlement.outcome.toUpperCase()} takes the pool.`}</h2>
+          <p>
+            {settlement.outcome === "cancel"
+              ? `${formatPoints(Number(settlement.total_pool))} committed points went back to their wallets.`
+              : `${settlement.winner_count} ${settlement.winner_count === 1 ? "winner takes" : "winners split"} the ${formatPoints(Number(settlement.total_pool))}-point pool, ${formatPoints(Number(settlement.losing_pool))} of it from the losing side.`}
+          </p>
+          {myStaked > 0 ? (
+            <p className="return-preview" data-testid="my-result">
+              <span>Your result on this market</span>
+              <strong>{formatPoints(myNet, true)} pts</strong>
+            </p>
+          ) : null}
+          <p className="resolution-note">
+            Settled {formatInTimezone(settlement.created_at, market.timezone)} ({market.timezone}). The full result reveal and standings arrive in FF-014.
+          </p>
+        </section>
+      ) : null}
+
       {["closed", "resolution_proposed", "disputed"].includes(market.status) ? (
         <section className="dashboard-card" aria-label="Resolution">
           <span className="card-kicker">Resolution</span>
@@ -446,7 +512,7 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
               <p className="resolution-note">
                 {challengeOpen
                   ? `Challenge window closes ${formatInTimezone(pendingProposal.challenge_deadline, market.timezone)} (${market.timezone}).`
-                  : "The challenge window has closed. Settlement arrives in FF-013."}
+                  : "The challenge window has closed. The proposal settles on the next page load."}
               </p>
               {position && payoutPreview !== null ? (
                 <p className="return-preview" data-testid="payout-preview">
@@ -482,7 +548,7 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
                     Final tally: {Object.entries(finalTally).map(([choice, votes]) => `${choice.replaceAll("_", " ").toUpperCase()} ${votes}`).join(" · ") || "no votes cast"}
                     {" "}· {voteProgress ? `${voteProgress.votes_cast} of ${voteProgress.eligible_voters} eligible voters` : null}
                   </p>
-                  <p>The settlement engine (FF-013) executes this outcome and moves the points.</p>
+                  <p>Settlement runs automatically on the next page load.</p>
                 </div>
               ) : (
                 <>
@@ -521,6 +587,7 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
           <>
             <h2>
               {market.status === "cancelled" ? "Cancelled and refunded."
+                : market.status === "settled" ? "Settled and paid out."
                 : market.status === "closed" ? "Awaiting the outcome."
                 : market.status === "resolution_proposed" ? "Proposal under review."
                 : market.status === "disputed" ? "Group vote pending."
@@ -528,7 +595,8 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
                 : "Ready for positions."}
             </h2>
             <p>
-              {market.status === "cancelled" ? "Both sides never got funded before the deadline. Every stake went back to its wallet."
+              {market.status === "cancelled" ? "Every committed point went back to its wallet. The record above explains why."
+                : market.status === "settled" ? "The pool moved to the winning side. Time to create the next market."
                 : market.status === "closed" ? "Use the resolution panel above to propose the outcome once the event is decided."
                 : market.status === "resolution_proposed" ? "The proposal stands unless someone disputes it before the challenge window closes."
                 : market.status === "disputed" ? "A hidden one-person-one-vote decision picks YES, NO, CANCEL, or NOT READY."

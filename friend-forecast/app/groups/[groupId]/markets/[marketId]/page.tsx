@@ -9,7 +9,7 @@ import { MarketLiveStatus } from "@/components/markets/market-live-status";
 import { MarketRulesPreview } from "@/components/markets/market-rules-preview";
 import { MarketShareLink } from "@/components/markets/market-share-link";
 import { PositionForm } from "@/components/markets/position-form";
-import { ResolutionDisputeForm, ResolutionProposalForm } from "@/components/markets/resolution-forms";
+import { DisputeVoteForm, ResolutionDisputeForm, ResolutionProposalForm } from "@/components/markets/resolution-forms";
 import { getAppUrl } from "@/lib/app-url";
 import { requireUser } from "@/lib/auth/require-user";
 import { calculatePoolSplit, type MarketSide } from "@/lib/market-math";
@@ -17,6 +17,7 @@ import { hasUnresolvedMarketTokens, type MarketOutcomeControl, type MarketResolu
 import {
   CREATOR_GRACE_HOURS,
   isResolutionOutcome,
+  OUTCOME_LABELS,
   type ResolutionOutcome
 } from "@/lib/resolution/input";
 import { previewSettlementPayout } from "@/lib/resolution/preview";
@@ -26,7 +27,7 @@ export const dynamic = "force-dynamic";
 
 type MarketPageProps = {
   params: Promise<{ groupId: string; marketId: string }>;
-  searchParams: Promise<{ committed?: string; created?: string; disputed?: string; proposed?: string; publish?: string; undo?: string; updated?: string }>;
+  searchParams: Promise<{ committed?: string; created?: string; disputed?: string; proposed?: string; publish?: string; undo?: string; updated?: string; voted?: string }>;
 };
 
 type MarketDetail = {
@@ -93,10 +94,21 @@ type DisputeRow = {
   created_at: string;
   disputer: { display_name: string } | { display_name: string }[] | null;
   evidence_url: string | null;
+  final_outcome: string | null;
+  final_reason: string | null;
+  finalized_at: string | null;
   id: string;
   reason: string;
   vote_deadline: string;
   voters: { count: number }[] | null;
+};
+
+type VoteProgress = {
+  eligible_voters: number;
+  finalized_at: string | null;
+  quorum: number;
+  vote_deadline: string;
+  votes_cast: number;
 };
 
 function displayName(value: { display_name: string } | { display_name: string }[] | null): string {
@@ -117,10 +129,12 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
   const query = await searchParams;
   const { supabase, userId } = await requireUser(`/groups/${groupId}/markets/${marketId}`);
 
-  // Opportunistic close: an expired market settles into its closed or
-  // refunded state before any of the reads below render it. Failures fall
-  // through — the membership-scoped reads below decide what the caller sees.
+  // Opportunistic close and vote finalization: an expired market or an
+  // expired dispute vote settles into its next state before the reads below
+  // render it. Failures fall through — the membership-scoped reads below
+  // decide what the caller sees.
   await supabase.rpc("close_market_if_due", { target_market_id: marketId });
+  await supabase.rpc("finalize_dispute_if_due", { target_market_id: marketId });
 
   const [
     { data: group, error: groupError },
@@ -161,7 +175,7 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
       .limit(1),
     supabase
       .from("market_disputes")
-      .select("id, reason, evidence_url, vote_deadline, created_at, disputer:profiles!market_disputes_disputer_user_id_fkey(display_name), voters:market_vote_snapshots(count)")
+      .select("id, reason, evidence_url, vote_deadline, created_at, final_outcome, final_reason, finalized_at, disputer:profiles!market_disputes_disputer_user_id_fkey(display_name), voters:market_vote_snapshots(count)")
       .eq("market_id", marketId)
       .is("released_at", null)
       .maybeSingle(),
@@ -240,6 +254,38 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
     : null;
   const voterCount = dispute?.voters?.[0]?.count ?? 0;
 
+  let voteProgress: VoteProgress | null = null;
+  let myVoteChoice: string | null = null;
+  let inVoterSnapshot = false;
+  const finalTally: Record<string, number> = {};
+  if (dispute && market.status === "disputed") {
+    const [
+      { data: progressData, error: progressError },
+      { data: myVoteData, error: myVoteError },
+      { data: snapshotData, error: snapshotError },
+      { data: allVotesData, error: allVotesError }
+    ] = await Promise.all([
+      supabase.rpc("dispute_vote_progress", { target_dispute_id: dispute.id }),
+      supabase.from("market_dispute_votes").select("choice").eq("dispute_id", dispute.id).eq("voter_user_id", userId).maybeSingle(),
+      supabase.from("market_vote_snapshots").select("user_id").eq("dispute_id", dispute.id).eq("user_id", userId).maybeSingle(),
+      dispute.finalized_at
+        ? supabase.from("market_dispute_votes").select("choice").eq("dispute_id", dispute.id)
+        : Promise.resolve({ data: null, error: null })
+    ]);
+    if (progressError || myVoteError || snapshotError || allVotesError) {
+      throw new Error("The dispute vote could not be loaded.");
+    }
+    voteProgress = ((progressData as VoteProgress[] | null) ?? [])[0] ?? null;
+    myVoteChoice = (myVoteData as { choice: string } | null)?.choice ?? null;
+    inVoterSnapshot = snapshotData !== null;
+    for (const vote of (allVotesData as { choice: string }[] | null) ?? []) {
+      finalTally[vote.choice] = (finalTally[vote.choice] ?? 0) + 1;
+    }
+  }
+  const voteOpen = dispute !== null
+    && dispute.finalized_at === null
+    && new Date(dispute.vote_deadline).valueOf() > now;
+
   return (
     <main className={`page-shell dashboard-shell theme-${group.accent_theme}`}>
       <header className="topbar">
@@ -273,6 +319,7 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
       {query.proposed === "not_ready" ? <p className="success-banner" role="status">Recorded: the outcome is not decided yet. The market stays open for a later proposal.</p> : null}
       {query.proposed && query.proposed !== "not_ready" ? <p className="success-banner" role="status">Resolution proposed. The group can challenge it before it settles.</p> : null}
       {query.disputed === "opened" ? <p className="success-banner" role="status">Dispute opened. The proposal is paused for a hidden group vote.</p> : null}
+      {query.voted === "1" ? <p className="success-banner" role="status">Vote recorded. It stays hidden until the vote finalizes.</p> : null}
 
       <MarketRulesPreview
         cancelCondition={market.cancel_condition}
@@ -424,9 +471,40 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
               {dispute.evidence_url ? (
                 <p><a className="text-link" href={dispute.evidence_url} rel="noreferrer" target="_blank">Open the dispute evidence</a></p>
               ) : null}
-              <p className="resolution-note">
-                {voterCount} eligible {voterCount === 1 ? "voter decides" : "voters decide"} by {formatInTimezone(dispute.vote_deadline, market.timezone)} ({market.timezone}). The hidden group vote arrives in FF-012.
-              </p>
+              {dispute.finalized_at && dispute.final_outcome ? (
+                <div data-testid="vote-result">
+                  <p className="success-banner" role="status">
+                    {dispute.final_reason === "no_quorum" ? "Too few members voted, so the market cancels and refunds."
+                      : dispute.final_reason === "no_consensus" ? "No outcome reached two-thirds, so the market cancels and refunds."
+                      : `The group decided ${dispute.final_outcome.replaceAll("_", " ").toUpperCase()}.`}
+                  </p>
+                  <p className="resolution-note">
+                    Final tally: {Object.entries(finalTally).map(([choice, votes]) => `${choice.replaceAll("_", " ").toUpperCase()} ${votes}`).join(" · ") || "no votes cast"}
+                    {" "}· {voteProgress ? `${voteProgress.votes_cast} of ${voteProgress.eligible_voters} eligible voters` : null}
+                  </p>
+                  <p>The settlement engine (FF-013) executes this outcome and moves the points.</p>
+                </div>
+              ) : (
+                <>
+                  <p className="resolution-note" data-testid="vote-progress">
+                    {voteProgress ? `${voteProgress.votes_cast} of ${voteProgress.eligible_voters} hidden votes cast · quorum ${voteProgress.quorum}` : `${voterCount} eligible voters`}
+                    {" "}· voting closes {formatInTimezone(dispute.vote_deadline, market.timezone)} ({market.timezone}).
+                  </p>
+                  {myVoteChoice ? (
+                    <p className="info-banner" data-testid="my-vote">
+                      Your hidden vote: {OUTCOME_LABELS[isResolutionOutcome(myVoteChoice) ? myVoteChoice : "yes"]}. The result appears when voting ends.
+                    </p>
+                  ) : voteOpen && inVoterSnapshot ? (
+                    <DisputeVoteForm disputeId={dispute.id} groupId={groupId} marketId={marketId} requestId={randomUUID()} />
+                  ) : (
+                    <p className="info-banner">
+                      {voteOpen
+                        ? "Only members in the frozen voter snapshot can vote on this dispute."
+                        : "Voting has closed. The result finalizes on the next page load."}
+                    </p>
+                  )}
+                </>
+              )}
             </div>
           ) : null}
         </section>

@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 
 import { requireUser } from "@/lib/auth/require-user";
 import { parsePositionInput } from "@/lib/positions/input";
-import { parseDisputeInput, parseProposalInput } from "@/lib/resolution/input";
+import { parseDisputeInput, parseProposalInput, parseVoteInput } from "@/lib/resolution/input";
 
 export type PositionActionState = {
   attempt: number;
@@ -141,6 +141,39 @@ export async function disputeResolutionAction(
     revalidatePath(path);
   }
   redirect(`/groups/${groupId}/markets/${marketId}?disputed=opened`);
+}
+
+export async function castVoteAction(
+  groupId: string,
+  marketId: string,
+  disputeId: string,
+  _previousState: ResolutionActionState,
+  formData: FormData
+): Promise<ResolutionActionState> {
+  const attempt = _previousState.attempt + 1;
+  const parsed = parseVoteInput(formData);
+  if (!parsed.data) {
+    return resolutionFailure(attempt, parsed.error);
+  }
+
+  const { supabase } = await requireUser(`/groups/${groupId}/markets/${marketId}`);
+  const { error } = await supabase.rpc("cast_dispute_vote", {
+    target_dispute_id: disputeId,
+    vote_choice: parsed.data.choice,
+    vote_request_id: parsed.data.requestId
+  });
+
+  if (error) {
+    return resolutionFailure(
+      attempt,
+      resolutionErrorMessage(error, "The vote could not be recorded. Refresh the market and try again.")
+    );
+  }
+
+  for (const path of marketPaths(groupId, marketId)) {
+    revalidatePath(path);
+  }
+  redirect(`/groups/${groupId}/markets/${marketId}?voted=1`);
 }
 
 export async function undoPositionAction(

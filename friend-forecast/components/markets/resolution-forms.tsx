@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 
 import {
+  castVoteAction,
   disputeResolutionAction,
   proposeResolutionAction,
   type ResolutionActionState
@@ -78,6 +79,39 @@ export function ResolutionProposalForm({ groupId, marketId, requestId }: Resolut
       </button>
       <p className="resolution-note">
         Proposals are permanent records. A challenge window opens before anything settles.
+      </p>
+    </form>
+  );
+}
+
+type DisputeVoteFormProps = ResolutionFormProps & {
+  disputeId: string;
+};
+
+export function DisputeVoteForm({ disputeId, groupId, marketId, requestId }: DisputeVoteFormProps) {
+  const [state, formAction, isPending] = useActionState(
+    castVoteAction.bind(null, groupId, marketId, disputeId),
+    initialActionState
+  );
+
+  return (
+    <form action={formAction} className="group-form" data-testid="vote-form">
+      <input type="hidden" name="requestId" value={state.nextRequestId ?? requestId} />
+      <fieldset className="form-field" disabled={isPending}>
+        <legend className="field-label">Your hidden vote</legend>
+        {RESOLUTION_OUTCOMES.map((outcome) => (
+          <label key={outcome} className="toggle-field">
+            <input type="radio" name="choice" value={outcome} required data-testid={`vote-${outcome}`} />
+            <span>{OUTCOME_LABELS[outcome]}</span>
+          </label>
+        ))}
+      </fieldset>
+      {state.error ? <p className="form-error" role="alert" data-testid="vote-error">{state.error}</p> : null}
+      <button className="primary-button" type="submit" disabled={isPending} data-testid="submit-vote">
+        {isPending ? "Recording…" : "Cast my hidden vote"}
+      </button>
+      <p className="resolution-note">
+        One vote per member, hidden until the vote ends. A two-thirds supermajority decides; anything less cancels and refunds.
       </p>
     </form>
   );

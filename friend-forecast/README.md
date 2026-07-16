@@ -168,6 +168,16 @@ The resolution proposal and dispute slice includes:
 Evidence attaches as an explanation plus source link during the pilot;
 private file uploads arrive with the storage-hardening pass.
 
+The hidden voting slice includes:
+
+- one hidden vote per snapshot member, invisible to others until finalization;
+- quorum of half the eligible voters (minimum three) and a two-thirds decision
+  threshold, with automatic cancellation when consensus fails;
+- early finalization the moment every eligible voter has voted;
+- NOT-READY outcomes that reopen the waiting state and permit a fresh dispute;
+- decided YES/NO/CANCEL outcomes recorded on the dispute for the settlement
+  engine to execute.
+
 For local authentication, add `http://localhost:3000/auth/callback` to the Supabase project's allowed redirect URLs. The checked-in database trigger creates a profile from the display name supplied during first sign-in.
 
 ## Initial product boundaries
@@ -202,4 +212,4 @@ The most important early metric is not individual daily activity. It is **weekly
 
 ## Status
 
-Foundation development and FF-004 through FF-011 are implemented: authentication, groups, invitations, seasons, grants, the wallet read model, structured market creation, server-authoritative position commitment with undo, the live market page with deadline closing and one-sided refunds, and the resolution proposal and dispute workflow with frozen voter snapshots. Hidden group voting and outcome finalization (FF-012) are the next milestone.
+Foundation development and FF-004 through FF-012 are implemented: authentication, groups, invitations, seasons, grants, the wallet read model, structured market creation, server-authoritative position commitment with undo, the live market page with deadline closing and one-sided refunds, the resolution proposal and dispute workflow with frozen voter snapshots, and hidden group voting with deterministic outcome finalization. The settlement and refund engines (FF-013) are the next milestone.

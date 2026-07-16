@@ -86,6 +86,25 @@ export function parseProposalInput(formData: FormData): ResolutionInputResult<Pr
   return { data: { evidenceUrl: evidence.url, explanation, outcome, requestId }, error: "" };
 }
 
+export type VoteInput = {
+  choice: ResolutionOutcome;
+  requestId: string;
+};
+
+export function parseVoteInput(formData: FormData): ResolutionInputResult<VoteInput> {
+  const choice = trimmedField(formData, "choice");
+  const requestId = trimmedField(formData, "requestId");
+
+  if (!isResolutionOutcome(choice)) {
+    return { data: null, error: "Vote YES, NO, CANCEL, or NOT READY." };
+  }
+  if (!UUID_PATTERN.test(requestId)) {
+    return { data: null, error: "Refresh the market to cast a valid vote." };
+  }
+
+  return { data: { choice, requestId }, error: "" };
+}
+
 export function parseDisputeInput(formData: FormData): ResolutionInputResult<DisputeInput> {
   const reason = trimmedField(formData, "reason");
   const evidence = parseEvidenceUrl(trimmedField(formData, "evidenceUrl"));

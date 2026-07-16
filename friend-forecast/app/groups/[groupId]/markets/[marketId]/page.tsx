@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { undoPositionAction } from "@/app/groups/[groupId]/markets/[marketId]/actions";
 import { publishMarketAction } from "@/app/groups/[groupId]/markets/actions";
+import { MarketLiveStatus } from "@/components/markets/market-live-status";
 import { MarketRulesPreview } from "@/components/markets/market-rules-preview";
 import { MarketShareLink } from "@/components/markets/market-share-link";
 import { PositionForm } from "@/components/markets/position-form";
@@ -74,6 +75,12 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
   const { groupId, marketId } = await params;
   const query = await searchParams;
   const { supabase, userId } = await requireUser(`/groups/${groupId}/markets/${marketId}`);
+
+  // Opportunistic close: an expired market settles into its closed or
+  // refunded state before any of the reads below render it. Failures fall
+  // through — the membership-scoped reads below decide what the caller sees.
+  await supabase.rpc("close_market_if_due", { target_market_id: marketId });
+
   const [
     { data: group, error: groupError },
     { data: marketData, error: marketError },
@@ -156,8 +163,14 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
       </header>
       <section className="group-hero market-detail-hero">
         <span className="eyebrow">Created by {market.creator?.display_name ?? "a group member"} · revision {market.rule_revision}</span>
-        <h1>{market.status === "draft" ? "Draft market." : "The group has a forecast."}</h1>
+        <h1>
+          {market.status === "draft" ? "Draft market."
+            : market.status === "cancelled" ? "Market cancelled and refunded."
+            : market.status === "closed" ? "Trading closed. The pool is locked."
+            : "The group has a forecast."}
+        </h1>
         <p>{market.rules_locked_at ? "The funded contract is immutable." : "Rules stay editable only until the first stake."}</p>
+        {tradingOpen ? <MarketLiveStatus marketId={marketId} tradingClosesAt={market.trading_closes_at} /> : null}
       </section>
 
       {query.created === "draft" || query.updated === "draft" ? <p className="info-banner" role="status">Completed draft saved. You and group admins can see it.</p> : null}
@@ -166,6 +179,8 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
       {committedBanner ? <p className="success-banner" role="status">{formatPoints(Number(committedBanner[0]))} points committed to {committedBanner[1].toUpperCase()}. The market moved.</p> : null}
       {query.undo === "done" ? <p className="success-banner" role="status">Commitment undone. The points are back in your wallet.</p> : null}
       {query.undo === "unavailable" ? <p className="form-error" role="alert">That commitment could not be undone. The undo window may have closed.</p> : null}
+      {market.status === "closed" ? <p className="info-banner" role="status">Trading is closed. Committed points stay in the pool until the group resolves the outcome.</p> : null}
+      {market.status === "cancelled" ? <p className="info-banner" role="status">This market ended without both sides funded, so every committed point was refunded.</p> : null}
 
       <MarketRulesPreview
         cancelCondition={market.cancel_condition}
@@ -205,14 +220,16 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
               <div className="pool-bar" aria-label={`${split.yesPercent}% yes and ${split.noPercent}% no`}>
                 <span style={{ width: `${split.yesPercent}%` }} />
               </div>
-              {!split.isContested ? (
+              {!split.isContested && market.status === "open" ? (
                 <p className="info-banner">Only one side is funded so far. If nobody takes the other side before the deadline, every stake is refunded.</p>
               ) : null}
             </>
           )}
           {position ? (
             <p className="resolution-note" data-testid="your-position">
-              Your position: {formatPoints(position.points)} points on {position.side.toUpperCase()}.
+              {market.status === "cancelled"
+                ? `Your ${formatPoints(position.points)}-point ${position.side.toUpperCase()} stake was refunded to your wallet.`
+                : `Your position: ${formatPoints(position.points)} points on ${position.side.toUpperCase()}.`}
             </p>
           ) : null}
           {undoable && undoStillOpen ? (
@@ -256,8 +273,18 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
           </>
         ) : (
           <>
-            <h2>{market.first_stake_at ? "Rules locked by the first stake." : "Ready for positions."}</h2>
-            <p>{market.first_stake_at ? "Committed points stay in the pool until the market resolves or refunds." : "The first committed stake makes this contract immutable."}</p>
+            <h2>
+              {market.status === "cancelled" ? "Cancelled and refunded."
+                : market.status === "closed" ? "Awaiting the outcome."
+                : market.first_stake_at ? "Rules locked by the first stake."
+                : "Ready for positions."}
+            </h2>
+            <p>
+              {market.status === "cancelled" ? "Both sides never got funded before the deadline. Every stake went back to its wallet."
+                : market.status === "closed" ? "Resolution proposals and group disputes arrive in FF-011. The locked pool waits for the outcome."
+                : market.first_stake_at ? "Committed points stay in the pool until the market resolves or refunds."
+                : "The first committed stake makes this contract immutable."}
+            </p>
             <MarketShareLink value={shareUrl} />
           </>
         )}

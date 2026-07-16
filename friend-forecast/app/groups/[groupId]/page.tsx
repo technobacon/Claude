@@ -64,6 +64,10 @@ export default async function GroupPage({ params }: GroupPageProps) {
     notFound();
   }
 
+  // Opportunistic close: reading the dashboard settles any market whose
+  // deadline has passed before its list entry renders.
+  await supabase.rpc("close_due_group_markets", { target_group_id: groupId });
+
   const now = new Date().toISOString();
   const [
     { data },

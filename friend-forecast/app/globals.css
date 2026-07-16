@@ -1184,6 +1184,19 @@ footer {
   background: rgba(124, 92, 255, 0.12);
 }
 
+.market-status-closed,
+.market-status-cancelled {
+  color: var(--text-muted, #a8a3b8);
+  background: var(--surface-soft);
+}
+
+.market-countdown {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
 .market-rules-preview > h2 {
   max-width: 900px;
   margin: 24px 0 28px;

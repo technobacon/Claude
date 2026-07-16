@@ -148,6 +148,14 @@ The position commitment slice includes:
 - live pool splits, backer counts, and projected returns on the market page;
 - first-stake rule locking wired into the commitment transaction.
 
+The live market and deadline slice includes:
+
+- an advisory countdown backed by server-time deadline enforcement;
+- realtime pool refreshes with authoritative re-reads after reconnect;
+- opportunistic closing whenever a due market or its group dashboard is read;
+- contested markets locking into a closed pool awaiting resolution;
+- exact one-time refunds for one-sided and unfunded markets at close.
+
 For local authentication, add `http://localhost:3000/auth/callback` to the Supabase project's allowed redirect URLs. The checked-in database trigger creates a profile from the display name supplied during first sign-in.
 
 ## Initial product boundaries
@@ -182,4 +190,4 @@ The most important early metric is not individual daily activity. It is **weekly
 
 ## Status
 
-Foundation development and FF-004 through FF-009 are implemented: authentication, groups, invitations, seasons, grants, the wallet read model, structured market creation, and server-authoritative position commitment with undo. The live market page with real-time updates and deadline closing (FF-010) is the next milestone.
+Foundation development and FF-004 through FF-010 are implemented: authentication, groups, invitations, seasons, grants, the wallet read model, structured market creation, server-authoritative position commitment with undo, and the live market page with deadline closing and one-sided refunds. Resolution proposals and the dispute workflow (FF-011) are the next milestone.

@@ -9,17 +9,24 @@ import { MarketLiveStatus } from "@/components/markets/market-live-status";
 import { MarketRulesPreview } from "@/components/markets/market-rules-preview";
 import { MarketShareLink } from "@/components/markets/market-share-link";
 import { PositionForm } from "@/components/markets/position-form";
+import { ResolutionDisputeForm, ResolutionProposalForm } from "@/components/markets/resolution-forms";
 import { getAppUrl } from "@/lib/app-url";
 import { requireUser } from "@/lib/auth/require-user";
 import { calculatePoolSplit, type MarketSide } from "@/lib/market-math";
 import { hasUnresolvedMarketTokens, type MarketOutcomeControl, type MarketResolutionMode } from "@/lib/markets/input";
+import {
+  CREATOR_GRACE_HOURS,
+  isResolutionOutcome,
+  type ResolutionOutcome
+} from "@/lib/resolution/input";
+import { previewSettlementPayout } from "@/lib/resolution/preview";
 import { formatPoints } from "@/lib/wallet/ledger";
 
 export const dynamic = "force-dynamic";
 
 type MarketPageProps = {
   params: Promise<{ groupId: string; marketId: string }>;
-  searchParams: Promise<{ committed?: string; created?: string; publish?: string; undo?: string; updated?: string }>;
+  searchParams: Promise<{ committed?: string; created?: string; disputed?: string; proposed?: string; publish?: string; undo?: string; updated?: string }>;
 };
 
 type MarketDetail = {
@@ -71,6 +78,40 @@ type UndoableTransaction = {
   undo_expires_at: string | null;
 };
 
+type ProposalRow = {
+  challenge_deadline: string;
+  created_at: string;
+  evidence_url: string | null;
+  explanation: string;
+  id: string;
+  outcome: string;
+  proposer: { display_name: string } | { display_name: string }[] | null;
+  status: string;
+};
+
+type DisputeRow = {
+  created_at: string;
+  disputer: { display_name: string } | { display_name: string }[] | null;
+  evidence_url: string | null;
+  id: string;
+  reason: string;
+  vote_deadline: string;
+  voters: { count: number }[] | null;
+};
+
+function displayName(value: { display_name: string } | { display_name: string }[] | null): string {
+  const record = Array.isArray(value) ? value[0] : value;
+  return record?.display_name ?? "a group member";
+}
+
+function formatInTimezone(value: string, timezone: string): string {
+  try {
+    return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone: timezone }).format(new Date(value));
+  } catch {
+    return new Date(value).toISOString();
+  }
+}
+
 export default async function MarketPage({ params, searchParams }: MarketPageProps) {
   const { groupId, marketId } = await params;
   const query = await searchParams;
@@ -88,7 +129,10 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
     { data: poolsData, error: poolsError },
     { data: positionData, error: positionError },
     { data: walletData, error: walletError },
-    { data: latestTransactions, error: transactionError }
+    { data: latestTransactions, error: transactionError },
+    { data: proposalData, error: proposalError },
+    { data: disputeData, error: disputeError },
+    { data: membershipData, error: membershipError }
   ] = await Promise.all([
     supabase.from("groups").select("id, name, accent_theme").eq("id", groupId).maybeSingle(),
     supabase
@@ -108,10 +152,30 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
       .eq("user_id", userId)
       .is("reversed_at", null)
       .order("created_at", { ascending: false })
-      .limit(1)
+      .limit(1),
+    supabase
+      .from("market_resolution_proposals")
+      .select("id, outcome, explanation, evidence_url, challenge_deadline, status, created_at, proposer:profiles!market_resolution_proposals_proposer_user_id_fkey(display_name)")
+      .eq("market_id", marketId)
+      .order("created_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("market_disputes")
+      .select("id, reason, evidence_url, vote_deadline, created_at, disputer:profiles!market_disputes_disputer_user_id_fkey(display_name), voters:market_vote_snapshots(count)")
+      .eq("market_id", marketId)
+      .is("released_at", null)
+      .maybeSingle(),
+    supabase
+      .from("group_memberships")
+      .select("joined_at")
+      .eq("group_id", groupId)
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .maybeSingle()
   ]);
 
-  if (groupError || marketError || permissionError || poolsError || positionError || walletError || transactionError) {
+  if (groupError || marketError || permissionError || poolsError || positionError || walletError
+    || transactionError || proposalError || disputeError || membershipError) {
     throw new Error("The market could not be loaded.");
   }
   if (!group || !marketData) {
@@ -153,6 +217,29 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
     ? query.committed.split("-")
     : null;
 
+  const latestProposal = (((proposalData as ProposalRow[] | null) ?? [])[0] ?? null);
+  const dispute = disputeData as DisputeRow | null;
+  const membership = membershipData as { joined_at: string } | null;
+  const joinedBeforeDeadline = membership !== null
+    && new Date(membership.joined_at).valueOf() < new Date(market.trading_closes_at).valueOf();
+  const resolutionOpensAtMs = new Date(market.resolution_eligible_at).valueOf();
+  const resolutionOpen = now >= resolutionOpensAtMs;
+  const graceOver = now >= resolutionOpensAtMs + CREATOR_GRACE_HOURS * 3_600_000;
+  const canPropose = market.status === "closed" && resolutionOpen && joinedBeforeDeadline && (isCreator || graceOver);
+  const pendingProposal = market.status === "resolution_proposed" && latestProposal?.status === "pending" ? latestProposal : null;
+  const challengeOpen = pendingProposal !== null && new Date(pendingProposal.challenge_deadline).valueOf() > now;
+  const canDispute = challengeOpen && joinedBeforeDeadline && market.resolution_mode === "disputable";
+  const proposalOutcome: ResolutionOutcome | null = pendingProposal && isResolutionOutcome(pendingProposal.outcome)
+    ? pendingProposal.outcome
+    : null;
+  const payoutPreview = position && proposalOutcome
+    ? previewSettlementPayout(proposalOutcome, position.side, position.points, yesPool, noPool)
+    : null;
+  const notReadyNote = market.status === "closed" && latestProposal?.outcome === "not_ready" && latestProposal.status === "accepted"
+    ? latestProposal
+    : null;
+  const voterCount = dispute?.voters?.[0]?.count ?? 0;
+
   return (
     <main className={`page-shell dashboard-shell theme-${group.accent_theme}`}>
       <header className="topbar">
@@ -167,6 +254,8 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
           {market.status === "draft" ? "Draft market."
             : market.status === "cancelled" ? "Market cancelled and refunded."
             : market.status === "closed" ? "Trading closed. The pool is locked."
+            : market.status === "resolution_proposed" ? "An outcome is on the table."
+            : market.status === "disputed" ? "The group is deciding."
             : "The group has a forecast."}
         </h1>
         <p>{market.rules_locked_at ? "The funded contract is immutable." : "Rules stay editable only until the first stake."}</p>
@@ -181,6 +270,9 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
       {query.undo === "unavailable" ? <p className="form-error" role="alert">That commitment could not be undone. The undo window may have closed.</p> : null}
       {market.status === "closed" ? <p className="info-banner" role="status">Trading is closed. Committed points stay in the pool until the group resolves the outcome.</p> : null}
       {market.status === "cancelled" ? <p className="info-banner" role="status">This market ended without both sides funded, so every committed point was refunded.</p> : null}
+      {query.proposed === "not_ready" ? <p className="success-banner" role="status">Recorded: the outcome is not decided yet. The market stays open for a later proposal.</p> : null}
+      {query.proposed && query.proposed !== "not_ready" ? <p className="success-banner" role="status">Resolution proposed. The group can challenge it before it settles.</p> : null}
+      {query.disputed === "opened" ? <p className="success-banner" role="status">Dispute opened. The proposal is paused for a hidden group vote.</p> : null}
 
       <MarketRulesPreview
         cancelCondition={market.cancel_condition}
@@ -264,6 +356,82 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
         <p className="info-banner">The betting deadline has passed. New positions are no longer accepted.</p>
       ) : null}
 
+      {["closed", "resolution_proposed", "disputed"].includes(market.status) ? (
+        <section className="dashboard-card" aria-label="Resolution">
+          <span className="card-kicker">Resolution</span>
+          {market.status === "closed" ? (
+            !resolutionOpen ? (
+              <>
+                <h2>Waiting for the event.</h2>
+                <p>Resolution opens {formatInTimezone(market.resolution_eligible_at, market.timezone)} ({market.timezone}).</p>
+              </>
+            ) : (
+              <>
+                <h2>Propose the outcome.</h2>
+                {notReadyNote ? (
+                  <p className="info-banner" data-testid="not-ready-note">
+                    {displayName(notReadyNote.proposer)} marked this market not ready on {formatInTimezone(notReadyNote.created_at, market.timezone)}: “{notReadyNote.explanation}”
+                  </p>
+                ) : null}
+                {canPropose ? (
+                  <>
+                    <p>State the result exactly as the locked rules define it. Attach the agreed evidence source where you can.</p>
+                    <ResolutionProposalForm groupId={groupId} marketId={marketId} requestId={randomUUID()} />
+                  </>
+                ) : (
+                  <p className="info-banner">
+                    {!joinedBeforeDeadline
+                      ? "Only members who joined before the trading deadline can resolve this market."
+                      : `The creator proposes first. Everyone else can propose ${CREATOR_GRACE_HOURS} hours after resolution opens.`}
+                  </p>
+                )}
+              </>
+            )
+          ) : null}
+
+          {pendingProposal ? (
+            <div data-testid="proposal-card">
+              <h2>{displayName(pendingProposal.proposer)} proposed {pendingProposal.outcome.toUpperCase()}.</h2>
+              <p>“{pendingProposal.explanation}”</p>
+              {pendingProposal.evidence_url ? (
+                <p><a className="text-link" href={pendingProposal.evidence_url} rel="noreferrer" target="_blank">Open the evidence</a></p>
+              ) : null}
+              <p className="resolution-note">
+                {challengeOpen
+                  ? `Challenge window closes ${formatInTimezone(pendingProposal.challenge_deadline, market.timezone)} (${market.timezone}).`
+                  : "The challenge window has closed. Settlement arrives in FF-013."}
+              </p>
+              {position && payoutPreview !== null ? (
+                <p className="return-preview" data-testid="payout-preview">
+                  <span>If this settles, your {formatPoints(position.points)}-point {position.side.toUpperCase()} stake returns</span>
+                  <strong>{formatPoints(payoutPreview)} pts</strong>
+                </p>
+              ) : null}
+              {canDispute ? (
+                <ResolutionDisputeForm groupId={groupId} marketId={marketId} requestId={randomUUID()} />
+              ) : market.resolution_mode !== "disputable" ? (
+                <p className="info-banner">This market settles on its named source without a group dispute.</p>
+              ) : !joinedBeforeDeadline ? (
+                <p className="info-banner">Only members who joined before the trading deadline can dispute.</p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {market.status === "disputed" && dispute ? (
+            <div data-testid="dispute-card">
+              <h2>{displayName(dispute.disputer)} disputed the proposal.</h2>
+              <p>“{dispute.reason}”</p>
+              {dispute.evidence_url ? (
+                <p><a className="text-link" href={dispute.evidence_url} rel="noreferrer" target="_blank">Open the dispute evidence</a></p>
+              ) : null}
+              <p className="resolution-note">
+                {voterCount} eligible {voterCount === 1 ? "voter decides" : "voters decide"} by {formatInTimezone(dispute.vote_deadline, market.timezone)} ({market.timezone}). The hidden group vote arrives in FF-012.
+              </p>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
       <section className="dashboard-card market-next-card">
         <span className="card-kicker">Market actions</span>
         {market.status === "draft" ? (
@@ -276,12 +444,16 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
             <h2>
               {market.status === "cancelled" ? "Cancelled and refunded."
                 : market.status === "closed" ? "Awaiting the outcome."
+                : market.status === "resolution_proposed" ? "Proposal under review."
+                : market.status === "disputed" ? "Group vote pending."
                 : market.first_stake_at ? "Rules locked by the first stake."
                 : "Ready for positions."}
             </h2>
             <p>
               {market.status === "cancelled" ? "Both sides never got funded before the deadline. Every stake went back to its wallet."
-                : market.status === "closed" ? "Resolution proposals and group disputes arrive in FF-011. The locked pool waits for the outcome."
+                : market.status === "closed" ? "Use the resolution panel above to propose the outcome once the event is decided."
+                : market.status === "resolution_proposed" ? "The proposal stands unless someone disputes it before the challenge window closes."
+                : market.status === "disputed" ? "A hidden one-person-one-vote decision picks YES, NO, CANCEL, or NOT READY."
                 : market.first_stake_at ? "Committed points stay in the pool until the market resolves or refunds."
                 : "The first committed stake makes this contract immutable."}
             </p>

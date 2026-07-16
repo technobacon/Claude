@@ -156,6 +156,18 @@ The live market and deadline slice includes:
 - contested markets locking into a closed pool awaiting resolution;
 - exact one-time refunds for one-sided and unfunded markets at close.
 
+The resolution proposal and dispute slice includes:
+
+- YES/NO/CANCEL/NOT-READY proposals with explanations and evidence links;
+- creator-first proposing with a 24-hour grace before any eligible member may propose;
+- immutable proposal records opening a 12-hour challenge window;
+- one visible dispute per market that freezes a one-person-one-vote voter
+  snapshot of members who joined before the trading deadline;
+- settlement payout previews that reuse the pari-mutuel pool math.
+
+Evidence attaches as an explanation plus source link during the pilot;
+private file uploads arrive with the storage-hardening pass.
+
 For local authentication, add `http://localhost:3000/auth/callback` to the Supabase project's allowed redirect URLs. The checked-in database trigger creates a profile from the display name supplied during first sign-in.
 
 ## Initial product boundaries
@@ -190,4 +202,4 @@ The most important early metric is not individual daily activity. It is **weekly
 
 ## Status
 
-Foundation development and FF-004 through FF-010 are implemented: authentication, groups, invitations, seasons, grants, the wallet read model, structured market creation, server-authoritative position commitment with undo, and the live market page with deadline closing and one-sided refunds. Resolution proposals and the dispute workflow (FF-011) are the next milestone.
+Foundation development and FF-004 through FF-011 are implemented: authentication, groups, invitations, seasons, grants, the wallet read model, structured market creation, server-authoritative position commitment with undo, the live market page with deadline closing and one-sided refunds, and the resolution proposal and dispute workflow with frozen voter snapshots. Hidden group voting and outcome finalization (FF-012) are the next milestone.

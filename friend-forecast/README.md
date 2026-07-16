@@ -134,6 +134,20 @@ The wallet and ledger slice includes:
 - member wallet summaries and activity history;
 - owner and moderator reconciliation across group wallets.
 
+The market creation slice includes:
+
+- a guided mobile creation wizard with reusable templates and placeholder detection;
+- draft and publish flows guarded by idempotent mutation receipts;
+- optimistic rule revisions with immutable rule snapshots at the first stake.
+
+The position commitment slice includes:
+
+- server-authoritative YES/NO point commitments with idempotent commit receipts;
+- season minimum, per-market cap, side consistency, and wallet balance enforced in one transaction;
+- aggregated per-member positions with a short, exactly-once undo window;
+- live pool splits, backer counts, and projected returns on the market page;
+- first-stake rule locking wired into the commitment transaction.
+
 For local authentication, add `http://localhost:3000/auth/callback` to the Supabase project's allowed redirect URLs. The checked-in database trigger creates a profile from the display name supplied during first sign-in.
 
 ## Initial product boundaries
@@ -168,4 +182,4 @@ The most important early metric is not individual daily activity. It is **weekly
 
 ## Status
 
-Foundation development and FF-004 through FF-007 are implemented: authentication, groups, invitations, seasons, grants, and the wallet read model. Structured market creation is the next milestone.
+Foundation development and FF-004 through FF-009 are implemented: authentication, groups, invitations, seasons, grants, the wallet read model, structured market creation, and server-authoritative position commitment with undo. The live market page with real-time updates and deadline closing (FF-010) is the next milestone.

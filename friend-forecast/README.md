@@ -168,6 +168,16 @@ The resolution proposal and dispute slice includes:
 Evidence attaches as an explanation plus source link during the pilot;
 private file uploads arrive with the storage-hardening pass.
 
+The result reveal and league slice includes:
+
+- ledger-backed result reveals with winner payouts, losses, and friendly
+  superlatives (first believer, biggest conviction — no loser labels);
+- a league screen ranking members by net market profit, then balance, so
+  sitting on grants never wins;
+- a deliberately redacted shareable result card carrying only the question,
+  final split, outcome, and pool size;
+- a create-the-next-market prompt on every settled result.
+
 The settlement and refund slice includes:
 
 - a settlement engine executing uncontested proposals past their challenge
@@ -223,4 +233,4 @@ The most important early metric is not individual daily activity. It is **weekly
 
 ## Status
 
-Foundation development and FF-004 through FF-013 are implemented: authentication, groups, invitations, seasons, grants, the wallet read model, structured market creation, server-authoritative position commitment with undo, the live market page with deadline closing and one-sided refunds, the resolution proposal and dispute workflow with frozen voter snapshots, hidden group voting with deterministic finalization, and the settlement and refund engines. The complete market lifecycle — from shared invitation through exact payout — now runs without manual intervention. The result reveal and group standings (FF-014) are the next milestone.
+Foundation development and FF-004 through FF-014 are implemented: authentication, groups, invitations, seasons, grants, the wallet read model, structured market creation, server-authoritative position commitment with undo, the live market page with deadline closing and one-sided refunds, the resolution proposal and dispute workflow with frozen voter snapshots, hidden group voting with deterministic finalization, the settlement and refund engines, and the result reveal with league standings and redacted share cards. The complete market lifecycle — from shared invitation through exact payout to the next-market prompt — runs without manual intervention. Comments, reactions, and notifications (FF-015) are the next milestone.

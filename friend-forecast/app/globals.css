@@ -1203,6 +1203,85 @@ footer {
   color: var(--text);
 }
 
+.league-table {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.league-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 4px 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+
+.league-row-self {
+  border-color: rgba(124, 92, 255, 0.45);
+}
+
+.league-rank {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.league-name {
+  font-weight: 700;
+}
+
+.league-record {
+  grid-column: 2;
+  font-size: 0.82rem;
+  color: var(--text-muted, #a8a3b8);
+}
+
+.league-net {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.league-balance {
+  grid-column: 3;
+  font-size: 0.82rem;
+  color: var(--text-muted, #a8a3b8);
+  text-align: right;
+}
+
+.result-positions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.result-positions li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.result-superlative {
+  font-size: 0.78rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(124, 92, 255, 0.4);
+  color: #d3c9ff;
+  white-space: nowrap;
+}
+
 .market-rules-preview > h2 {
   max-width: 900px;
   margin: 24px 0 28px;

@@ -130,6 +130,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
           <h2 id="wallet-heading">{wallet ? `${formatPoints(wallet.balance)} points` : walletError ? "Wallet unavailable" : "No active season"}</h2>
           <p>{wallet ? `${wallet.seasonName} · ${wallet.activityCount} ledger entries` : "Wallet balances are derived from append-only activity."}</p>
           <Link className="text-link" href={`/groups/${groupId}/wallet`}>View wallet activity</Link>
+          <Link className="text-link" href={`/groups/${groupId}/league`}>View league standings</Link>
         </section>
         <section className="dashboard-card" aria-labelledby="markets-heading">
           <span className="card-kicker">Forecasts</span>

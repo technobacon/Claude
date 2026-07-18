@@ -10,6 +10,7 @@ import { MarketRulesPreview } from "@/components/markets/market-rules-preview";
 import { MarketShareLink } from "@/components/markets/market-share-link";
 import { PositionForm } from "@/components/markets/position-form";
 import { DisputeVoteForm, ResolutionDisputeForm, ResolutionProposalForm } from "@/components/markets/resolution-forms";
+import { ResultShareCard } from "@/components/markets/result-share-card";
 import { getAppUrl } from "@/lib/app-url";
 import { requireUser } from "@/lib/auth/require-user";
 import { calculatePoolSplit, type MarketSide } from "@/lib/market-math";
@@ -21,6 +22,7 @@ import {
   type ResolutionOutcome
 } from "@/lib/resolution/input";
 import { previewSettlementPayout } from "@/lib/resolution/preview";
+import { buildResultCardText } from "@/lib/results/share-card";
 import { formatPoints } from "@/lib/wallet/ledger";
 
 export const dynamic = "force-dynamic";
@@ -124,6 +126,18 @@ type SettlementRow = {
 type MarketLedgerEntry = {
   amount: number;
   type: string;
+};
+
+type MarketResultRow = {
+  display_name: string;
+  is_biggest_conviction: boolean;
+  is_first_believer: boolean;
+  is_winner: boolean;
+  net: number;
+  payout: number;
+  side: MarketSide;
+  stake: number;
+  user_id: string;
 };
 
 function displayName(value: { display_name: string } | { display_name: string }[] | null): string {
@@ -324,6 +338,27 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
     && dispute.finalized_at === null
     && new Date(dispute.vote_deadline).valueOf() > now;
 
+  let results: MarketResultRow[] = [];
+  if (settlement) {
+    const { data: resultsData, error: resultsError } = await supabase.rpc("get_market_results", {
+      target_market_id: marketId
+    });
+    if (resultsError) {
+      throw new Error("The market results could not be loaded.");
+    }
+    results = (resultsData as MarketResultRow[] | null) ?? [];
+  }
+  const resultCardText = settlement
+    ? buildResultCardText({
+      groupName: null,
+      noPercent: split.noPercent,
+      outcome: settlement.outcome,
+      question: market.question,
+      totalPool: Number(settlement.total_pool),
+      yesPercent: split.yesPercent
+    })
+    : null;
+
   return (
     <main className={`page-shell dashboard-shell theme-${group.accent_theme}`}>
       <header className="topbar">
@@ -463,9 +498,32 @@ export default async function MarketPage({ params, searchParams }: MarketPagePro
               <strong>{formatPoints(myNet, true)} pts</strong>
             </p>
           ) : null}
+          {results.length > 0 ? (
+            <ul className="result-positions" data-testid="result-positions">
+              {results.map((row) => (
+                <li key={row.user_id}>
+                  <span>
+                    <strong>{row.display_name}</strong> · {formatPoints(Number(row.stake))} on {row.side.toUpperCase()}
+                    {row.is_winner && row.is_first_believer ? <span className="result-superlative"> First believer</span> : null}
+                    {row.is_winner && row.is_biggest_conviction ? <span className="result-superlative"> Biggest conviction</span> : null}
+                  </span>
+                  <span className={Number(row.net) >= 0 ? "amount-positive" : "amount-negative"}>
+                    {formatPoints(Number(row.net), true)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {resultCardText ? <ResultShareCard text={resultCardText} /> : null}
           <p className="resolution-note">
-            Settled {formatInTimezone(settlement.created_at, market.timezone)} ({market.timezone}). The full result reveal and standings arrive in FF-014.
+            Settled {formatInTimezone(settlement.created_at, market.timezone)} ({market.timezone}).
           </p>
+          <div className="market-action-row">
+            {canCreate ? (
+              <Link className="primary-button button-link" href={`/groups/${groupId}/markets/new`}>Create the next market</Link>
+            ) : null}
+            <Link className="ghost-button button-link" href={`/groups/${groupId}/league`}>See the league table</Link>
+          </div>
         </section>
       ) : null}
 
